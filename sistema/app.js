@@ -644,7 +644,8 @@
     vista.innerHTML =
       '<a class="voltar" href="#/colaboradores">← Colaboradores</a>' +
       '<div class="topo-vista"><div><h1>' + esc(c.nome) + '</h1><p>' + esc(c.cargo || 'Sem cargo') + ' · ' + esc(nomeEmpresa(emp)) + ' · ' + etiquetaStatus(c.status) + '</p></div>' +
-      '<div class="acoes"><a class="botao" href="#/colaboradores/' + esc(id) + '/editar">Editar</a>' +
+      '<div class="acoes"><a class="botao botao-secundario" target="_blank" rel="noopener" href="' + esc(linkSimulador(c, emp)) + '">Simular 13º e férias ↗</a>' +
+      '<a class="botao" href="#/colaboradores/' + esc(id) + '/editar">Editar</a>' +
       '<button type="button" class="botao botao-perigo" id="excluir">Excluir</button></div></div>' +
       '<div class="grade-ficha"><div>' +
       '<section class="painel"><h2>Dados pessoais</h2><dl class="dados">' +
@@ -729,6 +730,24 @@
         telaFicha(id);
       } catch (e) { aviso(e.message, true); }
     });
+  }
+
+  // Abre o simulador do site já preenchido com os dados do colaborador.
+  function linkSimulador(c, emp) {
+    var adm = lerData(c.data_admissao);
+    var hj = hoje();
+    var meses = 12;
+    if (adm && adm.getFullYear() === hj.getFullYear()) {
+      meses = Math.max(1, hj.getMonth() - adm.getMonth() + (adm.getDate() <= 15 ? 1 : 0));
+    }
+    var q = new URLSearchParams({ salario: c.salario, meses: meses });
+    if (emp) {
+      q.set('regime', emp.regime);
+      q.set('rat', emp.rat);
+      q.set('fap', emp.fap);
+      q.set('terceiros', Math.round(emp.terceiros * 10000) / 100);
+    }
+    return '../simulador.html?' + q.toString();
   }
 
   function naoEncontrado() {

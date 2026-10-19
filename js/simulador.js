@@ -18,6 +18,15 @@
     form.meses.appendChild(o);
   }
 
+  // Preenche a partir do link (ex.: vindo do sistema de colaboradores).
+  var url = new URLSearchParams(window.location.search);
+  ['salario', 'adicionais', 'quantidade', 'meses', 'regime', 'rat', 'fap', 'terceiros'].forEach(function (k) {
+    var v = url.get(k);
+    if (v == null || !form[k]) return;
+    if (form[k].tagName === 'SELECT' && !form[k].querySelector('option[value="' + CSS.escape(v) + '"]')) return;
+    form[k].value = v;
+  });
+
   var NOTAS = {
     normal: 'Lucro Presumido/Real: INSS patronal de 20%, RAT × FAP, terceiros e FGTS de 8%.',
     simples: 'Simples Nacional (Anexos I, II, III e V): a contribuição patronal está incluída no DAS. A empresa recolhe à parte apenas o FGTS de 8%.',
