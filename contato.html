@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Solicitar Proposta | KeyGest</title>
+  <meta name="description" content="Solicite uma proposta de terceirização de RH, departamento pessoal e folha de pagamento com a KeyGest.">
+  <meta name="theme-color" content="#0f3d3a">
+  <meta property="og:title" content="KeyGest — Gestão inteligente. Empresas mais fortes.">
+  <meta property="og:description" content="RH, departamento pessoal e folha de pagamento para empresas de todos os portes.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+
+  <header class="cabecalho">
+    <div class="container">
+      <a class="marca" href="index.html"><img src="assets/logo.svg" alt="" width="36" height="36">KeyGest</a>
+      <button class="menu-toggle" aria-expanded="false" aria-controls="menu" aria-label="Abrir menu">☰</button>
+      <ul class="menu" id="menu">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="index.html#servicos">Serviços</a></li>
+        <li><a href="calculadora.html">Calculadora de folha</a></li>
+        <li><a href="simulador.html">Simulador de encargos</a></li>
+        <li><a class="botao botao-pequeno" href="contato.html" aria-current="page">Solicitar proposta</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main id="conteudo">
+    <section class="topo-pagina">
+      <div class="container">
+        <span class="selo">Fale com a KeyGest</span>
+        <h1>Solicite uma proposta</h1>
+        <p>Preencha seus dados e um especialista entra em contato em até 1 dia útil com uma proposta personalizada para a sua empresa.</p>
+      </div>
+    </section>
+
+    <section class="secao" style="padding-top:0">
+      <div class="container layout-ferramenta">
+        <div class="painel">
+          <div id="mensagem" role="status" aria-live="polite"></div>
+          <form id="form-contato" novalidate>
+            <div id="bloco-estimativa" hidden>
+              <span class="rotulo" style="font-weight:600;color:var(--petroleo)">Sua estimativa será enviada junto:</span>
+              <div class="resumo-estimativa" id="resumo-estimativa"></div>
+            </div>
+            <div class="campos">
+              <div class="campo">
+                <label for="nome">Nome completo *</label>
+                <input type="text" id="nome" name="nome" autocomplete="name" required>
+                <div class="erro-campo">Informe seu nome.</div>
+              </div>
+              <div class="campo">
+                <label for="empresa">Empresa *</label>
+                <input type="text" id="empresa" name="empresa" autocomplete="organization" required>
+                <div class="erro-campo">Informe o nome da empresa.</div>
+              </div>
+              <div class="campo">
+                <label for="cnpj">CNPJ *</label>
+                <input type="text" id="cnpj" name="cnpj" inputmode="text" autocapitalize="characters" maxlength="18" placeholder="00.000.000/0000-00" required>
+                <div class="erro-campo">CNPJ inválido. Confira os números.</div>
+              </div>
+              <div class="campo">
+                <label for="telefone">Telefone / WhatsApp *</label>
+                <input type="tel" id="telefone" name="telefone" autocomplete="tel" maxlength="15" placeholder="(00) 00000-0000" required>
+                <div class="erro-campo">Informe um telefone com DDD.</div>
+              </div>
+              <div class="campo">
+                <label for="email">E-mail *</label>
+                <input type="email" id="email" name="email" autocomplete="email" required>
+                <div class="erro-campo">Informe um e-mail válido.</div>
+              </div>
+              <div class="campo">
+                <label for="funcionarios">Número de funcionários</label>
+                <select id="funcionarios" name="funcionarios">
+                  <option value="">Selecione</option>
+                  <option>1 a 5</option>
+                  <option>6 a 20</option>
+                  <option>21 a 50</option>
+                  <option>51 a 100</option>
+                  <option>101 a 300</option>
+                  <option>Mais de 300</option>
+                </select>
+              </div>
+              <div class="campo inteiro">
+                <span class="rotulo">Serviços de interesse</span>
+                <div class="opcoes grade grade-2" id="servicos" style="gap:10px"></div>
+              </div>
+              <div class="campo inteiro">
+                <label for="mensagem-texto">Mensagem</label>
+                <textarea id="mensagem-texto" name="mensagem" placeholder="Conte um pouco sobre a sua empresa e o que precisa."></textarea>
+              </div>
+              <div class="campo inteiro">
+                <label class="opcao" style="margin:0"><input type="checkbox" id="lgpd" name="lgpd" required><span>Autorizo a KeyGest a usar meus dados para entrar em contato e enviar uma proposta, conforme a <a href="privacidade.html" target="_blank">Política de privacidade</a>. *</span></label>
+                <div class="erro-campo">É preciso autorizar o contato.</div>
+              </div>
+              <input type="text" name="_gotcha" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+              <div class="campo inteiro">
+                <button type="submit" class="botao" style="width:100%">Enviar solicitação</button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <aside class="painel resultado">
+          <h2>Por que falar com a gente</h2>
+          <ul style="padding-left:20px;color:var(--texto-suave)">
+            <li>Diagnóstico gratuito da sua rotina de departamento pessoal</li>
+            <li>Proposta clara, sem taxas escondidas</li>
+            <li>Implantação acompanhada por um analista dedicado</li>
+          </ul>
+          <h3 style="margin-top:24px">Prefere outro canal?</h3>
+          <ul style="list-style:none;padding:0">
+            <li><a data-contato="email" href="#"></a></li>
+            <li><a data-contato="telefone" href="#"></a></li>
+            <li><a data-contato="whatsapp" class="botao botao-secundario botao-pequeno" href="#" target="_blank" rel="noopener" style="margin-top:8px">Conversar no WhatsApp</a></li>
+          </ul>
+          <p class="aviso" style="margin-top:20px">Ainda não sabe quanto custa? Use a <a href="calculadora.html">calculadora de folha</a> e envie a estimativa junto com o seu contato.</p>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    <div class="container">
+      <div class="grade">
+        <div>
+          <a class="marca" href="index.html"><img src="assets/logo.svg" alt="" width="36" height="36">KeyGest</a>
+          <p>Gestão inteligente. Empresas mais fortes.<br>RH, departamento pessoal e gestão de folha para empresas de todos os portes.</p>
+        </div>
+        <div>
+          <h3>Navegação</h3>
+          <ul>
+            <li><a href="index.html#servicos">Serviços</a></li>
+            <li><a href="calculadora.html">Calculadora de folha</a></li>
+            <li><a href="simulador.html">Simulador de encargos</a></li>
+            <li><a href="contato.html">Solicitar proposta</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Contato</h3>
+          <ul>
+            <li><a data-contato="email" href="#"></a></li>
+            <li><a data-contato="telefone" href="#"></a></li>
+            <li><a data-contato="whatsapp" href="#" target="_blank" rel="noopener">WhatsApp</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="rodape-base">
+        <span>© <span data-ano></span> KeyGest. Todos os direitos reservados.</span>
+        <a href="privacidade.html">Política de privacidade</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/encargos.js"></script>
+  <script src="js/contato.js"></script>
+</body>
+</html>

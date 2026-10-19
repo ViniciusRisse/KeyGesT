@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulador de Encargos e Provisões | KeyGest</title>
+  <meta name="description" content="Simule 13º salário, férias com 1/3, FGTS, INSS patronal, RAT e terceiros conforme o regime tributário da sua empresa.">
+  <meta name="theme-color" content="#0f3d3a">
+  <meta property="og:title" content="KeyGest — Gestão inteligente. Empresas mais fortes.">
+  <meta property="og:description" content="RH, departamento pessoal e folha de pagamento para empresas de todos os portes.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+
+  <header class="cabecalho">
+    <div class="container">
+      <a class="marca" href="index.html"><img src="assets/logo.svg" alt="" width="36" height="36">KeyGest</a>
+      <button class="menu-toggle" aria-expanded="false" aria-controls="menu" aria-label="Abrir menu">☰</button>
+      <ul class="menu" id="menu">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="index.html#servicos">Serviços</a></li>
+        <li><a href="calculadora.html">Calculadora de folha</a></li>
+        <li><a href="simulador.html" aria-current="page">Simulador de encargos</a></li>
+        <li><a class="botao botao-pequeno" href="contato.html">Solicitar proposta</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main id="conteudo">
+    <section class="topo-pagina">
+      <div class="container">
+        <span class="selo">Ferramenta gratuita</span>
+        <h1>Simulador de encargos e provisões</h1>
+        <p>Estime o 13º salário, as férias com adicional de um terço, o FGTS, as contribuições patronais e quanto a empresa precisa reservar todo mês para cada funcionário.</p>
+      </div>
+    </section>
+
+    <section class="secao" style="padding-top:0">
+      <div class="container layout-ferramenta">
+        <form id="form-sim" novalidate>
+          <div class="painel">
+            <h2><span class="num">1</span>Perfil do funcionário</h2>
+            <div class="campos">
+              <div class="campo">
+                <label for="salario">Salário mensal</label>
+                <div class="prefixo"><span>R$</span><input type="number" id="salario" name="salario" min="0" step="0.01" inputmode="decimal" value="3000"></div>
+              </div>
+              <div class="campo">
+                <label for="adicionais">Adicionais médios mensais</label>
+                <div class="prefixo"><span>R$</span><input type="number" id="adicionais" name="adicionais" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></div>
+                <small>Horas extras, comissões, adicional noturno, insalubridade etc.</small>
+              </div>
+              <div class="campo">
+                <label for="quantidade">Funcionários com este perfil</label>
+                <input type="number" id="quantidade" name="quantidade" min="1" step="1" value="1">
+              </div>
+              <div class="campo">
+                <label for="meses">Meses trabalhados no ano</label>
+                <select id="meses" name="meses"></select>
+                <small>Conta como mês cheio a fração de 15 dias ou mais.</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="painel">
+            <h2><span class="num">2</span>Perfil da empresa</h2>
+            <div class="campos">
+              <div class="campo inteiro">
+                <label for="regime">Regime tributário</label>
+                <select id="regime" name="regime">
+                  <option value="simples">Simples Nacional (Anexos I, II, III e V)</option>
+                  <option value="simples-iv">Simples Nacional – Anexo IV</option>
+                  <option value="normal" selected>Lucro Presumido ou Lucro Real</option>
+                  <option value="mei">MEI (até 1 empregado)</option>
+                </select>
+              </div>
+              <div class="campo">
+                <label for="rat">RAT (grau de risco)</label>
+                <select id="rat" name="rat">
+                  <option value="0.01">1% – risco leve</option>
+                  <option value="0.02" selected>2% – risco médio</option>
+                  <option value="0.03">3% – risco grave</option>
+                </select>
+              </div>
+              <div class="campo">
+                <label for="fap">FAP</label>
+                <input type="number" id="fap" name="fap" min="0.5" max="2" step="0.0001" value="1">
+                <small>Fator Acidentário de Prevenção, entre 0,5 e 2,0.</small>
+              </div>
+              <div class="campo">
+                <label for="terceiros">Terceiros (%)</label>
+                <input type="number" id="terceiros" name="terceiros" min="0" max="10" step="0.1" value="5.8">
+                <small>Sistema S e salário-educação, conforme o FPAS.</small>
+              </div>
+              <div class="campo">
+                <span class="rotulo">Multa do FGTS</span>
+                <label class="opcao" style="margin:0"><input type="checkbox" id="multa" name="multa"><span>Provisionar 40% para rescisões</span></label>
+              </div>
+            </div>
+            <p class="aviso" id="nota-regime" style="margin-top:16px"></p>
+          </div>
+        </form>
+
+        <aside class="painel resultado" id="resultado" aria-live="polite"></aside>
+      </div>
+    </section>
+
+    <section class="secao secao-branca" style="padding-top:56px">
+      <div class="container texto">
+        <h2>Como os valores são calculados</h2>
+        <p><strong>13º salário:</strong> 1/12 da remuneração por mês trabalhado. A 1ª parcela (metade) é paga até 30 de novembro e a 2ª até 20 de dezembro, com os descontos.</p>
+        <p><strong>Férias:</strong> após 12 meses, o funcionário tem direito a 30 dias de férias com acréscimo de 1/3. O salário das férias já está nos 12 salários do ano; o custo extra é o adicional de 1/3, além dos encargos.</p>
+        <p><strong>FGTS:</strong> 8% sobre salário, 13º e férias com 1/3 (no MEI e em todos os regimes).</p>
+        <p><strong>INSS patronal:</strong> 20% sobre a folha no Lucro Presumido/Real e no Anexo IV do Simples; 3% no MEI. Nos Anexos I, II, III e V do Simples, a contribuição já está no DAS.</p>
+        <p><strong>RAT × FAP e terceiros:</strong> o RAT (1% a 3%) é multiplicado pelo FAP. Terceiros (Sistema S e salário-educação, em média 5,8%) não se aplicam ao Simples Nacional.</p>
+        <p class="aviso">Empresas com desoneração da folha (CPRB), convenções coletivas específicas ou atividades com regras próprias podem ter valores diferentes. Fale com a KeyGest para uma análise do seu caso.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    <div class="container">
+      <div class="grade">
+        <div>
+          <a class="marca" href="index.html"><img src="assets/logo.svg" alt="" width="36" height="36">KeyGest</a>
+          <p>Gestão inteligente. Empresas mais fortes.<br>RH, departamento pessoal e gestão de folha para empresas de todos os portes.</p>
+        </div>
+        <div>
+          <h3>Navegação</h3>
+          <ul>
+            <li><a href="index.html#servicos">Serviços</a></li>
+            <li><a href="calculadora.html">Calculadora de folha</a></li>
+            <li><a href="simulador.html">Simulador de encargos</a></li>
+            <li><a href="contato.html">Solicitar proposta</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Contato</h3>
+          <ul>
+            <li><a data-contato="email" href="#"></a></li>
+            <li><a data-contato="telefone" href="#"></a></li>
+            <li><a data-contato="whatsapp" href="#" target="_blank" rel="noopener">WhatsApp</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="rodape-base">
+        <span>© <span data-ano></span> KeyGest. Todos os direitos reservados.</span>
+        <a href="privacidade.html">Política de privacidade</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/encargos.js"></script>
+  <script src="js/simulador.js"></script>
+</body>
+</html>

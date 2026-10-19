@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculadora de Folha de Pagamento | KeyGest</title>
+  <meta name="description" content="Calcule o custo mensal da folha de pagamento da sua empresa, com encargos, provisões, benefícios e honorários da KeyGest.">
+  <meta name="theme-color" content="#0f3d3a">
+  <meta property="og:title" content="KeyGest — Gestão inteligente. Empresas mais fortes.">
+  <meta property="og:description" content="RH, departamento pessoal e folha de pagamento para empresas de todos os portes.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+
+  <header class="cabecalho">
+    <div class="container">
+      <a class="marca" href="index.html"><img src="assets/logo.svg" alt="" width="36" height="36">KeyGest</a>
+      <button class="menu-toggle" aria-expanded="false" aria-controls="menu" aria-label="Abrir menu">☰</button>
+      <ul class="menu" id="menu">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="index.html#servicos">Serviços</a></li>
+        <li><a href="calculadora.html" aria-current="page">Calculadora de folha</a></li>
+        <li><a href="simulador.html">Simulador de encargos</a></li>
+        <li><a class="botao botao-pequeno" href="contato.html">Solicitar proposta</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main id="conteudo">
+    <section class="topo-pagina">
+      <div class="container">
+        <span class="selo">Ferramenta gratuita</span>
+        <h1>Calculadora de folha de pagamento</h1>
+        <p>Informe os cargos, salários, benefícios e serviços desejados. Calculamos uma estimativa do custo trabalhista da sua empresa e dos honorários da KeyGest.</p>
+      </div>
+    </section>
+
+    <section class="secao" style="padding-top:0">
+      <div class="container layout-ferramenta">
+        <form id="form-calc" novalidate>
+          <div class="painel">
+            <h2><span class="num">1</span>Sua empresa</h2>
+            <div class="campos">
+              <div class="campo inteiro">
+                <label for="regime">Regime tributário</label>
+                <select id="regime" name="regime">
+                  <option value="simples">Simples Nacional (Anexos I, II, III e V)</option>
+                  <option value="simples-iv">Simples Nacional – Anexo IV</option>
+                  <option value="normal" selected>Lucro Presumido ou Lucro Real</option>
+                  <option value="mei">MEI (até 1 empregado)</option>
+                </select>
+                <small>O regime muda a contribuição patronal ao INSS. Na dúvida, consulte seu contador.</small>
+              </div>
+            </div>
+            <details class="avancado">
+              <summary>Ajustes avançados (RAT, FAP e terceiros)</summary>
+              <div class="campos">
+                <div class="campo">
+                  <label for="rat">RAT (grau de risco)</label>
+                  <select id="rat" name="rat">
+                    <option value="0.01">1% – risco leve</option>
+                    <option value="0.02" selected>2% – risco médio</option>
+                    <option value="0.03">3% – risco grave</option>
+                  </select>
+                </div>
+                <div class="campo">
+                  <label for="fap">FAP</label>
+                  <input type="number" id="fap" name="fap" min="0.5" max="2" step="0.0001" value="1">
+                  <small>Entre 0,5 e 2,0.</small>
+                </div>
+                <div class="campo">
+                  <label for="terceiros">Terceiros (%)</label>
+                  <input type="number" id="terceiros" name="terceiros" min="0" max="10" step="0.1" value="5.8">
+                  <small>Sistema S e salário-educação. Varia pelo código FPAS.</small>
+                </div>
+                <div class="campo">
+                  <span class="rotulo">Provisão da multa do FGTS</span>
+                  <label class="opcao" style="margin:0"><input type="checkbox" id="multa" name="multa"><span>Incluir 40% para rescisões sem justa causa</span></label>
+                </div>
+              </div>
+            </details>
+          </div>
+
+          <div class="painel">
+            <h2><span class="num">2</span>Funcionários e salários</h2>
+            <p class="ajuda">Adicione um cargo por linha. Se preferir, use um único cargo com o salário médio da equipe.</p>
+            <div class="cargos" id="cargos"></div>
+            <button type="button" class="botao botao-secundario botao-pequeno" id="add-cargo" style="margin-top:14px">+ Adicionar cargo</button>
+          </div>
+
+          <div class="painel">
+            <h2><span class="num">3</span>Benefícios por funcionário</h2>
+            <p class="ajuda">Valores mensais médios por funcionário. Deixe em branco o que a empresa não oferece.</p>
+            <div class="campos">
+              <div class="campo">
+                <label for="vt">Vale-transporte (valor total)</label>
+                <div class="prefixo"><span>R$</span><input type="number" id="vt" name="vt" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></div>
+                <small>Descontamos automaticamente até 6% do salário.</small>
+              </div>
+              <div class="campo">
+                <label for="vr">Vale-refeição / alimentação</label>
+                <div class="prefixo"><span>R$</span><input type="number" id="vr" name="vr" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></div>
+              </div>
+              <div class="campo">
+                <label for="saude">Plano de saúde / odonto</label>
+                <div class="prefixo"><span>R$</span><input type="number" id="saude" name="saude" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></div>
+              </div>
+              <div class="campo">
+                <label for="outros">Outros benefícios</label>
+                <div class="prefixo"><span>R$</span><input type="number" id="outros" name="outros" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="painel">
+            <h2><span class="num">4</span>Serviços desejados</h2>
+            <div class="opcoes" id="servicos"></div>
+          </div>
+        </form>
+
+        <aside class="painel resultado" id="resultado" aria-live="polite"></aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    <div class="container">
+      <div class="grade">
+        <div>
+          <a class="marca" href="index.html"><img src="assets/logo.svg" alt="" width="36" height="36">KeyGest</a>
+          <p>Gestão inteligente. Empresas mais fortes.<br>RH, departamento pessoal e gestão de folha para empresas de todos os portes.</p>
+        </div>
+        <div>
+          <h3>Navegação</h3>
+          <ul>
+            <li><a href="index.html#servicos">Serviços</a></li>
+            <li><a href="calculadora.html">Calculadora de folha</a></li>
+            <li><a href="simulador.html">Simulador de encargos</a></li>
+            <li><a href="contato.html">Solicitar proposta</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Contato</h3>
+          <ul>
+            <li><a data-contato="email" href="#"></a></li>
+            <li><a data-contato="telefone" href="#"></a></li>
+            <li><a data-contato="whatsapp" href="#" target="_blank" rel="noopener">WhatsApp</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="rodape-base">
+        <span>© <span data-ano></span> KeyGest. Todos os direitos reservados.</span>
+        <a href="privacidade.html">Política de privacidade</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/encargos.js"></script>
+  <script src="js/calculadora.js"></script>
+</body>
+</html>

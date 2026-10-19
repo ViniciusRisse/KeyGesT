@@ -1,0 +1,98 @@
+/*
+ * Configurações da KeyGest.
+ * Edite este arquivo para trocar contatos, preços e parâmetros legais
+ * sem precisar mexer no restante do site.
+ */
+window.KEYGEST_CONFIG = {
+  empresa: {
+    nome: 'KeyGest',
+    email: 'contato@keygest.com.br',
+    telefone: '(00) 0000-0000',
+    // Somente números, com DDI e DDD. Ex.: '5511999999999'. Vazio esconde o botão.
+    whatsapp: '',
+    cidade: 'Brasil',
+  },
+
+  formulario: {
+    // URL que recebe os contatos (ex.: Formspree "https://formspree.io/f/xxxxxx").
+    // Se ficar vazio, o formulário abre o e-mail do visitante com a mensagem pronta.
+    endpoint: '',
+  },
+
+  // Parâmetros de referência. Confira a cada ano com a legislação vigente.
+  parametros: {
+    ano: 2026,
+    salarioMinimo: 1621.0,
+    fgts: 0.08,
+    inssPatronal: 0.2,
+    terceirosPadrao: 0.058, // Sistema S + salário-educação (varia por FPAS)
+    ratPadrao: 0.02,
+    fapPadrao: 1.0,
+    meiCpp: 0.03,
+    descontoMaxVt: 0.06, // desconto máximo do vale-transporte no salário
+    multaFgts: 0.4,
+  },
+
+  // Tabela de honorários (VALORES DE EXEMPLO — ajuste para os seus preços).
+  honorarios: {
+    minimoMensal: 390,
+    // Preço por funcionário conforme o tamanho total da folha.
+    faixas: [
+      { ate: 5, porFuncionario: 75 },
+      { ate: 20, porFuncionario: 60 },
+      { ate: 50, porFuncionario: 50 },
+      { ate: 100, porFuncionario: 42 },
+      { ate: Infinity, porFuncionario: 35 },
+    ],
+    servicos: [
+      {
+        id: 'folha',
+        nome: 'Folha de pagamento e eSocial',
+        descricao: 'Cálculo mensal, 13º, férias, guias (FGTS Digital, DCTFWeb) e eSocial.',
+        tipo: 'base',
+        obrigatorio: true,
+      },
+      {
+        id: 'admissao',
+        nome: 'Admissões e rescisões',
+        descricao: 'Documentação, contratos, cálculos rescisórios e homologações.',
+        tipo: 'porFuncionario',
+        valor: 10,
+      },
+      {
+        id: 'ponto',
+        nome: 'Gestão de ponto e jornada',
+        descricao: 'Tratamento de ponto, horas extras, banco de horas e escalas.',
+        tipo: 'porFuncionario',
+        valor: 8,
+      },
+      {
+        id: 'beneficios',
+        nome: 'Gestão de benefícios',
+        descricao: 'VT, VR/VA, plano de saúde e conferência de faturas.',
+        tipo: 'porFuncionario',
+        valor: 6,
+      },
+      {
+        id: 'sst',
+        nome: 'Apoio em SST',
+        descricao: 'Controle de ASOs, PGR/PCMSO e eventos de SST no eSocial.',
+        tipo: 'porFuncionario',
+        valor: 7,
+      },
+      {
+        id: 'consultoria',
+        nome: 'Consultoria trabalhista',
+        descricao: 'Atendimento consultivo para dúvidas e decisões trabalhistas.',
+        tipo: 'fixo',
+        valor: 350,
+      },
+      {
+        id: 'recrutamento',
+        nome: 'Recrutamento e seleção',
+        descricao: 'Divulgação de vagas, triagem e entrevistas.',
+        tipo: 'consulta',
+      },
+    ],
+  },
+};
