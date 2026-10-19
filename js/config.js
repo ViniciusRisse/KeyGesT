@@ -6,10 +6,10 @@
 window.KEYGEST_CONFIG = {
   empresa: {
     nome: 'KeyGest',
-    email: 'contato@keygest.com.br',
-    telefone: '(00) 0000-0000',
+    email: 'KeyGest.rh@gmail.com',
+    telefone: '(11) 94308-0263',
     // Somente números, com DDI e DDD. Ex.: '5511999999999'. Vazio esconde o botão.
-    whatsapp: '',
+    whatsapp: '5511943080263',
     cidade: 'Brasil',
   },
 
