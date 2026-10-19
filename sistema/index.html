@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Sistema KeyGest | Colaboradores</title>
+  <meta name="theme-color" content="#0f3d3a">
+  <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="sistema.css">
+</head>
+<body class="sistema">
+  <!-- Login -->
+  <div id="tela-login" class="tela-login" hidden>
+    <form id="form-login" class="painel login-caixa" novalidate>
+      <a class="marca marca-escura" href="../index.html"><img src="../assets/logo.svg" alt="" width="36" height="36">KeyGest</a>
+      <h1>Área restrita</h1>
+      <p class="ajuda">Entre com o e-mail e a senha da equipe KeyGest.</p>
+      <div id="login-erro" class="alerta erro" hidden></div>
+      <div class="campo"><label for="login-email">E-mail</label><input type="email" id="login-email" autocomplete="username" required></div>
+      <div class="campo" style="margin-top:14px"><label for="login-senha">Senha</label><input type="password" id="login-senha" autocomplete="current-password" required></div>
+      <button class="botao" type="submit" style="width:100%;margin-top:20px">Entrar</button>
+    </form>
+  </div>
+
+  <!-- Aplicação -->
+  <div id="app" class="app" hidden>
+    <aside class="lateral">
+      <a class="marca" href="#/painel"><img src="../assets/logo.svg" alt="" width="32" height="32">KeyGest</a>
+      <nav class="nav-sistema" aria-label="Menu do sistema">
+        <a href="#/painel" data-rota="painel">Painel</a>
+        <a href="#/colaboradores" data-rota="colaboradores">Colaboradores</a>
+        <a href="#/empresas" data-rota="empresas">Empresas</a>
+      </nav>
+      <div class="usuario">
+        <span id="usuario-email"></span>
+        <button type="button" class="botao botao-contorno botao-pequeno" id="sair">Sair</button>
+      </div>
+    </aside>
+    <main class="area" id="conteudo">
+      <div id="aviso-demo" class="faixa-demo" hidden>
+        <strong>Modo demonstração:</strong> os dados ficam salvos só neste navegador e os registros de exemplo são fictícios.
+        Para usar de verdade, configure o banco de dados (veja o README).
+        <button type="button" class="link" id="limpar-demo">Apagar exemplos</button>
+      </div>
+      <div id="vista"></div>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="../js/config.js"></script>
+  <script src="../js/encargos.js"></script>
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -13,6 +13,14 @@ window.KEYGEST_CONFIG = {
     cidade: 'Brasil',
   },
 
+  // Banco de dados do sistema de colaboradores (Supabase).
+  // Preencha com os dados de Project Settings → API do seu projeto.
+  // Vazio = modo demonstração (os dados ficam só no navegador).
+  supabase: {
+    url: '',
+    anonKey: '',
+  },
+
   formulario: {
     // URL que recebe os contatos (ex.: Formspree "https://formspree.io/f/xxxxxx").
     // Se ficar vazio, o formulário abre o e-mail do visitante com a mensagem pronta.

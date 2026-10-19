@@ -38,3 +38,30 @@ python3 -m http.server 8000
 ## Publicar no GitHub Pages
 
 Settings → Pages → Source: *Deploy from a branch* → escolha a branch e a pasta `/ (root)`.
+
+## Sistema de colaboradores — `sistema/`
+
+Área restrita em `sistema/index.html` (link "Área restrita" no rodapé do site) para a equipe KeyGest gerenciar:
+
+- **Empresas clientes**: dados, CNPJ, regime tributário e encargos (RAT, FAP, terceiros).
+- **Colaboradores**: dados pessoais (CPF validado), contrato, salário, admissão, situação e desligamento; busca, filtros e exportação para planilha (CSV/Excel).
+- **Férias**: períodos aquisitivos e concessivos calculados automaticamente, saldo, alerta de férias vencidas (pagamento em dobro) e registro de férias com abono.
+- **Painel**: totais, folha mensal, custo estimado com encargos, prazos de férias e de contrato de experiência (45/90 dias) e aniversariantes do mês.
+
+Sem configuração, o sistema abre em **modo demonstração**: dados de exemplo fictícios, salvos só no navegador. Não use o modo demonstração para dados reais.
+
+### Ativar o banco de dados (Supabase)
+
+1. Crie uma conta gratuita em [supabase.com](https://supabase.com) e clique em **New project** (região: South America – São Paulo).
+2. Abra **SQL Editor**, cole todo o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) e clique em **Run**. Isso cria as tabelas e as regras de segurança.
+3. Em **Authentication → Users**, clique em **Add user → Create new user**, informe `keygest.rh@gmail.com` e uma senha forte e marque **Auto Confirm User**.
+4. Em **Authentication → Sign In / Providers**, desative **Allow new users to sign up** (só você cria os acessos).
+5. Em **Project Settings → API**, copie a **Project URL** e a chave **anon public** e cole em `js/config.js`, no bloco `supabase`.
+
+A chave *anon* pode ficar no site: o acesso aos dados é protegido pelas regras de segurança (RLS), que só liberam os e-mails cadastrados na tabela `equipe`. Para dar acesso a outra pessoa, crie o usuário (passo 3) e rode no SQL Editor:
+
+```sql
+insert into equipe (email, nome) values ('pessoa@exemplo.com', 'Nome da pessoa');
+```
+
+> Nunca coloque a chave **service_role** no site.
