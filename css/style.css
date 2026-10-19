@@ -757,6 +757,7 @@ input[type='email'],
 input[type='tel'],
 input[type='number'],
 input[type='date'],
+input[type='month'],
 input[type='password'],
 select,
 textarea {

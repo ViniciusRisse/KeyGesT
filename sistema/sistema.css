@@ -495,3 +495,264 @@ body.sistema {
     font-size: 1.1rem;
   }
 }
+
+/* ---------- Folha do mês (planilha) ---------- */
+.filtros-folha {
+  grid-template-columns: 1.4fr 0.8fr 1.4fr;
+  align-items: center;
+}
+
+.status-salvo {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+.planilha-caixa {
+  overflow: auto;
+  max-height: 70vh;
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  background: var(--branco);
+}
+
+.planilha {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.88rem;
+  min-width: 100%;
+}
+
+.planilha th,
+.planilha td {
+  border-right: 1px solid var(--borda);
+  border-bottom: 1px solid var(--borda);
+  padding: 0;
+  white-space: nowrap;
+}
+
+.planilha thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--petroleo);
+  color: var(--branco);
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 10px 10px;
+  text-align: right;
+  cursor: help;
+}
+
+.planilha thead th.calc {
+  background: var(--petroleo-2);
+}
+
+.planilha thead th.forte {
+  background: var(--esmeralda-escuro);
+}
+
+.planilha .fixa {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--branco);
+  text-align: left;
+  padding: 8px 12px;
+  min-width: 190px;
+  max-width: 230px;
+  white-space: normal;
+  box-shadow: 2px 0 0 var(--borda);
+}
+
+.planilha thead .fixa {
+  z-index: 3;
+  background: var(--petroleo);
+}
+
+.planilha tbody .fixa a {
+  color: var(--petroleo);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.planilha .fixa small {
+  display: block;
+  color: var(--texto-suave);
+  font-weight: 400;
+  font-size: 0.76rem;
+}
+
+.planilha .celula {
+  width: 108px;
+  border: 0;
+  border-radius: 0;
+  padding: 9px 10px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  background: transparent;
+}
+
+.planilha .celula:focus {
+  box-shadow: inset 0 0 0 2px var(--esmeralda);
+  background: #f3faf7;
+}
+
+.planilha td.calc {
+  background: #f6f9f8;
+  padding: 9px 10px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  min-width: 104px;
+  color: var(--texto);
+}
+
+.planilha td.forte {
+  background: var(--esmeralda-claro);
+  font-weight: 700;
+  color: var(--petroleo);
+}
+
+.planilha tr.negativo td.forte {
+  background: #fdecea;
+  color: var(--erro);
+}
+
+.planilha tfoot td,
+.planilha tfoot th {
+  position: sticky;
+  bottom: 0;
+  background: #e9f1ef;
+  font-weight: 700;
+  padding: 10px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.planilha tfoot .fixa {
+  z-index: 2;
+  background: #e9f1ef;
+  text-align: left;
+}
+
+@media (max-width: 700px) {
+  .filtros-folha {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .status-salvo {
+    grid-column: 1 / -1;
+  }
+
+  .planilha .fixa {
+    min-width: 130px;
+  }
+}
+
+@media print {
+  .lateral,
+  .faixa-demo,
+  .filtros-folha,
+  .acoes,
+  .aviso {
+    display: none !important;
+  }
+
+  .app {
+    display: block;
+  }
+
+  .planilha-caixa {
+    max-height: none;
+    overflow: visible;
+    border: 0;
+  }
+
+  .planilha {
+    font-size: 7.5pt;
+  }
+
+  .planilha .celula {
+    width: auto;
+    padding: 4px;
+  }
+
+  .planilha th,
+  .planilha td.calc {
+    padding: 4px;
+  }
+
+  .planilha thead th,
+  .planilha tfoot td,
+  .planilha .fixa {
+    position: static;
+  }
+}
+
+.nav-sistema a {
+  white-space: nowrap;
+}
+
+.nav-sistema,
+.filtros > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.resumo-folha {
+  grid-template-columns: repeat(5, 1fr);
+  margin-bottom: 16px;
+}
+
+.resumo-folha .indicador strong {
+  font-size: 1.2rem;
+}
+
+.resumo-folha .indicador.forte {
+  background: var(--petroleo);
+  border-color: var(--petroleo);
+}
+
+.resumo-folha .indicador.forte span {
+  color: #b8d6cf;
+}
+
+.resumo-folha .indicador.forte strong {
+  color: var(--branco);
+}
+
+@media (max-width: 1100px) {
+  .resumo-folha {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .resumo-folha {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media print {
+  .resumo-folha {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .so-impressao {
+    display: block !important;
+  }
+}
+
+.so-impressao {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lateral,
+  .area {
+    min-width: 0;
+  }
+}

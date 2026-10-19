@@ -81,6 +81,9 @@
       memoria = dadosExemplo();
       salvar();
     }
+    ['empresas', 'colaboradores', 'ferias', 'folha'].forEach(function (t) {
+      if (!Array.isArray(memoria[t])) memoria[t] = [];
+    });
     return memoria;
   }
 
@@ -174,13 +177,14 @@
       }
       if (tabela === 'colaboradores') {
         d.ferias = d.ferias.filter(function (f) { return f.colaborador_id !== id; });
+        d.folha = d.folha.filter(function (f) { return f.colaborador_id !== id; });
       }
       d[tabela] = d[tabela].filter(function (x) { return x.id !== id; });
       salvar();
       return Promise.resolve();
     },
     limpar: function () {
-      memoria = { empresas: [], colaboradores: [], ferias: [] };
+      memoria = { empresas: [], colaboradores: [], ferias: [], folha: [] };
       salvar();
     },
     restaurarExemplo: function () {

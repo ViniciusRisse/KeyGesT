@@ -214,6 +214,90 @@
     return c.slice(12) === String(d1) + String(d2);
   }
 
+  function arred(v) {
+    return Math.round((v + (v >= 0 ? 1e-9 : -1e-9)) * 100) / 100;
+  }
+
+  // INSS do empregado: progressivo por faixas, limitado ao teto.
+  function inssEmpregado(base, p) {
+    var total = 0;
+    var anterior = 0;
+    for (var i = 0; i < p.inssFaixas.length; i++) {
+      var f = p.inssFaixas[i];
+      if (base <= anterior) break;
+      total += (Math.min(base, f.ate) - anterior) * f.aliquota;
+      anterior = f.ate;
+    }
+    return arred(total);
+  }
+
+  /*
+   * IRRF mensal: usa a dedução mais vantajosa (INSS + dependentes ou desconto
+   * simplificado) e aplica a redução de 2026 para rendimentos até R$ 7.350.
+   */
+  function irrfMensal(bruto, inss, dependentes, p) {
+    function imposto(base) {
+      for (var i = 0; i < p.irrfFaixas.length; i++) {
+        var f = p.irrfFaixas[i];
+        if (base <= f.ate) return Math.max(0, base * f.aliquota - f.deduzir);
+      }
+      return 0;
+    }
+    var legal = imposto(bruto - inss - num(dependentes) * p.irrfDependente);
+    var simples = imposto(bruto - p.irrfSimplificado);
+    var ir = Math.min(legal, simples);
+    var r = p.irrfReducao;
+    var reducao = 0;
+    if (bruto <= r.isencaoAte) reducao = r.maximo;
+    else if (bruto <= r.limite) reducao = Math.max(0, r.a - r.b * bruto);
+    ir = arred(Math.max(0, ir - Math.min(ir, reducao)));
+    return ir < p.irrfMinimo ? 0 : ir;
+  }
+
+  /*
+   * Uma linha da folha do mês.
+   * e: { salario, jornada, dependentes, faltas, he50, he100, adicionais, vt, descVr, outrosDescontos }
+   * emp: empresa (regime, rat, fap, terceiros) para o custo patronal.
+   */
+  function linhaFolha(e, emp, p) {
+    var salario = num(e.salario);
+    var horasMes = (num(e.jornada) || 44) * 5;
+    var valorHora = horasMes ? salario / horasMes : 0;
+    var descFaltas = (salario / 30) * num(e.faltas);
+    var horasExtras = valorHora * 1.5 * num(e.he50) + valorHora * 2 * num(e.he100);
+    var bruto = arred(Math.max(0, salario - descFaltas + horasExtras + num(e.adicionais)));
+    var inss = inssEmpregado(bruto, p);
+    var irrf = irrfMensal(bruto, inss, e.dependentes, p);
+    var vt = num(e.vt);
+    var descVt = arred(Math.min(vt, salario * p.descontoMaxVt));
+    var descVr = num(e.descVr);
+    var outros = num(e.outrosDescontos);
+    var descontos = arred(inss + irrf + descVt + descVr + outros);
+    var a = aliquotas({
+      regime: emp ? emp.regime : 'normal',
+      rat: emp ? emp.rat : p.ratPadrao,
+      fap: emp ? emp.fap : p.fapPadrao,
+      terceiros: emp ? emp.terceiros : p.terceirosPadrao,
+    }, p);
+    var fgts = arred(bruto * a.fgts);
+    var patronal = arred(bruto * (a.inss + a.rat + a.terceiros));
+    return {
+      valorHora: valorHora,
+      descFaltas: arred(descFaltas),
+      horasExtras: arred(horasExtras),
+      bruto: bruto,
+      inss: inss,
+      irrf: irrf,
+      descVt: descVt,
+      descontos: descontos,
+      liquido: arred(bruto - descontos),
+      fgts: fgts,
+      patronal: patronal,
+      vtEmpresa: arred(vt - descVt),
+      custo: arred(bruto + fgts + patronal + (vt - descVt)),
+    };
+  }
+
   var api = {
     REGIMES: REGIMES,
     aliquotas: aliquotas,
@@ -224,6 +308,9 @@
     formatarBRL: formatarBRL,
     formatarPct: formatarPct,
     validarCNPJ: validarCNPJ,
+    inssEmpregado: inssEmpregado,
+    irrfMensal: irrfMensal,
+    linhaFolha: linhaFolha,
     num: num,
   };
 

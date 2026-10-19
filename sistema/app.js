@@ -387,7 +387,7 @@
 
     vista.innerHTML =
       '<div class="topo-vista"><div><h1>Painel</h1><p>Visão geral das empresas e colaboradores atendidos.</p></div>' +
-      '<div class="acoes"><a class="botao" href="#/colaboradores/novo">+ Novo colaborador</a></div></div>' +
+      '<div class="acoes"><a class="botao botao-secundario" href="#/folha">Lançar folha do mês</a><a class="botao" href="#/colaboradores/novo">+ Novo colaborador</a></div></div>' +
       '<div class="indicadores">' +
       '<div class="indicador"><span>Empresas ativas</span><strong>' + empresas.filter(function (e) { return e.ativo !== false; }).length + '</strong></div>' +
       '<div class="indicador"><span>Colaboradores ativos</span><strong>' + ativos.length + '</strong></div>' +
@@ -433,7 +433,8 @@
               '<td>' + esc(e.cnpj || '—') + '</td><td>' + esc(REGIMES[e.regime] || e.regime) + '</td>' +
               '<td class="num">' + doEmp.length + '</td><td class="num">' + brl(folha) + '</td>' +
               '<td>' + (e.ativo === false ? '<span class="etiqueta desligado">Inativa</span>' : '<span class="etiqueta">Ativa</span>') + '</td>' +
-              '<td><a class="botao botao-secundario botao-pequeno" href="#/empresas/' + esc(e.id) + '/editar">Editar</a></td></tr>';
+              '<td><div class="acoes" style="flex-wrap:nowrap"><a class="botao botao-secundario botao-pequeno" href="#/folha?empresa=' + esc(e.id) + '">Folha</a>' +
+              '<a class="botao botao-secundario botao-pequeno" href="#/empresas/' + esc(e.id) + '/editar">Editar</a></div></td></tr>';
           }).join('') + '</tbody></table>'
         : '<div class="vazio">Nenhuma empresa cadastrada ainda.<br><a class="botao" style="margin-top:14px" href="#/empresas/nova">Cadastrar a primeira empresa</a></div>') +
       '</div>';
@@ -775,6 +776,8 @@
         if (caminho[1] === 'nova') await telaFormEmpresa(null);
         else if (caminho[1] && caminho[2] === 'editar') await telaFormEmpresa(caminho[1]);
         else await telaEmpresas();
+      } else if (caminho[0] === 'folha') {
+        await window.TelaFolha({ DB: DB, vista: vista, esc: esc, aviso: aviso, porNome: porNome, nomeEmpresa: nomeEmpresa }, query);
       } else if (caminho[0] === 'colaboradores') {
         if (caminho[1] === 'novo') await telaFormColaborador(null, query);
         else if (caminho[1] && caminho[2] === 'editar') await telaFormColaborador(caminho[1], query);

@@ -140,3 +140,41 @@ create policy colaboradores_equipe on colaboradores for all to authenticated
 drop policy if exists ferias_equipe on ferias;
 create policy ferias_equipe on ferias for all to authenticated
   using (eh_equipe()) with check (eh_equipe());
+
+-- ---------------------------------------------------------------
+-- Folha do mês: lançamentos por colaborador e competência (AAAA-MM)
+-- ---------------------------------------------------------------
+create table if not exists folha (
+  id uuid primary key default gen_random_uuid(),
+  colaborador_id uuid not null references colaboradores(id) on delete cascade,
+  empresa_id uuid not null references empresas(id) on delete cascade,
+  competencia text not null check (competencia ~ '^\d{4}-\d{2}$'),
+  salario numeric(12,2) not null default 0,
+  faltas numeric(5,2) not null default 0,
+  he50 numeric(6,2) not null default 0,
+  he100 numeric(6,2) not null default 0,
+  adicionais numeric(12,2) not null default 0,
+  vt numeric(12,2) not null default 0,
+  desc_vr numeric(12,2) not null default 0,
+  outros_descontos numeric(12,2) not null default 0,
+  bruto numeric(12,2),
+  inss numeric(12,2),
+  irrf numeric(12,2),
+  desc_vt numeric(12,2),
+  liquido numeric(12,2),
+  fgts numeric(12,2),
+  custo numeric(12,2),
+  atualizado_em timestamptz not null default now(),
+  unique (colaborador_id, competencia)
+);
+
+create index if not exists folha_empresa_comp_idx on folha (empresa_id, competencia);
+
+drop trigger if exists folha_atualizado on folha;
+create trigger folha_atualizado before update on folha
+  for each row execute function tocar_atualizado_em();
+
+alter table folha enable row level security;
+drop policy if exists folha_equipe on folha;
+create policy folha_equipe on folha for all to authenticated
+  using (eh_equipe()) with check (eh_equipe());

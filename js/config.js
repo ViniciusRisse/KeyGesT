@@ -39,6 +39,27 @@ window.KEYGEST_CONFIG = {
     meiCpp: 0.03,
     descontoMaxVt: 0.06, // desconto máximo do vale-transporte no salário
     multaFgts: 0.4,
+
+    // INSS do empregado (Portaria Interministerial MPS/MF nº 13/2026) — progressivo.
+    inssFaixas: [
+      { ate: 1621.0, aliquota: 0.075 },
+      { ate: 2902.84, aliquota: 0.09 },
+      { ate: 4354.27, aliquota: 0.12 },
+      { ate: 8475.55, aliquota: 0.14 },
+    ],
+
+    // IRRF mensal (Lei 15.191/2025) + redução da Lei 15.270/2025.
+    irrfFaixas: [
+      { ate: 2428.8, aliquota: 0, deduzir: 0 },
+      { ate: 2826.65, aliquota: 0.075, deduzir: 182.16 },
+      { ate: 3751.05, aliquota: 0.15, deduzir: 394.16 },
+      { ate: 4664.68, aliquota: 0.225, deduzir: 675.49 },
+      { ate: Infinity, aliquota: 0.275, deduzir: 908.73 },
+    ],
+    irrfDependente: 189.59,
+    irrfSimplificado: 607.2,
+    irrfMinimo: 10,
+    irrfReducao: { isencaoAte: 5000, maximo: 312.89, limite: 7350, a: 978.62, b: 0.133145 },
   },
 
   // Tabela de honorários (VALORES DE EXEMPLO — ajuste para os seus preços).
