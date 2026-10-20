@@ -756,3 +756,154 @@ body.sistema {
     min-width: 0;
   }
 }
+
+/* ---------- Login ---------- */
+.abas-login {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  background: var(--fundo);
+  border-radius: 10px;
+  padding: 4px;
+  margin-top: 20px;
+}
+
+.abas-login button {
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 4px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  cursor: pointer;
+}
+
+.abas-login button.ativa {
+  background: var(--branco);
+  color: var(--petroleo);
+  box-shadow: 0 1px 4px rgba(15, 61, 58, 0.12);
+}
+
+.login-caixa h1 {
+  margin-top: 18px;
+  margin-bottom: 4px;
+}
+
+#form-login .campo {
+  margin-bottom: 14px;
+}
+
+#form-login .botao {
+  margin-top: 6px;
+}
+
+.login-rodape {
+  text-align: center;
+  font-size: 0.88rem;
+  margin: 18px 0 0;
+}
+
+.ver-como {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  flex-wrap: wrap;
+}
+
+.ver-como select {
+  width: auto;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  border-color: #e0c66f;
+  background: #fffdf3;
+}
+
+.usuario small {
+  color: #8fb8ae;
+}
+
+.link-holerite {
+  font-weight: 600;
+}
+
+.permissoes td:first-child {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.permissoes td:last-child {
+  text-align: left;
+  white-space: normal;
+}
+
+/* ---------- Holerite ---------- */
+.holerite {
+  max-width: 820px;
+}
+
+.holerite-topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid var(--petroleo);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.holerite-titulo {
+  text-align: right;
+}
+
+.holerite-dados {
+  margin-bottom: 18px;
+}
+
+.holerite-tabela th,
+.holerite-tabela td {
+  padding: 8px 6px;
+}
+
+.holerite-tabela th:nth-child(n + 3),
+.holerite-tabela td:nth-child(n + 3) {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.holerite-bases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  font-size: 0.86rem;
+  color: var(--texto-suave);
+  background: var(--fundo);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.holerite-assinatura {
+  margin-top: 26px;
+  font-size: 0.86rem;
+  color: var(--texto-suave);
+}
+
+@media print {
+  .voltar,
+  .topo-vista {
+    display: none !important;
+  }
+
+  .holerite {
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+    max-width: none;
+  }
+
+  .area {
+    padding: 0;
+  }
+}

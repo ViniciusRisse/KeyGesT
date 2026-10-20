@@ -16,32 +16,37 @@
 <body class="sistema">
   <!-- Login -->
   <div id="tela-login" class="tela-login" hidden>
-    <form id="form-login" class="painel login-caixa" novalidate>
+    <div class="painel login-caixa">
       <a class="marca marca-escura" href="../index.html"><img src="../assets/logo.svg" alt="" width="36" height="36">KeyGest</a>
-      <h1>Área restrita</h1>
-      <p class="ajuda">Entre com o e-mail e a senha da equipe KeyGest.</p>
-      <div id="login-erro" class="alerta erro" hidden></div>
-      <div class="campo"><label for="login-email">E-mail</label><input type="email" id="login-email" autocomplete="username" required></div>
-      <div class="campo" style="margin-top:14px"><label for="login-senha">Senha</label><input type="password" id="login-senha" autocomplete="current-password" required></div>
-      <button class="botao" type="submit" style="width:100%;margin-top:20px">Entrar</button>
-    </form>
+      <div class="abas-login" id="login-abas" role="tablist" aria-label="Opções de acesso">
+        <button type="button" role="tab" data-modo="entrar">Entrar</button>
+        <button type="button" role="tab" data-modo="primeiro">Primeiro acesso</button>
+        <button type="button" role="tab" data-modo="esqueci">Esqueci a senha</button>
+      </div>
+      <h1 id="login-titulo">Entrar</h1>
+      <p class="ajuda" id="login-texto"></p>
+      <div id="login-msg" class="alerta erro" role="alert" hidden></div>
+      <form id="form-login" novalidate>
+        <div class="campo" id="campo-login-email"><label for="login-email">E-mail</label><input type="email" id="login-email" autocomplete="username"></div>
+        <div class="campo" id="campo-login-senha"><label for="login-senha">Senha</label><input type="password" id="login-senha" autocomplete="current-password"></div>
+        <div class="campo" id="campo-login-senha2"><label for="login-senha2">Repita a senha</label><input type="password" id="login-senha2" autocomplete="new-password"></div>
+        <button class="botao" type="submit" id="login-enviar" style="width:100%">Entrar</button>
+      </form>
+      <button type="button" class="botao botao-secundario" id="login-sair" style="width:100%;margin-top:10px" hidden>Sair</button>
+      <p class="login-rodape"><a href="../index.html">← Voltar ao site</a></p>
+    </div>
   </div>
 
   <!-- Aplicação -->
   <div id="app" class="app" hidden>
     <aside class="lateral">
       <a class="marca" href="#/painel"><img src="../assets/logo.svg" alt="" width="32" height="32">KeyGest</a>
-      <nav class="nav-sistema" aria-label="Menu do sistema">
-        <a href="#/painel" data-rota="painel">Painel</a>
-        <a href="#/colaboradores" data-rota="colaboradores">Colaboradores</a>
-        <a href="#/folha" data-rota="folha">Folha do mês</a>
-        <a href="#/empresas" data-rota="empresas">Empresas</a>
-      </nav>
+      <nav class="nav-sistema" id="menu-sistema" aria-label="Menu do sistema"></nav>
       <nav class="nav-sistema nav-site" aria-label="Site KeyGest">
         <span class="nav-titulo">Site KeyGest</span>
         <a href="../index.html">← Voltar ao site</a>
-        <a href="../calculadora.html" target="_blank" rel="noopener">Calculadora de folha ↗</a>
-        <a href="../simulador.html" target="_blank" rel="noopener">Simulador de encargos ↗</a>
+        <a class="so-equipe" href="../calculadora.html" target="_blank" rel="noopener">Calculadora de folha ↗</a>
+        <a class="so-equipe" href="../simulador.html" target="_blank" rel="noopener">Simulador de encargos ↗</a>
       </nav>
       <div class="usuario">
         <span id="usuario-email"></span>
@@ -53,6 +58,7 @@
         <strong>Modo demonstração:</strong> os dados ficam salvos só neste navegador e os registros de exemplo são fictícios.
         Para usar de verdade, configure o banco de dados (veja o README).
         <button type="button" class="link" id="limpar-demo">Apagar exemplos</button>
+        <label class="ver-como"><span>Testar como:</span> <select id="ver-como" aria-label="Testar o sistema como outro perfil"></select></label>
       </div>
       <div id="vista"></div>
     </main>

@@ -8,6 +8,29 @@
   var brl = C.formatarBRL;
   var vista = document.getElementById('vista');
 
+  // Acesso do usuário logado e o que ele pode fazer
+  var ACESSO = null;
+  var PODE = {};
+  var PERFIS = {
+    admin: 'Administrador',
+    analista: 'Analista (edita)',
+    consulta: 'Somente consulta',
+    cliente: 'Empresa cliente',
+    colaborador: 'Colaborador',
+  };
+
+  function definirPermissoes(a) {
+    var p = a.perfil;
+    PODE = {
+      equipe: p === 'admin' || p === 'analista' || p === 'consulta',
+      editar: p === 'admin' || p === 'analista',
+      folha: p === 'admin' || p === 'analista' || p === 'cliente',
+      usuarios: p === 'admin',
+      cliente: p === 'cliente',
+      colaborador: p === 'colaborador',
+    };
+  }
+
   // ------------------------------------------------------------------
   // Utilidades
   // ------------------------------------------------------------------
@@ -386,8 +409,10 @@
     }).sort(function (a, b) { return lerData(a.data_nascimento).getDate() - lerData(b.data_nascimento).getDate(); });
 
     vista.innerHTML =
-      '<div class="topo-vista"><div><h1>Painel</h1><p>Visão geral das empresas e colaboradores atendidos.</p></div>' +
-      '<div class="acoes"><a class="botao botao-secundario" href="#/folha">Lançar folha do mês</a><a class="botao" href="#/colaboradores/novo">+ Novo colaborador</a></div></div>' +
+      '<div class="topo-vista"><div><h1>Painel' + (PODE.cliente && empresas[0] ? ' – ' + esc(nomeEmpresa(empresas[0])) : '') + '</h1>' +
+      '<p>' + (PODE.cliente ? 'Visão geral dos colaboradores da sua empresa.' : 'Visão geral das empresas e colaboradores atendidos.') + '</p></div>' +
+      '<div class="acoes">' + (PODE.folha ? '<a class="botao botao-secundario" href="#/folha">Lançar folha do mês</a>' : '') +
+      (PODE.editar ? '<a class="botao" href="#/colaboradores/novo">+ Novo colaborador</a>' : '') + '</div></div>' +
       '<div class="indicadores">' +
       '<div class="indicador"><span>Empresas ativas</span><strong>' + empresas.filter(function (e) { return e.ativo !== false; }).length + '</strong></div>' +
       '<div class="indicador"><span>Colaboradores ativos</span><strong>' + ativos.length + '</strong></div>' +
@@ -422,7 +447,7 @@
 
     vista.innerHTML =
       '<div class="topo-vista"><div><h1>Empresas clientes</h1><p>' + empresas.length + ' empresa(s) cadastrada(s).</p></div>' +
-      '<div class="acoes"><a class="botao" href="#/empresas/nova">+ Nova empresa</a></div></div>' +
+      '<div class="acoes">' + (PODE.editar ? '<a class="botao" href="#/empresas/nova">+ Nova empresa</a>' : '') + '</div></div>' +
       '<div class="caixa-lista">' +
       (empresas.length
         ? '<table class="lista"><thead><tr><th>Empresa</th><th>CNPJ</th><th>Regime</th><th class="num">Colaboradores</th><th class="num">Folha mensal</th><th>Situação</th><th></th></tr></thead><tbody>' +
@@ -434,9 +459,9 @@
               '<td class="num">' + doEmp.length + '</td><td class="num">' + brl(folha) + '</td>' +
               '<td>' + (e.ativo === false ? '<span class="etiqueta desligado">Inativa</span>' : '<span class="etiqueta">Ativa</span>') + '</td>' +
               '<td><div class="acoes" style="flex-wrap:nowrap"><a class="botao botao-secundario botao-pequeno" href="#/folha?empresa=' + esc(e.id) + '">Folha</a>' +
-              '<a class="botao botao-secundario botao-pequeno" href="#/empresas/' + esc(e.id) + '/editar">Editar</a></div></td></tr>';
+              (PODE.editar ? '<a class="botao botao-secundario botao-pequeno" href="#/empresas/' + esc(e.id) + '/editar">Editar</a>' : '') + '</div></td></tr>';
           }).join('') + '</tbody></table>'
-        : '<div class="vazio">Nenhuma empresa cadastrada ainda.<br><a class="botao" style="margin-top:14px" href="#/empresas/nova">Cadastrar a primeira empresa</a></div>') +
+        : '<div class="vazio">Nenhuma empresa cadastrada ainda.' + (PODE.editar ? '<br><a class="botao" style="margin-top:14px" href="#/empresas/nova">Cadastrar a primeira empresa</a>' : '') + '</div>') +
       '</div>';
   }
 
@@ -502,7 +527,7 @@
     vista.innerHTML =
       '<div class="topo-vista"><div><h1>Colaboradores</h1><p>Cadastro de funcionários das empresas clientes.</p></div>' +
       '<div class="acoes"><button type="button" class="botao botao-secundario" id="exportar">Exportar planilha</button>' +
-      '<a class="botao" id="novo" href="#/colaboradores/novo">+ Novo colaborador</a></div></div>' +
+      (PODE.editar ? '<a class="botao" id="novo" href="#/colaboradores/novo">+ Novo colaborador</a>' : '') + '</div></div>' +
       '<div class="filtros">' +
       '<input type="text" id="busca" placeholder="Buscar por nome, CPF ou cargo" aria-label="Buscar" value="' + esc(filtros.busca) + '">' +
       '<select id="f-empresa" aria-label="Empresa"><option value="">Todas as empresas</option>' +
@@ -534,7 +559,7 @@
       var lista = filtrados();
       var total = lista.reduce(function (s, c) { return s + (+c.salario || 0); }, 0);
       var novo = document.getElementById('novo');
-      novo.href = '#/colaboradores/novo' + (filtros.empresa ? '?empresa=' + encodeURIComponent(filtros.empresa) : '');
+      if (novo) novo.href = '#/colaboradores/novo' + (filtros.empresa ? '?empresa=' + encodeURIComponent(filtros.empresa) : '');
       document.getElementById('tabela').innerHTML = lista.length
         ? '<table class="lista"><thead><tr><th>Nome</th><th>Empresa</th><th>Cargo</th><th class="num">Salário</th><th>Admissão</th><th>Situação</th></tr></thead><tbody>' +
           lista.map(function (c) {
@@ -629,8 +654,9 @@
   async function telaFicha(id) {
     var c = await DB.obter('colaboradores', id);
     if (!c) return naoEncontrado();
-    var r = await Promise.all([DB.obter('empresas', c.empresa_id), DB.listar('ferias', { colaborador_id: id })]);
+    var r = await Promise.all([DB.obter('empresas', c.empresa_id), DB.listar('ferias', { colaborador_id: id }), DB.listar('folha', { colaborador_id: id })]);
     var emp = r[0];
+    var holerites = holeritesVisiveis(r[2]);
     var ferias = r[1].sort(function (a, b) { return a.inicio < b.inicio ? 1 : -1; });
     var custo = custoColaborador(c, emp);
     var periodos = periodosFerias(c, ferias);
@@ -643,11 +669,15 @@
     var abertos = periodos.filter(function (p) { return p.aberto || p.situacao === 'Em aquisição'; });
 
     vista.innerHTML =
-      '<a class="voltar" href="#/colaboradores">← Colaboradores</a>' +
-      '<div class="topo-vista"><div><h1>' + esc(c.nome) + '</h1><p>' + esc(c.cargo || 'Sem cargo') + ' · ' + esc(nomeEmpresa(emp)) + ' · ' + etiquetaStatus(c.status) + '</p></div>' +
-      '<div class="acoes"><a class="botao botao-secundario" target="_blank" rel="noopener" href="' + esc(linkSimulador(c, emp)) + '">Simular 13º e férias ↗</a>' +
-      '<a class="botao" href="#/colaboradores/' + esc(id) + '/editar">Editar</a>' +
-      '<button type="button" class="botao botao-perigo" id="excluir">Excluir</button></div></div>' +
+      (PODE.colaborador ? '' : '<a class="voltar" href="#/colaboradores">← Colaboradores</a>') +
+      '<div class="topo-vista"><div><h1>' + (PODE.colaborador ? 'Olá, ' + esc(String(c.nome).split(' ')[0]) : esc(c.nome)) + '</h1><p>' + esc(c.cargo || 'Sem cargo') + ' · ' + esc(nomeEmpresa(emp)) + ' · ' + etiquetaStatus(c.status) + '</p></div>' +
+      '<div class="acoes">' +
+      (PODE.colaborador ? '<a class="botao" href="#/holerites">Ver meus holerites</a>' :
+        '<a class="botao botao-secundario" target="_blank" rel="noopener" href="' + esc(linkSimulador(c, emp)) + '">Simular 13º e férias ↗</a>') +
+      (PODE.usuarios ? '<a class="botao botao-secundario" href="#/usuarios/novo?perfil=colaborador&colaborador=' + encodeURIComponent(id) +
+        '&email=' + encodeURIComponent(c.email || '') + '&nome=' + encodeURIComponent(c.nome) + '">Dar acesso ao portal</a>' : '') +
+      (PODE.editar ? '<a class="botao" href="#/colaboradores/' + esc(id) + '/editar">Editar</a>' +
+        '<button type="button" class="botao botao-perigo" id="excluir">Excluir</button>' : '') + '</div></div>' +
       '<div class="grade-ficha"><div>' +
       '<section class="painel"><h2>Dados pessoais</h2><dl class="dados">' +
       item('CPF', esc(c.cpf)) + item('PIS/NIS', esc(c.pis)) +
@@ -661,15 +691,16 @@
       (exp ? item('Experiência', '45 dias: ' + fmtData(exp.primeiro) + '<br>90 dias: ' + fmtData(exp.segundo)) : '') +
       (c.data_desligamento ? item('Desligamento', fmtData(c.data_desligamento)) : '') +
       '</dl>' + (c.observacoes ? '<p class="aviso" style="margin-top:16px;white-space:pre-line">' + esc(c.observacoes) + '</p>' : '') + '</section>' +
+      (PODE.colaborador ? '' : htmlListaHolerites(holerites)) +
       '</div><div>' +
-      '<section class="painel"><h2>Custo mensal estimado</h2>' +
+      (PODE.colaborador ? '' : '<section class="painel"><h2>Custo mensal estimado</h2>' +
       '<div class="destaque"><span class="rotulo">Custo para a empresa</span><span class="valor">' + brl(custo.total) + '</span>' +
       '<span class="sub">' + brl(custo.anual) + ' por ano · ' + custo.fator.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + '× o salário</span></div>' +
       '<table class="tabela"><tbody>' +
       '<tr><td>Salário</td><td>' + brl(custo.remuneracao) + '</td></tr>' +
       '<tr><td>Encargos sobre o salário<small>' + esc(emp ? REGIMES[emp.regime] : '') + '</small></td><td>' + brl(custo.encargosSobreSalario) + '</td></tr>' +
       '<tr><td>Provisões de 13º e férias</td><td>' + brl(custo.provisoes) + '</td></tr>' +
-      '</tbody></table></section>' +
+      '</tbody></table></section>') +
       '<section class="painel"><h2>Férias</h2>' +
       '<table class="tabela"><thead><tr><th>Período aquisitivo</th><th>Saldo</th><th>Situação</th></tr></thead><tbody>' +
       (periodos.length ? periodos.slice().reverse().map(function (p) {
@@ -681,9 +712,9 @@
         var fim = somarDias(lerData(f.inicio), f.dias - 1);
         return '<li><div>' + fmtData(f.inicio) + ' a ' + fmtData(fim) + ' (' + f.dias + ' dias' + (f.abono ? ' + abono de 10 dias' : '') + ')' +
           '<small>Período aquisitivo de ' + fmtData(f.periodo_inicio) + '</small></div>' +
-          '<button type="button" class="link" data-excluir-ferias="' + esc(f.id) + '">Remover</button></li>';
+          (PODE.editar ? '<button type="button" class="link" data-excluir-ferias="' + esc(f.id) + '">Remover</button>' : '') + '</li>';
       }).join('') + '</ul>' : '') +
-      (abertos.length ? '<form id="form-ferias" class="form-sistema" style="margin-top:18px" novalidate><fieldset><legend>Registrar férias</legend><div class="campos" style="grid-template-columns:1fr 1fr">' +
+      (abertos.length && PODE.editar ? '<form id="form-ferias" class="form-sistema" style="margin-top:18px" novalidate><fieldset><legend>Registrar férias</legend><div class="campos" style="grid-template-columns:1fr 1fr">' +
         '<div class="campo inteiro"><label for="fe-periodo">Período aquisitivo</label><select id="fe-periodo" name="periodo">' +
         abertos.map(function (p) { return '<option value="' + p.chave + '">' + fmtData(p.inicio) + ' a ' + fmtData(p.fimAquisitivo) + ' (saldo ' + p.saldo + ' dias)</option>'; }).join('') +
         '</select><div class="erro-campo"></div></div>' +
@@ -693,7 +724,8 @@
         '</div></fieldset><button class="botao botao-pequeno" type="submit">Registrar férias</button></form>' : '') +
       '</section></div></div>';
 
-    document.getElementById('excluir').addEventListener('click', async function () {
+    var btExcluir = document.getElementById('excluir');
+    if (btExcluir) btExcluir.addEventListener('click', async function () {
       if (!confirm('Excluir ' + c.nome + ' e todo o histórico de férias? Para quem saiu da empresa, prefira marcar como "Desligado".')) return;
       try {
         await DB.excluir('colaboradores', id);
@@ -751,6 +783,252 @@
     return '../simulador.html?' + q.toString();
   }
 
+  // ------------------------------------------------------------------
+  // Holerites
+  // ------------------------------------------------------------------
+  function competenciaAtual() {
+    var d = hoje();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+
+  function nomeCompetencia(c) {
+    var p = String(c).split('-');
+    var t = new Date(+p[0], +p[1] - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+
+  // O colaborador só vê holerites de meses já encerrados
+  function holeritesVisiveis(lista) {
+    var atual = competenciaAtual();
+    return lista.filter(function (f) { return !PODE.colaborador || f.competencia < atual; })
+      .sort(function (a, b) { return a.competencia < b.competencia ? 1 : -1; });
+  }
+
+  function htmlListaHolerites(lista) {
+    return '<section class="painel"><h2>Holerites</h2>' +
+      (lista.length
+        ? '<ul class="alertas">' + lista.map(function (f) {
+          return '<li><div><a href="#/holerite/' + esc(f.id) + '">' + esc(nomeCompetencia(f.competencia)) + '</a>' +
+            '<small>Bruto ' + brl(f.bruto) + '</small></div><strong>' + brl(f.liquido) + '</strong></li>';
+        }).join('') + '</ul>'
+        : '<p class="ajuda">' + (PODE.colaborador ? 'Seus holerites aparecem aqui depois do fechamento de cada mês.' : 'Nenhuma folha lançada para este colaborador.') + '</p>') +
+      '</section>';
+  }
+
+  async function telaHolerites() {
+    var lista = holeritesVisiveis(await DB.listar('folha', { colaborador_id: ACESSO.colaborador_id }));
+    vista.innerHTML = '<div class="topo-vista"><div><h1>Meus holerites</h1><p>Recibos de pagamento dos meses fechados.</p></div></div>' +
+      '<div style="max-width:640px">' + htmlListaHolerites(lista) + '</div>';
+  }
+
+  async function telaHolerite(id) {
+    var f = await DB.obter('folha', id);
+    if (!f || (PODE.colaborador && f.competencia >= competenciaAtual())) return naoEncontrado();
+    var r = await Promise.all([DB.obter('colaboradores', f.colaborador_id), DB.obter('empresas', f.empresa_id)]);
+    var c = r[0], emp = r[1];
+    if (!c) return naoEncontrado();
+    var calc = C.linhaFolha({
+      salario: f.salario, jornada: c.jornada_semanal, dependentes: c.dependentes, faltas: f.faltas,
+      he50: f.he50, he100: f.he100, adicionais: f.adicionais, vt: f.vt, descVr: f.desc_vr, outrosDescontos: f.outros_descontos,
+    }, emp, P);
+    var vh = calc.valorHora;
+    var linhas = [
+      ['Salário base', '30 dias', +f.salario, 0],
+      ['Horas extras 50%', fmtQtd(f.he50) + 'h', vh * 1.5 * f.he50, 0],
+      ['Horas extras 100%', fmtQtd(f.he100) + 'h', vh * 2 * f.he100, 0],
+      ['Outros proventos', '', +f.adicionais, 0],
+      ['Faltas', fmtQtd(f.faltas) + ' dia(s)', 0, calc.descFaltas],
+      ['INSS', '', 0, calc.inss],
+      ['IRRF', c.dependentes ? c.dependentes + ' dep.' : '', 0, calc.irrf],
+      ['Vale-transporte', '6%', 0, calc.descVt],
+      ['Vale-refeição / alimentação', '', 0, +f.desc_vr],
+      ['Outros descontos', '', 0, +f.outros_descontos],
+    ].filter(function (l) { return l[2] > 0.004 || l[3] > 0.004; });
+    var prov = linhas.reduce(function (s, l) { return s + l[2]; }, 0);
+    var desc = linhas.reduce(function (s, l) { return s + l[3]; }, 0);
+    var voltar = PODE.colaborador ? '#/holerites' : '#/colaboradores/' + c.id;
+
+    vista.innerHTML =
+      '<a class="voltar" href="' + esc(voltar) + '">← Voltar</a>' +
+      '<div class="topo-vista"><h1>Holerite</h1><div class="acoes"><button type="button" class="botao" id="imprimir-holerite">Imprimir / salvar PDF</button></div></div>' +
+      '<article class="painel holerite">' +
+      '<header class="holerite-topo"><div><strong>' + esc(emp ? emp.razao_social : '') + '</strong><br>' + (emp && emp.cnpj ? 'CNPJ ' + esc(emp.cnpj) : '') + '</div>' +
+      '<div class="holerite-titulo"><strong>Recibo de pagamento de salário</strong><br>' + esc(nomeCompetencia(f.competencia)) + '</div></header>' +
+      '<dl class="dados holerite-dados">' +
+      '<div><dt>Colaborador</dt><dd>' + esc(c.nome) + '</dd></div><div><dt>CPF</dt><dd>' + esc(c.cpf) + '</dd></div>' +
+      '<div><dt>Cargo</dt><dd>' + esc(c.cargo || '—') + '</dd></div><div><dt>Admissão</dt><dd>' + fmtData(c.data_admissao) + '</dd></div>' +
+      '</dl>' +
+      '<table class="tabela holerite-tabela"><thead><tr><th>Descrição</th><th>Referência</th><th>Proventos</th><th>Descontos</th></tr></thead><tbody>' +
+      linhas.map(function (l) {
+        return '<tr><td>' + l[0] + '</td><td>' + esc(l[1]) + '</td><td>' + (l[2] ? brl(l[2]) : '') + '</td><td>' + (l[3] ? brl(l[3]) : '') + '</td></tr>';
+      }).join('') +
+      '<tr class="sub-total"><td>Totais</td><td></td><td>' + brl(prov) + '</td><td>' + brl(desc) + '</td></tr>' +
+      '<tr class="total"><td>Valor líquido</td><td></td><td></td><td>' + brl(prov - desc) + '</td></tr>' +
+      '</tbody></table>' +
+      '<div class="holerite-bases"><span>Salário base: <strong>' + brl(f.salario) + '</strong></span>' +
+      '<span>Base INSS: <strong>' + brl(Math.min(calc.bruto, P.inssFaixas[P.inssFaixas.length - 1].ate)) + '</strong></span>' +
+      '<span>Base FGTS: <strong>' + brl(calc.bruto) + '</strong></span>' +
+      '<span>FGTS do mês: <strong>' + brl(calc.fgts) + '</strong></span></div>' +
+      '<p class="holerite-assinatura">Declaro ter recebido a importância líquida discriminada neste recibo.<br><br>' +
+      '____/____/______ &nbsp;&nbsp;&nbsp; ______________________________________<br><small>Data &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Assinatura do colaborador</small></p>' +
+      '</article>';
+    document.getElementById('imprimir-holerite').addEventListener('click', function () { window.print(); });
+  }
+
+  function fmtQtd(v) {
+    return (+v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  }
+
+  // ------------------------------------------------------------------
+  // Usuários e permissões (somente administrador)
+  // ------------------------------------------------------------------
+  async function telaUsuarios() {
+    var r = await Promise.all([DB.listar('acessos'), DB.listar('empresas'), DB.listar('colaboradores')]);
+    var mapaEmp = {}, mapaCol = {};
+    r[1].forEach(function (e) { mapaEmp[e.id] = e; });
+    r[2].forEach(function (c) { mapaCol[c.id] = c; });
+    var ordem = ['admin', 'analista', 'consulta', 'cliente', 'colaborador'];
+    var lista = r[0].sort(function (a, b) {
+      return ordem.indexOf(a.perfil) - ordem.indexOf(b.perfil) || String(a.nome || a.email).localeCompare(String(b.nome || b.email), 'pt-BR');
+    });
+    vista.innerHTML =
+      '<div class="topo-vista"><div><h1>Usuários e permissões</h1><p>Quem pode entrar no sistema e o que cada um vê.</p></div>' +
+      '<div class="acoes"><a class="botao" href="#/usuarios/novo">+ Novo acesso</a></div></div>' +
+      '<div class="caixa-lista"><table class="lista"><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Vínculo</th><th>Situação</th><th></th></tr></thead><tbody>' +
+      lista.map(function (a) {
+        var vinculo = a.perfil === 'cliente' ? nomeEmpresa(mapaEmp[a.empresa_id]) :
+          a.perfil === 'colaborador' ? (mapaCol[a.colaborador_id] ? mapaCol[a.colaborador_id].nome : '—') : 'Equipe KeyGest';
+        return '<tr><td>' + esc(a.nome || '—') + '</td><td>' + esc(a.email) + '</td><td>' + esc(PERFIS[a.perfil]) + '</td>' +
+          '<td>' + esc(vinculo) + '</td><td>' + (a.ativo ? '<span class="etiqueta">Ativo</span>' : '<span class="etiqueta desligado">Bloqueado</span>') + '</td>' +
+          '<td><a class="botao botao-secundario botao-pequeno" href="#/usuarios/editar?email=' + encodeURIComponent(a.email) + '">Editar</a></td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<section class="painel" style="margin-top:20px"><h2>O que cada perfil pode fazer</h2><table class="tabela permissoes"><thead><tr><th>Perfil</th><th>Vê</th><th>Pode alterar</th></tr></thead><tbody>' +
+      '<tr><td>Administrador</td><td>Tudo</td><td>Tudo, inclusive usuários e permissões</td></tr>' +
+      '<tr><td>Analista</td><td>Todas as empresas e colaboradores</td><td>Cadastros, férias e folha</td></tr>' +
+      '<tr><td>Somente consulta</td><td>Todas as empresas e colaboradores</td><td>Nada</td></tr>' +
+      '<tr><td>Empresa cliente</td><td>Só a própria empresa e seus colaboradores</td><td>Lançamentos da folha do mês</td></tr>' +
+      '<tr><td>Colaborador</td><td>Só os próprios dados, férias e holerites</td><td>Nada</td></tr>' +
+      '</tbody></table></section>';
+  }
+
+  async function telaFormUsuario(email, query) {
+    var r = await Promise.all([DB.listar('empresas'), DB.listar('colaboradores')]);
+    var empresas = r[0].sort(porNome('razao_social'));
+    var cols = r[1].sort(porNome('nome'));
+    var mapaEmp = {};
+    empresas.forEach(function (e) { mapaEmp[e.id] = e; });
+    var a = { perfil: query.perfil || 'analista', ativo: true, email: query.email || '', nome: query.nome || '', colaborador_id: query.colaborador || null, empresa_id: query.empresa || null };
+    if (email) {
+      a = await DB.obter('acessos', email);
+      if (!a) return naoEncontrado();
+    }
+    var proprio = !!email && email === ACESSO.email;
+
+    vista.innerHTML =
+      '<a class="voltar" href="#/usuarios">← Usuários</a>' +
+      '<div class="topo-vista"><h1>' + (email ? 'Editar acesso' : 'Novo acesso') + '</h1></div>' +
+      '<form class="painel form-sistema" id="form" novalidate style="max-width:760px"><fieldset><legend>Dados de acesso</legend><div class="campos" style="grid-template-columns:1fr 1fr">' +
+      '<div class="campo"><label for="u-nome">Nome</label><input id="u-nome" name="nome" value="' + esc(a.nome || '') + '"><div class="erro-campo"></div></div>' +
+      '<div class="campo"><label for="u-email">E-mail *</label><input id="u-email" name="email" type="email" value="' + esc(a.email) + '"' + (email ? ' disabled' : '') + '><div class="erro-campo"></div></div>' +
+      '<div class="campo"><label for="u-perfil">Perfil *</label><select id="u-perfil" name="perfil"' + (proprio ? ' disabled' : '') + '>' +
+      Object.keys(PERFIS).map(function (k) { return '<option value="' + k + '"' + (a.perfil === k ? ' selected' : '') + '>' + PERFIS[k] + '</option>'; }).join('') +
+      '</select><div class="erro-campo"></div></div>' +
+      '<div class="campo"><label for="u-ativo">Situação</label><select id="u-ativo" name="ativo"' + (proprio ? ' disabled' : '') + '>' +
+      '<option value="true"' + (a.ativo ? ' selected' : '') + '>Ativo</option><option value="false"' + (a.ativo ? '' : ' selected') + '>Bloqueado</option></select><div class="erro-campo"></div></div>' +
+      '<div class="campo inteiro" id="campo-empresa"><label for="u-empresa">Empresa *</label><select id="u-empresa" name="empresa_id"><option value="">Selecione</option>' +
+      empresas.map(function (e) { return '<option value="' + esc(e.id) + '"' + (a.empresa_id === e.id ? ' selected' : '') + '>' + esc(nomeEmpresa(e)) + '</option>'; }).join('') +
+      '</select><div class="erro-campo"></div></div>' +
+      '<div class="campo inteiro" id="campo-colaborador"><label for="u-colaborador">Colaborador *</label><select id="u-colaborador" name="colaborador_id"><option value="">Selecione</option>' +
+      cols.map(function (c) { return '<option value="' + esc(c.id) + '"' + (a.colaborador_id === c.id ? ' selected' : '') + '>' + esc(c.nome + ' — ' + nomeEmpresa(mapaEmp[c.empresa_id])) + '</option>'; }).join('') +
+      '</select><div class="erro-campo"></div></div>' +
+      '</div></fieldset>' +
+      '<p class="aviso" id="u-descricao"></p>' +
+      (proprio ? '<p class="aviso">Você não pode mudar o próprio perfil nem se bloquear, para não perder o acesso de administrador.</p>' : '') +
+      '<div class="acoes"><button class="botao" type="submit">Salvar acesso</button><a class="botao botao-secundario" href="#/usuarios">Cancelar</a>' +
+      (email && !proprio ? '<button type="button" class="botao botao-perigo" id="excluir" style="margin-left:auto">Remover acesso</button>' : '') +
+      '</div></form><div id="convite"></div>';
+
+    var form = document.getElementById('form');
+    var DESCR = {
+      admin: 'Acesso total, inclusive para criar e bloquear usuários.',
+      analista: 'Vê todas as empresas e pode cadastrar, editar e lançar a folha.',
+      consulta: 'Vê todas as empresas e colaboradores, sem poder alterar nada.',
+      cliente: 'Vê só a empresa escolhida e seus colaboradores, e pode lançar a folha do mês dessa empresa.',
+      colaborador: 'Vê só os próprios dados, férias e holerites dos meses fechados.',
+    };
+    function ajustar() {
+      var p = form.perfil.value;
+      document.getElementById('campo-empresa').hidden = p !== 'cliente';
+      document.getElementById('campo-colaborador').hidden = p !== 'colaborador';
+      document.getElementById('u-descricao').textContent = DESCR[p];
+    }
+    form.perfil.addEventListener('change', ajustar);
+    ajustar();
+
+    form.addEventListener('submit', async function (ev) {
+      ev.preventDefault();
+      form.querySelectorAll('.invalido').forEach(function (x) { x.classList.remove('invalido'); });
+      var d = {
+        nome: form.nome.value.trim() || null,
+        perfil: form.perfil.value,
+        ativo: form.ativo.value === 'true',
+        empresa_id: form.perfil.value === 'cliente' ? form.empresa_id.value || null : null,
+        colaborador_id: form.perfil.value === 'colaborador' ? form.colaborador_id.value || null : null,
+      };
+      var novoEmail = form.email.value.trim().toLowerCase();
+      var erro = null;
+      if (!email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(novoEmail)) erro = marcarErro(form, 'email', 'Informe um e-mail válido.');
+      if (d.perfil === 'cliente' && !d.empresa_id) erro = erro || marcarErro(form, 'empresa_id', 'Escolha a empresa.');
+      if (d.perfil === 'colaborador' && !d.colaborador_id) erro = erro || marcarErro(form, 'colaborador_id', 'Escolha o colaborador.');
+      if (erro) { erro.focus(); return; }
+      try {
+        if (email) await DB.atualizar('acessos', email, d);
+        else await DB.inserir('acessos', Object.assign({ email: novoEmail }, d));
+        aviso('Acesso salvo.');
+        if (email) { location.hash = '#/usuarios'; return; }
+        mostrarConvite(novoEmail, d.nome);
+      } catch (e) { aviso(e.message, true); }
+    });
+
+    var bt = document.getElementById('excluir');
+    if (bt) bt.addEventListener('click', async function () {
+      if (!confirm('Remover o acesso de ' + email + '? A pessoa não conseguirá mais ver os dados.')) return;
+      try {
+        await DB.excluir('acessos', email);
+        aviso('Acesso removido.');
+        location.hash = '#/usuarios';
+      } catch (e) { aviso(e.message, true); }
+    });
+  }
+
+  // Mensagem pronta para enviar à pessoa que recebeu acesso
+  function mostrarConvite(email, nome) {
+    var link = location.origin + location.pathname;
+    var texto = 'Olá' + (nome ? ', ' + String(nome).split(' ')[0] : '') + '! Seu acesso ao sistema da KeyGest foi liberado.\n\n' +
+      '1. Acesse: ' + link + '\n' +
+      '2. Clique em "Primeiro acesso"\n' +
+      '3. Use o e-mail ' + email + ' e crie a sua senha\n' +
+      '4. Confirme pelo link que chegará no seu e-mail';
+    document.getElementById('form').hidden = true;
+    document.getElementById('convite').innerHTML =
+      '<div class="painel" style="max-width:760px"><div class="alerta sucesso"><strong>Acesso criado!</strong> Agora envie as instruções para a pessoa criar a senha.</div>' +
+      '<div class="resumo-estimativa" id="texto-convite">' + esc(texto) + '</div>' +
+      '<div class="acoes"><button type="button" class="botao" id="copiar-convite">Copiar mensagem</button>' +
+      '<a class="botao botao-secundario" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(texto) + '">Enviar pelo WhatsApp</a>' +
+      '<a class="botao botao-secundario" href="mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent('Seu acesso ao sistema KeyGest') + '&body=' + encodeURIComponent(texto) + '">Enviar por e-mail</a>' +
+      '<button type="button" class="botao botao-secundario" id="outro-acesso">Criar outro acesso</button>' +
+      '<a class="botao botao-secundario" href="#/usuarios">Voltar aos usuários</a></div></div>';
+    document.getElementById('outro-acesso').addEventListener('click', function () {
+      if (location.hash === '#/usuarios/novo') rotear();
+      else location.hash = '#/usuarios/novo';
+    });
+    document.getElementById('copiar-convite').addEventListener('click', function () {
+      try {
+        navigator.clipboard.writeText(texto).then(function () { aviso('Mensagem copiada.'); });
+      } catch (e) { aviso('Selecione o texto e copie manualmente.', true); }
+    });
+  }
+
   function naoEncontrado() {
     vista.innerHTML = '<div class="painel vazio">Registro não encontrado.<br><a href="#/painel">Voltar ao painel</a></div>';
   }
@@ -758,15 +1036,43 @@
   // ------------------------------------------------------------------
   // Rotas
   // ------------------------------------------------------------------
+  function rotaPermitida(c) {
+    var tela = c[0];
+    var formulario = c[1] === 'novo' || c[1] === 'nova' || c[2] === 'editar';
+    if (PODE.colaborador) return tela === 'meus-dados' || tela === 'holerites' || tela === 'holerite';
+    if (tela === 'meus-dados' || tela === 'holerites') return false;
+    if (tela === 'usuarios') return PODE.usuarios;
+    if (PODE.cliente && tela === 'empresas') return false;
+    if (formulario && !PODE.editar) return false;
+    return true;
+  }
+
+  function montarMenu() {
+    var itens = PODE.colaborador
+      ? [['meus-dados', 'Meus dados'], ['holerites', 'Meus holerites']]
+      : [['painel', 'Painel'], ['colaboradores', 'Colaboradores'], ['folha', 'Folha do mês']]
+        .concat(PODE.equipe ? [['empresas', 'Empresas']] : [])
+        .concat(PODE.usuarios ? [['usuarios', 'Usuários']] : []);
+    document.getElementById('menu-sistema').innerHTML = itens.map(function (i) {
+      return '<a href="#/' + i[0] + '" data-rota="' + i[0] + '">' + i[1] + '</a>';
+    }).join('');
+    document.querySelectorAll('.so-equipe').forEach(function (el) { el.hidden = PODE.colaborador; });
+  }
   async function rotear() {
-    var hash = location.hash.replace(/^#\/?/, '') || 'painel';
+    var inicial = PODE.colaborador ? 'meus-dados' : 'painel';
+    var hash = location.hash.replace(/^#\/?/, '') || inicial;
     var partes = hash.split('?');
     var caminho = partes[0].split('/').filter(Boolean);
+    if (!rotaPermitida(caminho)) {
+      location.replace('#/' + inicial);
+      return;
+    }
     var query = {};
     new URLSearchParams(partes[1] || '').forEach(function (v, k) { query[k] = v; });
 
     document.querySelectorAll('.nav-sistema a').forEach(function (a) {
-      a.classList.toggle('ativo', a.getAttribute('data-rota') === caminho[0]);
+      var rota = a.getAttribute('data-rota');
+      a.classList.toggle('ativo', rota === caminho[0] || (rota === 'holerites' && caminho[0] === 'holerite'));
     });
     vista.innerHTML = '<div class="carregando">Carregando...</div>';
     window.scrollTo(0, 0);
@@ -777,7 +1083,17 @@
         else if (caminho[1] && caminho[2] === 'editar') await telaFormEmpresa(caminho[1]);
         else await telaEmpresas();
       } else if (caminho[0] === 'folha') {
-        await window.TelaFolha({ DB: DB, vista: vista, esc: esc, aviso: aviso, porNome: porNome, nomeEmpresa: nomeEmpresa }, query);
+        await window.TelaFolha({ DB: DB, vista: vista, esc: esc, aviso: aviso, porNome: porNome, nomeEmpresa: nomeEmpresa, somenteLeitura: !PODE.folha }, query);
+      } else if (caminho[0] === 'meus-dados') {
+        await telaFicha(ACESSO.colaborador_id);
+      } else if (caminho[0] === 'holerites') {
+        await telaHolerites();
+      } else if (caminho[0] === 'holerite') {
+        await telaHolerite(caminho[1]);
+      } else if (caminho[0] === 'usuarios') {
+        if (caminho[1] === 'novo') await telaFormUsuario(null, query);
+        else if (caminho[1] === 'editar') await telaFormUsuario(query.email, query);
+        else await telaUsuarios();
       } else if (caminho[0] === 'colaboradores') {
         if (caminho[1] === 'novo') await telaFormColaborador(null, query);
         else if (caminho[1] && caminho[2] === 'editar') await telaFormColaborador(caminho[1], query);
@@ -792,56 +1108,168 @@
   }
 
   // ------------------------------------------------------------------
-  // Início e login
+  // Início, login e permissões
   // ------------------------------------------------------------------
-  function mostrarApp(sessao) {
-    document.getElementById('tela-login').hidden = true;
+  var telaLogin = document.getElementById('tela-login');
+  var formLogin = document.getElementById('form-login');
+  var msgLogin = document.getElementById('login-msg');
+  var modoLogin = 'entrar';
+  var recuperando = false;
+
+  var MODOS = {
+    entrar: { titulo: 'Entrar', texto: 'Use o e-mail e a senha cadastrados.', botao: 'Entrar', email: true, senha: true, senha2: false },
+    primeiro: { titulo: 'Primeiro acesso', texto: 'Seu e-mail precisa ter sido liberado pela KeyGest. Crie uma senha com pelo menos 8 caracteres.', botao: 'Criar senha', email: true, senha: true, senha2: true },
+    esqueci: { titulo: 'Esqueci a senha', texto: 'Enviaremos um link para você criar uma nova senha.', botao: 'Enviar link', email: true, senha: false, senha2: false },
+    nova: { titulo: 'Nova senha', texto: 'Digite a nova senha (mínimo de 8 caracteres).', botao: 'Salvar nova senha', email: false, senha: true, senha2: true },
+    bloqueado: { titulo: 'Acesso não liberado', texto: '', botao: '', email: false, senha: false, senha2: false },
+  };
+
+  function mensagemLogin(texto, tipo) {
+    msgLogin.textContent = texto || '';
+    msgLogin.className = 'alerta ' + (tipo || 'erro');
+    msgLogin.hidden = !texto;
+  }
+
+  function definirModoLogin(m, texto) {
+    modoLogin = m;
+    var c = MODOS[m];
+    document.getElementById('login-titulo').textContent = c.titulo;
+    document.getElementById('login-texto').textContent = texto || c.texto;
+    document.getElementById('campo-login-email').hidden = !c.email;
+    document.getElementById('campo-login-senha').hidden = !c.senha;
+    document.getElementById('campo-login-senha2').hidden = !c.senha2;
+    document.getElementById('login-enviar').hidden = !c.botao;
+    document.getElementById('login-enviar').textContent = c.botao;
+    document.getElementById('login-sair').hidden = m !== 'bloqueado' && m !== 'nova';
+    document.getElementById('login-abas').hidden = m === 'bloqueado' || m === 'nova';
+    document.getElementById('login-senha').autocomplete = m === 'entrar' ? 'current-password' : 'new-password';
+    document.querySelectorAll('#login-abas button').forEach(function (b) {
+      b.classList.toggle('ativa', b.dataset.modo === m);
+      b.setAttribute('aria-selected', b.dataset.modo === m ? 'true' : 'false');
+    });
+    mensagemLogin('');
+  }
+
+  function mostrarLogin(modo, texto) {
+    document.getElementById('app').hidden = true;
+    telaLogin.hidden = false;
+    definirModoLogin(modo || 'entrar', texto);
+    var foco = telaLogin.querySelector('input:not([hidden])');
+    if (foco && !foco.closest('[hidden]')) foco.focus();
+  }
+
+  async function iniciarSessao(sessao) {
+    try {
+      ACESSO = await DB.meuAcesso(sessao);
+    } catch (e) {
+      ACESSO = null;
+    }
+    if (!ACESSO || !ACESSO.ativo) {
+      mostrarLogin('bloqueado', 'O e-mail ' + sessao.user.email + ' ainda não tem acesso ao sistema ou foi bloqueado. Fale com a KeyGest para liberar.');
+      return;
+    }
+    definirPermissoes(ACESSO);
+    montarMenu();
+    telaLogin.hidden = true;
     document.getElementById('app').hidden = false;
-    document.getElementById('usuario-email').textContent = DB.modo === 'demo' ? 'Modo demonstração' : sessao.user.email;
+    document.getElementById('usuario-email').innerHTML = esc(ACESSO.nome || ACESSO.email) + '<br><small>' + esc(PERFIS[ACESSO.perfil]) + '</small>';
     document.getElementById('aviso-demo').hidden = DB.modo !== 'demo';
     document.getElementById('sair').hidden = DB.modo === 'demo';
+    if (DB.modo === 'demo') montarVerComo();
     rotear();
   }
 
-  function mostrarLogin() {
-    document.getElementById('app').hidden = true;
-    document.getElementById('tela-login').hidden = false;
-    document.getElementById('login-email').focus();
+  // Modo demonstração: trocar de perfil para testar as permissões
+  function montarVerComo() {
+    var sel = document.getElementById('ver-como');
+    sel.innerHTML = DB.perfisDemo().map(function (a) {
+      return '<option value="' + esc(a.email) + '"' + (a.email === ACESSO.email ? ' selected' : '') + '>' + esc(PERFIS[a.perfil] + ' — ' + (a.nome || a.email)) + '</option>';
+    }).join('');
   }
 
-  document.getElementById('form-login').addEventListener('submit', async function (ev) {
+  document.getElementById('ver-como').addEventListener('change', function () {
+    DB.verComo(this.value);
+    location.hash = '';
+    DB.sessao().then(iniciarSessao);
+  });
+
+  document.getElementById('login-abas').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button[data-modo]');
+    if (b) mostrarLogin(b.dataset.modo);
+  });
+
+  formLogin.addEventListener('submit', async function (ev) {
     ev.preventDefault();
-    var erro = document.getElementById('login-erro');
-    var botao = this.querySelector('button');
-    erro.hidden = true;
+    var email = document.getElementById('login-email').value.trim().toLowerCase();
+    var senha = document.getElementById('login-senha').value;
+    var senha2 = document.getElementById('login-senha2').value;
+    var c = MODOS[modoLogin];
+    if (c.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return mensagemLogin('Informe um e-mail válido.');
+    if (c.senha2 && senha.length < 8) return mensagemLogin('A senha precisa ter pelo menos 8 caracteres.');
+    if (c.senha2 && senha !== senha2) return mensagemLogin('As senhas não são iguais.');
+    if (c.senha && !senha) return mensagemLogin('Informe a senha.');
+    var botao = document.getElementById('login-enviar');
     botao.disabled = true;
     try {
-      var s = await DB.entrar(document.getElementById('login-email').value.trim(), document.getElementById('login-senha').value);
-      mostrarApp(s);
+      if (modoLogin === 'entrar') {
+        await iniciarSessao(await DB.entrar(email, senha));
+      } else if (modoLogin === 'primeiro') {
+        var r = await DB.cadastrar(email, senha);
+        if (r && r.session) await iniciarSessao(r.session);
+        else {
+          definirModoLogin('entrar');
+          mensagemLogin('Pronto! Enviamos um link de confirmação para ' + email + '. Confirme pelo e-mail e depois entre com a sua senha.', 'sucesso');
+        }
+      } else if (modoLogin === 'esqueci') {
+        await DB.recuperar(email);
+        mensagemLogin('Se o e-mail estiver cadastrado, você receberá um link para criar uma nova senha.', 'sucesso');
+      } else if (modoLogin === 'nova') {
+        await DB.novaSenha(senha);
+        recuperando = false;
+        mensagemLogin('Senha alterada!', 'sucesso');
+        await iniciarSessao(await DB.sessao());
+      }
     } catch (e) {
-      erro.textContent = e.message;
-      erro.hidden = false;
+      mensagemLogin(e.message);
     }
     botao.disabled = false;
   });
 
-  document.getElementById('sair').addEventListener('click', async function () {
+  async function sair() {
     await DB.sair();
+    ACESSO = null;
+    PODE = {};
     location.hash = '';
-    mostrarLogin();
-  });
+    mostrarLogin('entrar');
+  }
+  document.getElementById('sair').addEventListener('click', sair);
+  document.getElementById('login-sair').addEventListener('click', sair);
 
   document.getElementById('limpar-demo').addEventListener('click', function () {
     if (!confirm('Apagar todos os dados de demonstração deste navegador?')) return;
     DB.limpar();
     aviso('Dados de demonstração apagados.');
-    rotear();
+    DB.sessao().then(iniciarSessao);
   });
 
-  window.addEventListener('hashchange', rotear);
+  window.addEventListener('hashchange', function () {
+    if (ACESSO && ACESSO.ativo) rotear();
+  });
+
+  // Links de confirmação de e-mail e de nova senha
+  if (DB.aoMudarLogin) {
+    DB.aoMudarLogin(function (evento) {
+      if (evento === 'PASSWORD_RECOVERY') {
+        recuperando = true;
+        mostrarLogin('nova');
+      }
+    });
+  }
 
   DB.sessao().then(function (s) {
-    if (s) mostrarApp(s);
-    else mostrarLogin();
-  }).catch(function () { mostrarLogin(); });
+    if (/[?&]code=/.test(location.search)) history.replaceState(null, '', location.pathname + location.hash);
+    if (recuperando) return;
+    if (s) iniciarSessao(s);
+    else mostrarLogin('entrar');
+  }).catch(function () { mostrarLogin('entrar'); });
 })();

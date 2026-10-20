@@ -69,6 +69,7 @@
 
   window.TelaFolha = async function (ctx, query) {
     var DB = ctx.DB, vista = ctx.vista, esc = ctx.esc, aviso = ctx.aviso;
+    var leitura = !!ctx.somenteLeitura;
     if (query.empresa) estado.empresa = query.empresa;
     if (query.competencia && /^\d{4}-\d{2}$/.test(query.competencia)) estado.competencia = query.competencia;
 
@@ -112,7 +113,7 @@
     });
 
     vista.innerHTML =
-      '<div class="topo-vista"><div><h1>Folha do mês</h1><p>Preencha como numa planilha: os cálculos e o salvamento são automáticos.</p></div>' +
+      '<div class="topo-vista"><div><h1>Folha do mês</h1><p>' + (leitura ? 'Consulta dos lançamentos do mês (somente leitura).' : 'Preencha como numa planilha: os cálculos e o salvamento são automáticos.') + '</p></div>' +
       '<div class="acoes"><button type="button" class="botao botao-secundario" id="fl-exportar">Exportar planilha</button>' +
       '<button type="button" class="botao botao-secundario" id="fl-imprimir">Imprimir</button></div></div>' +
       '<div class="filtros filtros-folha">' +
@@ -136,10 +137,11 @@
           '</tr></thead><tbody>' +
           linhas.map(function (l, i) {
             return '<tr data-i="' + i + '"><th class="fixa" scope="row"><a href="#/colaboradores/' + esc(l.col.id) + '">' + esc(l.col.nome) + '</a>' +
-              '<small>' + esc(l.col.cargo || '') + (l.col.dependentes ? ' · ' + l.col.dependentes + ' dep.' : '') + '</small></th>' +
+              '<small>' + esc(l.col.cargo || '') + (l.col.dependentes ? ' · ' + l.col.dependentes + ' dep.' : '') +
+              ' · <a class="link-holerite" data-holerite="' + i + '" href="' + (l.id ? '#/holerite/' + esc(l.id) : '#') + '"' + (l.id ? '' : ' hidden') + '>holerite</a></small></th>' +
               ENTRADAS.map(function (e, j) {
                 var inteiro = e.k === 'faltas' || e.k === 'he50' || e.k === 'he100';
-                return '<td><input class="celula" inputmode="decimal" autocomplete="off" data-l="' + i + '" data-c="' + j + '" ' +
+                return '<td><input class="celula" inputmode="decimal" autocomplete="off"' + (leitura ? ' readonly tabindex="-1"' : '') + ' data-l="' + i + '" data-c="' + j + '" ' +
                   'aria-label="' + esc(e.t + ' de ' + l.col.nome) + '" value="' + esc(fmtNum(l.v[e.k], inteiro)) + '"></td>';
               }).join('') +
               SAIDAS.map(function (s) { return '<td class="calc' + (s.destaque ? ' forte' : '') + '" data-s="' + s.k + '"></td>'; }).join('') +
@@ -149,10 +151,10 @@
           ENTRADAS.map(function (e) { return '<td data-t="' + e.k + '"></td>'; }).join('') +
           SAIDAS.map(function (s) { return '<td class="calc' + (s.destaque ? ' forte' : '') + '" data-t="' + s.k + '"></td>'; }).join('') +
           '</tr></tfoot></table></div>' +
-          '<p class="aviso" style="margin-top:16px"><strong>Dicas:</strong> use Enter ou as setas ↑ ↓ ← → para andar entre as células, como no Excel. ' +
+          (leitura ? '' : '<p class="aviso" style="margin-top:16px"><strong>Dicas:</strong> use Enter ou as setas ↑ ↓ ← → para andar entre as células, como no Excel. ' +
           'Você pode copiar várias células do Excel e colar aqui de uma vez. ' +
           'O desconto do vale-transporte é de até 6% do salário base (se as passagens custarem menos, desconta só o valor delas). ' +
-          'Hora extra calculada sobre ' + 'a jornada do cadastro; DSR sobre horas extras e médias não estão incluídos. INSS e IRRF pelas tabelas de ' + P.ano + '.</p>'
+          'Hora extra calculada sobre ' + 'a jornada do cadastro; DSR sobre horas extras e médias não estão incluídos. INSS e IRRF pelas tabelas de ' + P.ano + '.</p>')
         : '<div class="painel vazio">Nenhum colaborador ativo nesta empresa em ' + esc(nomeMes(comp)) + '.<br>' +
           '<a class="botao" style="margin-top:14px" href="#/colaboradores/novo?empresa=' + esc(emp.id) + '">Cadastrar colaborador</a></div>');
 
@@ -175,6 +177,7 @@
     var pendentes = 0;
 
     function mostrarStatus() {
+      if (leitura) { status.textContent = 'Somente leitura'; return; }
       var naoSalvas = linhas.filter(function (l) { return !l.salvo; }).length;
       if (pendentes) status.textContent = 'Salvando...';
       else if (naoSalvas === linhas.length) status.textContent = 'Mês ainda não lançado — os valores serão salvos ao editar.';
@@ -226,7 +229,12 @@
       mostrarStatus();
       var dados = registro(l);
       l.fila = (l.id ? DB.atualizar('folha', l.id, dados) : DB.inserir('folha', dados))
-        .then(function (salvo) { l.id = salvo.id; l.salvo = true; })
+        .then(function (salvo) {
+          l.id = salvo.id;
+          l.salvo = true;
+          var link = tabela.querySelector('[data-holerite="' + linhas.indexOf(l) + '"]');
+          if (link) { link.href = '#/holerite/' + salvo.id; link.hidden = false; }
+        })
         .catch(function (e) { aviso('Não foi possível salvar: ' + e.message, true); })
         .then(function () {
           l.fila = null;
@@ -251,7 +259,7 @@
 
     tabela.addEventListener('input', function (ev) {
       var el = ev.target;
-      if (!el.classList.contains('celula')) return;
+      if (leitura || !el.classList.contains('celula')) return;
       var i = +el.dataset.l;
       linhas[i].v[ENTRADAS[+el.dataset.c].k] = Math.max(0, numBR(el.value));
       alterado(i);
@@ -288,7 +296,7 @@
     // Colar várias células copiadas do Excel
     tabela.addEventListener('paste', function (ev) {
       var el = ev.target;
-      if (!el.classList.contains('celula')) return;
+      if (leitura || !el.classList.contains('celula')) return;
       var texto = (ev.clipboardData || window.clipboardData).getData('text');
       if (!/[\t\n]/.test(texto.trim())) return;
       ev.preventDefault();
