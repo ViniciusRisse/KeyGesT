@@ -24,7 +24,7 @@
     }
     if (/foreign key|violates.*restrict/i.test(m)) return 'Não é possível excluir: existem colaboradores ligados a esta empresa.';
     if (/KG_EMAIL_NAO_LIBERADO/.test(m)) return 'Este e-mail ainda não foi liberado pela KeyGest.';
-    if (/Database error saving new user/i.test(m)) return 'Este e-mail ainda não foi liberado pela KeyGest. Confira se digitou o e-mail certo.';
+    if (/Database error saving new user/i.test(m)) return 'Não foi possível criar a senha: este e-mail não está liberado no sistema (ou o banco precisa ser atualizado). Confira o e-mail digitado ou fale com a KeyGest.';
     if (/signups? not allowed|signup.*disabled|Email signups are disabled|email_provider_disabled/i.test(m)) return 'O cadastro de novas senhas está desligado no Supabase (Authentication → Sign In / Providers → "Allow new users to sign up" e "Email"). Peça para a KeyGest ligar.';
     if (/Email address .* is invalid|invalid.*email/i.test(m)) return 'O Supabase recusou este e-mail. Confira se está escrito corretamente.';
     if (/Invalid login/i.test(m)) return 'E-mail ou senha incorretos.';
