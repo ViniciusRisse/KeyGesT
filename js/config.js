@@ -17,8 +17,9 @@ window.KEYGEST_CONFIG = {
   // Preencha com os dados de Project Settings → API do seu projeto.
   // Vazio = modo demonstração (os dados ficam só no navegador).
   supabase: {
-    url: '',
-    anonKey: '',
+    url: 'https://jkfhpttabwbhcvtxzzvb.supabase.co',
+    // Chave pública (publishable): pode ficar no site. Nunca coloque aqui a chave secreta.
+    anonKey: 'sb_publishable_eiPgvkYmFUlNfemkAqF_LA_EvMya21b',
   },
 
   formulario: {
