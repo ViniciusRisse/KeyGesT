@@ -149,8 +149,10 @@ create table if not exists acessos (
 alter table acessos drop column if exists codigo_hash;
 
 insert into acessos (email, nome, perfil)
-values ('keygest.rh@gmail.com', 'KeyGest', 'admin')
-on conflict (email) do nothing;
+values
+  ('keygest.rh@gmail.com', 'KeyGest', 'admin'),
+  ('keygestrh@gmail.com', 'KeyGest', 'admin')
+on conflict (email) do update set perfil = 'admin', ativo = true;
 
 -- Remove a tabela antiga de equipe, se existir de uma versão anterior
 drop table if exists equipe cascade;
