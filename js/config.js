@@ -23,9 +23,11 @@ window.KEYGEST_CONFIG = {
   },
 
   formulario: {
-    // URL que recebe os contatos (ex.: Formspree "https://formspree.io/f/xxxxxx").
+    // Os pedidos de proposta são enviados pelo FormSubmit direto para o Gmail.
+    // No primeiro envio, o FormSubmit manda um e-mail de ativação para esse endereço:
+    // basta clicar em "Activate Form" uma única vez.
     // Se ficar vazio, o formulário abre o e-mail do visitante com a mensagem pronta.
-    endpoint: '',
+    endpoint: 'https://formsubmit.co/ajax/KeyGest.rh@gmail.com',
   },
 
   // Parâmetros de referência. Confira a cada ano com a legislação vigente.

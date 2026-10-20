@@ -144,15 +144,39 @@
       return;
     }
 
+    // Campos com nomes legíveis para o e-mail que chega no Gmail
+    var envio = {
+      'Nome': d.nome,
+      'Empresa': d.empresa,
+      'CNPJ': d.cnpj,
+      'Telefone / WhatsApp': d.telefone,
+      'E-mail': d.email,
+      'Número de funcionários': d.funcionarios || '-',
+      'Serviços de interesse': d.servicos || '-',
+      'Mensagem': d.mensagem || '-',
+      'Estimativa do site': d.estimativa || '-',
+      'Origem': d.origem,
+      _subject: d._subject,
+      _replyto: d.email,
+      _template: 'table',
+      _captcha: 'false',
+    };
+
     botao.disabled = true;
     botao.textContent = 'Enviando...';
     fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(d),
+      body: JSON.stringify(/formsubmit\.co/.test(endpoint) ? envio : d),
     })
       .then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json().catch(function () { return {}; });
+      })
+      .then(function (resposta) {
+        if (resposta && (resposta.success === false || resposta.success === 'false')) {
+          throw new Error(resposta.message || 'Envio recusado');
+        }
         form.reset();
         form.hidden = true;
         try { sessionStorage.removeItem('keygest-estimativa'); } catch (err) { /* ignora */ }
