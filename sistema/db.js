@@ -23,6 +23,9 @@
       return 'Registro duplicado.';
     }
     if (/foreign key|violates.*restrict/i.test(m)) return 'Não é possível excluir: existem colaboradores ligados a esta empresa.';
+    if (/KG_CODIGO_INVALIDO/.test(m)) return 'Código de primeiro acesso inválido ou já usado. Confira o código ou peça um novo à KeyGest.';
+    if (/KG_EMAIL_NAO_LIBERADO/.test(m)) return 'Este e-mail ainda não foi liberado pela KeyGest.';
+    if (/Database error saving new user/i.test(m)) return 'Não foi possível criar a senha: confira o e-mail e o código de primeiro acesso, ou peça um novo código à KeyGest.';
     if (/Invalid login/i.test(m)) return 'E-mail ou senha incorretos.';
     if (/Email not confirmed/i.test(m)) return 'Confirme o seu e-mail antes de entrar (veja a caixa de entrada e o spam).';
     if (/already registered|already been registered/i.test(m)) return 'Este e-mail já tem senha criada. Use "Entrar" ou "Esqueci a senha".';
@@ -51,8 +54,8 @@
       });
     },
     // Primeiro acesso: a pessoa cria a própria senha (o e-mail precisa ter sido liberado pelo admin)
-    cadastrar: function (email, senha) {
-      return sb.auth.signUp({ email: email, password: senha, options: { emailRedirectTo: ENDERECO } }).then(resultado);
+    cadastrar: function (email, senha, codigo) {
+      return sb.auth.signUp({ email: email, password: senha, options: { emailRedirectTo: ENDERECO, data: { codigo: codigo } } }).then(resultado);
     },
     recuperar: function (email) {
       return sb.auth.resetPasswordForEmail(email, { redirectTo: ENDERECO }).then(resultado);

@@ -946,7 +946,8 @@
       '<p class="aviso" id="u-descricao"></p>' +
       (proprio ? '<p class="aviso">Você não pode mudar o próprio perfil nem se bloquear, para não perder o acesso de administrador.</p>' : '') +
       '<div class="acoes"><button class="botao" type="submit">Salvar acesso</button><a class="botao botao-secundario" href="#/usuarios">Cancelar</a>' +
-      (email && !proprio ? '<button type="button" class="botao botao-perigo" id="excluir" style="margin-left:auto">Remover acesso</button>' : '') +
+      (email && !proprio ? '<button type="button" class="botao botao-secundario" id="novo-codigo">Gerar novo código de primeiro acesso</button>' +
+        '<button type="button" class="botao botao-perigo" id="excluir" style="margin-left:auto">Remover acesso</button>' : '') +
       '</div></form><div id="convite"></div>';
 
     var form = document.getElementById('form');
@@ -983,11 +984,27 @@
       if (d.perfil === 'colaborador' && !d.colaborador_id) erro = erro || marcarErro(form, 'colaborador_id', 'Escolha o colaborador.');
       if (erro) { erro.focus(); return; }
       try {
-        if (email) await DB.atualizar('acessos', email, d);
-        else await DB.inserir('acessos', Object.assign({ email: novoEmail }, d));
+        if (email) {
+          await DB.atualizar('acessos', email, d);
+          aviso('Acesso salvo.');
+          location.hash = '#/usuarios';
+          return;
+        }
+        var novo = await gerarCodigo();
+        d.codigo_hash = novo.hash;
+        await DB.inserir('acessos', Object.assign({ email: novoEmail }, d));
         aviso('Acesso salvo.');
-        if (email) { location.hash = '#/usuarios'; return; }
-        mostrarConvite(novoEmail, d.nome);
+        mostrarConvite(novoEmail, d.nome, novo.codigo);
+      } catch (e) { aviso(e.message, true); }
+    });
+
+    var btCodigo = document.getElementById('novo-codigo');
+    if (btCodigo) btCodigo.addEventListener('click', async function () {
+      if (!confirm('Gerar um novo código de primeiro acesso para ' + email + '? O código anterior deixa de valer.')) return;
+      try {
+        var novo = await gerarCodigo();
+        await DB.atualizar('acessos', email, { codigo_hash: novo.hash });
+        mostrarConvite(email, a.nome, novo.codigo);
       } catch (e) { aviso(e.message, true); }
     });
 
@@ -1003,15 +1020,28 @@
   }
 
   // Mensagem pronta para enviar à pessoa que recebeu acesso
-  function mostrarConvite(email, nome) {
-    var link = location.origin + location.pathname + '?acesso=primeiro';
+  // Código de 8 caracteres sem letras/números que se confundem (0/O, 1/I/L)
+  async function gerarCodigo() {
+    var alfabeto = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    var bytes = new Uint32Array(8);
+    crypto.getRandomValues(bytes);
+    var codigo = Array.prototype.map.call(bytes, function (b) { return alfabeto[b % alfabeto.length]; }).join('');
+    var hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(codigo));
+    hash = Array.prototype.map.call(new Uint8Array(hash), function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+    return { codigo: codigo.slice(0, 4) + '-' + codigo.slice(4), hash: hash };
+  }
+
+  function mostrarConvite(email, nome, codigo) {
+    var link = location.origin + location.pathname + '?acesso=primeiro&email=' + encodeURIComponent(email) + '&codigo=' + encodeURIComponent(codigo);
     var texto = 'Olá' + (nome ? ', ' + String(nome).split(' ')[0] : '') + '! Seu acesso ao sistema da KeyGest foi liberado.\n\n' +
       '1. Acesse: ' + link + '\n' +
-      '2. Use o e-mail ' + email + ' e crie a sua senha\n' +
-      '3. Confirme pelo link que chegará no seu e-mail';
+      '2. Confira o e-mail ' + email + ' e o código ' + codigo + ' (já vêm preenchidos pelo link)\n' +
+      '3. Crie a sua senha e pronto, você já entra no sistema.\n\n' +
+      'O código vale uma única vez. Não compartilhe esta mensagem.';
     document.getElementById('form').hidden = true;
     document.getElementById('convite').innerHTML =
-      '<div class="painel" style="max-width:760px"><div class="alerta sucesso"><strong>Acesso criado!</strong> Agora envie as instruções para a pessoa criar a senha.</div>' +
+      '<div class="painel" style="max-width:760px"><div class="alerta sucesso"><strong>Pronto!</strong> Código de primeiro acesso: <strong style="font-size:1.15rem;letter-spacing:.08em">' + esc(codigo) + '</strong>. ' +
+      'Envie a mensagem abaixo para a pessoa. Por segurança, o código não fica salvo e não aparece de novo; se perder, gere outro.</div>' +
       '<div class="resumo-estimativa" id="texto-convite">' + esc(texto) + '</div>' +
       '<div class="acoes"><button type="button" class="botao" id="copiar-convite">Copiar mensagem</button>' +
       '<a class="botao botao-secundario" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(texto) + '">Enviar pelo WhatsApp</a>' +
@@ -1118,7 +1148,7 @@
 
   var MODOS = {
     entrar: { titulo: 'Entrar', texto: 'Use o e-mail e a senha cadastrados.', botao: 'Entrar', email: true, senha: true, senha2: false },
-    primeiro: { titulo: 'Primeiro acesso', texto: 'Use o e-mail liberado pela KeyGest e crie uma senha forte e exclusiva, que você não usa em nenhum outro site.', botao: 'Criar senha', email: true, senha: true, senha2: true },
+    primeiro: { titulo: 'Primeiro acesso', texto: 'Informe o e-mail e o código enviados pela KeyGest e crie uma senha forte e exclusiva, que você não usa em nenhum outro site.', botao: 'Criar senha e entrar', email: true, codigo: true, senha: true, senha2: true },
     esqueci: { titulo: 'Esqueci a senha', texto: 'Informe o seu e-mail de login. Enviaremos um link para você criar uma nova senha.', botao: 'Enviar link', email: true, senha: false, senha2: false },
     nova: { titulo: 'Nova senha', texto: 'Crie uma senha forte, diferente das anteriores e que você não usa em nenhum outro site.', botao: 'Salvar nova senha', email: false, senha: true, senha2: true },
     bloqueado: { titulo: 'Acesso não liberado', texto: '', botao: '', email: false, senha: false, senha2: false },
@@ -1136,6 +1166,7 @@
     document.getElementById('login-titulo').textContent = c.titulo;
     document.getElementById('login-texto').textContent = texto || c.texto;
     document.getElementById('campo-login-email').hidden = !c.email;
+    document.getElementById('campo-login-codigo').hidden = !c.codigo;
     document.getElementById('campo-login-senha').hidden = !c.senha;
     document.getElementById('campo-login-senha2').hidden = !c.senha2;
     document.getElementById('regras-senha').hidden = !c.senha2;
@@ -1168,6 +1199,10 @@
     return r;
   }
   document.getElementById('login-senha').addEventListener('input', atualizarRegras);
+  document.getElementById('login-codigo').addEventListener('input', function () {
+    var v = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+    this.value = v.length > 4 ? v.slice(0, 4) + '-' + v.slice(4) : v;
+  });
   document.getElementById('login-email').addEventListener('input', atualizarRegras);
   document.getElementById('mostrar-senha').addEventListener('change', function () {
     var tipo = this.checked ? 'text' : 'password';
@@ -1230,6 +1265,8 @@
     var senha2 = document.getElementById('login-senha2').value;
     var c = MODOS[modoLogin];
     if (c.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return mensagemLogin('Informe um e-mail válido.');
+    var codigo = document.getElementById('login-codigo').value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    if (c.codigo && codigo.length !== 8) return mensagemLogin('Informe o código de primeiro acesso (8 letras e números).');
     if (c.senha && !senha) return mensagemLogin('Informe a senha.');
     if (c.senha2 && !atualizarRegras().valida) return mensagemLogin('A senha ainda não cumpre todas as regras da lista.');
     if (c.senha2 && senha !== senha2) return mensagemLogin('As senhas não são iguais.');
@@ -1249,11 +1286,12 @@
       if (modoLogin === 'entrar') {
         await iniciarSessao(await DB.entrar(email, senha));
       } else if (modoLogin === 'primeiro') {
-        var r = await DB.cadastrar(email, senha);
+        var r = await DB.cadastrar(email, senha, codigo);
         if (r && r.session) await iniciarSessao(r.session);
         else {
           definirModoLogin('entrar');
-          mensagemLogin('Pronto! Enviamos um link de confirmação para ' + email + '. Confirme pelo e-mail e depois entre com a sua senha.', 'sucesso');
+          document.getElementById('login-email').value = email;
+          mensagemLogin('Senha criada! Agora entre com o seu e-mail e a nova senha.', 'sucesso');
         }
       } else if (modoLogin === 'esqueci') {
         await DB.recuperar(email);
@@ -1306,8 +1344,17 @@
   DB.sessao().then(function (s) {
     if (/[?&]code=/.test(location.search)) history.replaceState(null, '', location.pathname + location.hash);
     if (recuperando) return;
-    var pedido = new URLSearchParams(location.search).get('acesso');
-    if (s) iniciarSessao(s);
-    else mostrarLogin(pedido === 'primeiro' || pedido === 'esqueci' ? pedido : 'entrar');
+    var q = new URLSearchParams(location.search);
+    var pedido = q.get('acesso');
+    if (q.get('email') || q.get('codigo')) history.replaceState(null, '', location.pathname + '?acesso=' + (pedido || 'primeiro') + location.hash);
+    if (s) return iniciarSessao(s);
+    mostrarLogin(pedido === 'primeiro' || pedido === 'esqueci' ? pedido : 'entrar');
+    if (q.get('email')) document.getElementById('login-email').value = q.get('email');
+    if (q.get('codigo')) {
+      var cod = document.getElementById('login-codigo');
+      cod.value = q.get('codigo');
+      cod.dispatchEvent(new Event('input'));
+    }
+    if (q.get('email') && q.get('codigo')) document.getElementById('login-senha').focus();
   }).catch(function () { mostrarLogin('entrar'); });
 })();

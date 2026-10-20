@@ -145,6 +145,9 @@ create table if not exists acessos (
   check (perfil <> 'colaborador' or colaborador_id is not null)
 );
 
+-- Código de primeiro acesso (guardado só como hash SHA-256; vale uma vez)
+alter table acessos add column if not exists codigo_hash text;
+
 insert into acessos (email, nome, perfil)
 values ('keygest.rh@gmail.com', 'KeyGest', 'admin')
 on conflict (email) do nothing;
@@ -277,3 +280,33 @@ create policy folha_alterar on folha for update to authenticated
 drop policy if exists folha_excluir on folha;
 create policy folha_excluir on folha for delete to authenticated
   using (pode_editar());
+
+-- ---------------------------------------------------------------
+-- Cadastro de senha (Primeiro acesso) sem confirmação por e-mail:
+-- só aceita e-mails liberados na tabela acessos e, quando houver,
+-- exige o código de primeiro acesso gerado pelo administrador.
+-- ---------------------------------------------------------------
+create or replace function public.validar_cadastro()
+returns trigger language plpgsql security definer set search_path = public, extensions as $$
+declare
+  a public.acessos%rowtype;
+  codigo text;
+begin
+  select * into a from public.acessos where email = lower(new.email);
+  if not found then
+    raise exception 'KG_EMAIL_NAO_LIBERADO';
+  end if;
+  if a.codigo_hash is not null then
+    codigo := upper(regexp_replace(coalesce(new.raw_user_meta_data ->> 'codigo', ''), '[^A-Za-z0-9]', '', 'g'));
+    if codigo = '' or encode(digest(codigo, 'sha256'), 'hex') <> a.codigo_hash then
+      raise exception 'KG_CODIGO_INVALIDO';
+    end if;
+    update public.acessos set codigo_hash = null where email = a.email;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists validar_cadastro on auth.users;
+create trigger validar_cadastro before insert on auth.users
+  for each row execute function public.validar_cadastro();
