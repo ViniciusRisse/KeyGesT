@@ -907,3 +907,51 @@ body.sistema {
     padding: 0;
   }
 }
+
+/* ---------- Regras de senha ---------- */
+.regras-senha {
+  list-style: none;
+  margin: -4px 0 14px;
+  padding: 10px 12px;
+  background: var(--fundo);
+  border-radius: 10px;
+  font-size: 0.82rem;
+  color: var(--texto-suave);
+  display: grid;
+  gap: 3px;
+}
+
+.regras-senha li span:first-child {
+  display: inline-block;
+  width: 14px;
+  font-weight: 700;
+}
+
+.regras-senha li.ok {
+  color: var(--esmeralda-escuro);
+}
+
+.mostrar-senha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+  color: var(--texto-suave);
+  margin: -4px 0 14px;
+  cursor: pointer;
+}
+
+.mostrar-senha input {
+  accent-color: var(--esmeralda);
+  width: 16px;
+  height: 16px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

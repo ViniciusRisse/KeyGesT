@@ -929,7 +929,8 @@
       '<div class="topo-vista"><h1>' + (email ? 'Editar acesso' : 'Novo acesso') + '</h1></div>' +
       '<form class="painel form-sistema" id="form" novalidate style="max-width:760px"><fieldset><legend>Dados de acesso</legend><div class="campos" style="grid-template-columns:1fr 1fr">' +
       '<div class="campo"><label for="u-nome">Nome</label><input id="u-nome" name="nome" value="' + esc(a.nome || '') + '"><div class="erro-campo"></div></div>' +
-      '<div class="campo"><label for="u-email">E-mail *</label><input id="u-email" name="email" type="email" value="' + esc(a.email) + '"' + (email ? ' disabled' : '') + '><div class="erro-campo"></div></div>' +
+      '<div class="campo"><label for="u-email">E-mail (login) *</label><input id="u-email" name="email" type="email" autocapitalize="none" spellcheck="false" value="' + esc(a.email) + '"' + (email ? ' disabled' : '') + '>' +
+      '<small>É o login da pessoa e o endereço que recebe o link de recuperação de senha.</small><div class="erro-campo"></div></div>' +
       '<div class="campo"><label for="u-perfil">Perfil *</label><select id="u-perfil" name="perfil"' + (proprio ? ' disabled' : '') + '>' +
       Object.keys(PERFIS).map(function (k) { return '<option value="' + k + '"' + (a.perfil === k ? ' selected' : '') + '>' + PERFIS[k] + '</option>'; }).join('') +
       '</select><div class="erro-campo"></div></div>' +
@@ -1118,9 +1119,9 @@
 
   var MODOS = {
     entrar: { titulo: 'Entrar', texto: 'Use o e-mail e a senha cadastrados.', botao: 'Entrar', email: true, senha: true, senha2: false },
-    primeiro: { titulo: 'Primeiro acesso', texto: 'Seu e-mail precisa ter sido liberado pela KeyGest. Crie uma senha com pelo menos 8 caracteres.', botao: 'Criar senha', email: true, senha: true, senha2: true },
-    esqueci: { titulo: 'Esqueci a senha', texto: 'Enviaremos um link para você criar uma nova senha.', botao: 'Enviar link', email: true, senha: false, senha2: false },
-    nova: { titulo: 'Nova senha', texto: 'Digite a nova senha (mínimo de 8 caracteres).', botao: 'Salvar nova senha', email: false, senha: true, senha2: true },
+    primeiro: { titulo: 'Primeiro acesso', texto: 'Use o e-mail liberado pela KeyGest e crie uma senha forte e exclusiva, que você não usa em nenhum outro site.', botao: 'Criar senha', email: true, senha: true, senha2: true },
+    esqueci: { titulo: 'Esqueci a senha', texto: 'Informe o seu e-mail de login. Enviaremos um link para você criar uma nova senha.', botao: 'Enviar link', email: true, senha: false, senha2: false },
+    nova: { titulo: 'Nova senha', texto: 'Crie uma senha forte, diferente das anteriores e que você não usa em nenhum outro site.', botao: 'Salvar nova senha', email: false, senha: true, senha2: true },
     bloqueado: { titulo: 'Acesso não liberado', texto: '', botao: '', email: false, senha: false, senha2: false },
   };
 
@@ -1138,6 +1139,11 @@
     document.getElementById('campo-login-email').hidden = !c.email;
     document.getElementById('campo-login-senha').hidden = !c.senha;
     document.getElementById('campo-login-senha2').hidden = !c.senha2;
+    document.getElementById('regras-senha').hidden = !c.senha2;
+    document.getElementById('mostrar-senha-rotulo').hidden = !c.senha;
+    document.getElementById('login-senha').value = '';
+    document.getElementById('login-senha2').value = '';
+    atualizarRegras();
     document.getElementById('login-enviar').hidden = !c.botao;
     document.getElementById('login-enviar').textContent = c.botao;
     document.getElementById('login-sair').hidden = m !== 'bloqueado' && m !== 'nova';
@@ -1149,6 +1155,26 @@
     });
     mensagemLogin('');
   }
+
+  // Lista de regras da senha, atualizada enquanto a pessoa digita
+  var emailSessao = '';
+  function atualizarRegras() {
+    var senha = document.getElementById('login-senha').value;
+    var email = document.getElementById('login-email').value || emailSessao;
+    var r = window.Senha.avaliar(senha, email);
+    document.getElementById('regras-senha').innerHTML = r.regras.map(function (x) {
+      return '<li class="' + (x.ok ? 'ok' : '') + '"><span aria-hidden="true">' + (x.ok ? '✓' : '•') + '</span> ' + esc(x.texto) +
+        '<span class="sr-only">' + (x.ok ? ' (cumprida)' : ' (pendente)') + '</span></li>';
+    }).join('');
+    return r;
+  }
+  document.getElementById('login-senha').addEventListener('input', atualizarRegras);
+  document.getElementById('login-email').addEventListener('input', atualizarRegras);
+  document.getElementById('mostrar-senha').addEventListener('change', function () {
+    var tipo = this.checked ? 'text' : 'password';
+    document.getElementById('login-senha').type = tipo;
+    document.getElementById('login-senha2').type = tipo;
+  });
 
   function mostrarLogin(modo, texto) {
     document.getElementById('app').hidden = true;
@@ -1205,12 +1231,22 @@
     var senha2 = document.getElementById('login-senha2').value;
     var c = MODOS[modoLogin];
     if (c.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return mensagemLogin('Informe um e-mail válido.');
-    if (c.senha2 && senha.length < 8) return mensagemLogin('A senha precisa ter pelo menos 8 caracteres.');
-    if (c.senha2 && senha !== senha2) return mensagemLogin('As senhas não são iguais.');
     if (c.senha && !senha) return mensagemLogin('Informe a senha.');
+    if (c.senha2 && !atualizarRegras().valida) return mensagemLogin('A senha ainda não cumpre todas as regras da lista.');
+    if (c.senha2 && senha !== senha2) return mensagemLogin('As senhas não são iguais.');
     var botao = document.getElementById('login-enviar');
+    var textoBotao = botao.textContent;
     botao.disabled = true;
     try {
+      if (c.senha2) {
+        botao.textContent = 'Verificando a senha...';
+        if (await window.Senha.vazada(senha)) {
+          botao.textContent = textoBotao;
+          botao.disabled = false;
+          return mensagemLogin('Esta senha já apareceu em vazamentos de dados na internet e pode ser descoberta facilmente. Crie outra senha, exclusiva para a KeyGest.');
+        }
+        botao.textContent = textoBotao;
+      }
       if (modoLogin === 'entrar') {
         await iniciarSessao(await DB.entrar(email, senha));
       } else if (modoLogin === 'primeiro') {
@@ -1232,6 +1268,7 @@
     } catch (e) {
       mensagemLogin(e.message);
     }
+    botao.textContent = textoBotao;
     botao.disabled = false;
   });
 
@@ -1261,6 +1298,7 @@
     DB.aoMudarLogin(function (evento) {
       if (evento === 'PASSWORD_RECOVERY') {
         recuperando = true;
+        emailSessao = (arguments[1] && arguments[1].user && arguments[1].user.email) || '';
         mostrarLogin('nova');
       }
     });

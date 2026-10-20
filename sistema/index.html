@@ -27,9 +27,11 @@
       <p class="ajuda" id="login-texto"></p>
       <div id="login-msg" class="alerta erro" role="alert" hidden></div>
       <form id="form-login" novalidate>
-        <div class="campo" id="campo-login-email"><label for="login-email">E-mail</label><input type="email" id="login-email" autocomplete="username"></div>
+        <div class="campo" id="campo-login-email"><label for="login-email">E-mail</label><input type="email" id="login-email" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false"><small>O seu login é sempre o seu e-mail.</small></div>
         <div class="campo" id="campo-login-senha"><label for="login-senha">Senha</label><input type="password" id="login-senha" autocomplete="current-password"></div>
+        <ul class="regras-senha" id="regras-senha" aria-live="polite"></ul>
         <div class="campo" id="campo-login-senha2"><label for="login-senha2">Repita a senha</label><input type="password" id="login-senha2" autocomplete="new-password"></div>
+        <label class="mostrar-senha" id="mostrar-senha-rotulo"><input type="checkbox" id="mostrar-senha"> Mostrar senha</label>
         <button class="botao" type="submit" id="login-enviar" style="width:100%">Entrar</button>
       </form>
       <button type="button" class="botao botao-secundario" id="login-sair" style="width:100%;margin-top:10px" hidden>Sair</button>
@@ -69,6 +71,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="../js/config.js"></script>
   <script src="../js/encargos.js"></script>
+  <script src="senha.js"></script>
   <script src="db.js"></script>
   <script src="folha.js"></script>
   <script src="app.js"></script>

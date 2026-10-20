@@ -26,7 +26,9 @@
     if (/Invalid login/i.test(m)) return 'E-mail ou senha incorretos.';
     if (/Email not confirmed/i.test(m)) return 'Confirme o seu e-mail antes de entrar (veja a caixa de entrada e o spam).';
     if (/already registered|already been registered/i.test(m)) return 'Este e-mail já tem senha criada. Use "Entrar" ou "Esqueci a senha".';
-    if (/Password should be|at least 6/i.test(m)) return 'A senha precisa ter pelo menos 8 caracteres.';
+    if (/pwned|leaked|compromised/i.test(m)) return 'Esta senha já apareceu em vazamentos de dados. Crie outra senha, exclusiva para a KeyGest.';
+    if (/Password should|weak_password|at least \d+ characters|should contain/i.test(m)) return 'A senha não cumpre as regras: mínimo de 8 caracteres, com letras, números e símbolos.';
+    if (/same.*password|different from the old/i.test(m)) return 'A nova senha precisa ser diferente da anterior.';
     if (/rate limit|too many/i.test(m)) return 'Muitas tentativas. Aguarde alguns minutos e tente de novo.';
     if (/row-level security|permission denied|multiple \(or no\) rows|0 rows/i.test(m)) return 'Você não tem permissão para esta ação.';
     return m;
