@@ -154,6 +154,15 @@ p {
   color: var(--branco);
 }
 
+.menu .botao-entrar {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.menu .botao-entrar:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--branco);
+}
+
 .menu-toggle {
   display: none;
   background: none;
@@ -191,6 +200,8 @@ p {
   }
 
   .menu .botao {
+    display: flex;
+    width: 100%;
     margin: 8px 0 0;
     text-align: center;
   }

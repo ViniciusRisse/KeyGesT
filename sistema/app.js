@@ -1004,12 +1004,11 @@
 
   // Mensagem pronta para enviar à pessoa que recebeu acesso
   function mostrarConvite(email, nome) {
-    var link = location.origin + location.pathname;
+    var link = location.origin + location.pathname + '?acesso=primeiro';
     var texto = 'Olá' + (nome ? ', ' + String(nome).split(' ')[0] : '') + '! Seu acesso ao sistema da KeyGest foi liberado.\n\n' +
       '1. Acesse: ' + link + '\n' +
-      '2. Clique em "Primeiro acesso"\n' +
-      '3. Use o e-mail ' + email + ' e crie a sua senha\n' +
-      '4. Confirme pelo link que chegará no seu e-mail';
+      '2. Use o e-mail ' + email + ' e crie a sua senha\n' +
+      '3. Confirme pelo link que chegará no seu e-mail';
     document.getElementById('form').hidden = true;
     document.getElementById('convite').innerHTML =
       '<div class="painel" style="max-width:760px"><div class="alerta sucesso"><strong>Acesso criado!</strong> Agora envie as instruções para a pessoa criar a senha.</div>' +
@@ -1307,7 +1306,8 @@
   DB.sessao().then(function (s) {
     if (/[?&]code=/.test(location.search)) history.replaceState(null, '', location.pathname + location.hash);
     if (recuperando) return;
+    var pedido = new URLSearchParams(location.search).get('acesso');
     if (s) iniciarSessao(s);
-    else mostrarLogin('entrar');
+    else mostrarLogin(pedido === 'primeiro' || pedido === 'esqueci' ? pedido : 'entrar');
   }).catch(function () { mostrarLogin('entrar'); });
 })();
