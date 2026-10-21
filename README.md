@@ -65,3 +65,7 @@ insert into equipe (email, nome) values ('pessoa@exemplo.com', 'Nome da pessoa')
 ```
 
 > Nunca coloque a chave **service_role** no site.
+
+## Gerador de propostas — `propostas/`
+
+Site à parte (Node.js) para buscar projetos de sites no Freelancer.com e escrever propostas com IA. Veja `propostas/README.md`.
