@@ -1225,3 +1225,31 @@ body.sistema {
   opacity: 0.6;
   pointer-events: none;
 }
+
+.icone-excluir {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1.5px solid #f0c4be;
+  background: var(--branco);
+  color: var(--erro);
+  cursor: pointer;
+}
+
+.icone-excluir:hover,
+.icone-excluir:focus-visible {
+  background: #fdecea;
+  border-color: var(--erro);
+}
+
+.topo-vista .botao svg {
+  flex: none;
+}
+
+@media print {
+  .nao-imprimir {
+    display: none !important;
+  }
+}

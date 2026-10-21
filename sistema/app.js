@@ -146,6 +146,7 @@
     return e ? e.nome_fantasia || e.razao_social : '—';
   }
 
+  var ICONE_LIXEIRA = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
   var ICONE_LAPIS = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
 
   var STATUS = { ativo: 'Ativo', ferias: 'Em férias', afastado: 'Afastado', desligado: 'Desligado' };
@@ -997,10 +998,43 @@
     });
   }
 
-  function topoDocumentos(titulo, query) {
-    return '<a class="voltar" href="#/folha?empresa=' + encodeURIComponent(query.empresa || '') + '&competencia=' + encodeURIComponent(query.competencia || '') + '">← Folha do mês</a>' +
+  function linkFolha(query) {
+    return '#/folha?empresa=' + encodeURIComponent(query.empresa || '') + '&competencia=' + encodeURIComponent(query.competencia || '');
+  }
+
+  function topoDocumentos(titulo, query, temItens) {
+    return '<a class="voltar" href="' + linkFolha(query) + '">← Folha do mês</a>' +
       '<div class="topo-vista"><div><h1>' + esc(titulo) + '</h1><p>Confira e use "Imprimir / salvar PDF" para gerar o documento.</p></div>' +
-      '<div class="acoes"><button type="button" class="botao" id="imprimir-doc">Imprimir / salvar PDF</button></div></div>';
+      '<div class="acoes">' +
+      (temItens && PODE.folha ? '<a class="botao botao-secundario" href="' + linkFolha(query) + '">' + ICONE_LAPIS + ' Editar valores</a>' : '') +
+      (temItens && PODE.editar ? '<button type="button" class="botao botao-perigo" id="excluir-doc">Excluir relatório</button>' : '') +
+      '<button type="button" class="botao" id="imprimir-doc">Imprimir / salvar PDF</button></div></div>';
+  }
+
+  // Exclusão do relatório inteiro ou de um colaborador do mês
+  function ligarExclusao(d, query) {
+    var bt = document.getElementById('excluir-doc');
+    if (bt) bt.addEventListener('click', async function () {
+      if (!confirm('Excluir o relatório de ' + nomeCompetencia(query.competencia) + ' da ' + nomeEmpresa(d.emp) + '?\n\n' +
+        'Isso apaga os lançamentos de ' + d.itens.length + ' colaborador(es) neste mês, incluindo os holerites. Não dá para desfazer.')) return;
+      bt.disabled = true;
+      try {
+        for (var i = 0; i < d.itens.length; i++) await DB.excluir('folha', d.itens[i].f.id);
+        aviso('Relatório excluído.');
+        rotear();
+      } catch (e) { aviso(e.message, true); bt.disabled = false; }
+    });
+    vista.querySelectorAll('[data-excluir-lanc]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        var item = d.itens[+b.getAttribute('data-excluir-lanc')];
+        if (!confirm('Tirar ' + item.c.nome + ' do relatório de ' + nomeCompetencia(query.competencia) + '? O lançamento e o holerite deste mês serão apagados.')) return;
+        try {
+          await DB.excluir('folha', item.f.id);
+          aviso('Lançamento excluído.');
+          rotear();
+        } catch (e) { aviso(e.message, true); }
+      });
+    });
   }
 
   // Todos os holerites da empresa no mês, um por página
@@ -1032,13 +1066,16 @@
       t.patronal += i.calc.patronal;
       t.custo += i.calc.custo;
     });
-    var linhas = d.itens.map(function (i) {
+    var acoes = PODE.editar;
+    var linhas = d.itens.map(function (i, n) {
       var outros = i.calc.descVt + (+i.f.desc_vr || 0) + (+i.f.outros_descontos || 0);
       return '<tr><td>' + esc(i.c.nome) + '<small>' + esc(i.c.cargo || '') + '</small></td>' +
         '<td>' + brl(i.f.salario) + '</td><td>' + brl(i.calc.bruto) + '</td><td>' + brl(i.calc.inss) + '</td>' +
-        '<td>' + brl(i.calc.irrf) + '</td><td>' + brl(outros) + '</td><td class="forte">' + brl(i.calc.liquido) + '</td><td>' + brl(i.calc.fgts) + '</td></tr>';
+        '<td>' + brl(i.calc.irrf) + '</td><td>' + brl(outros) + '</td><td class="forte">' + brl(i.calc.liquido) + '</td><td>' + brl(i.calc.fgts) + '</td>' +
+        (acoes ? '<td class="nao-imprimir col-acoes"><button type="button" class="icone-excluir" data-excluir-lanc="' + n + '" title="Tirar ' + esc(i.c.nome) + ' do relatório" aria-label="Tirar ' + esc(i.c.nome) + ' do relatório">' + ICONE_LIXEIRA + '</button></td>' : '') +
+        '</tr>';
     }).join('');
-    vista.innerHTML = topoDocumentos('Relatório da folha – ' + nomeEmpresa(d.emp), query) +
+    vista.innerHTML = topoDocumentos('Relatório da folha – ' + nomeEmpresa(d.emp), query, d.itens.length > 0) +
       avisoFaltando(d, query) +
       '<article class="painel documento relatorio">' + MARCA +
       cabecalhoDocumento('Relatório da folha de pagamento', d.emp, query.competencia) +
@@ -1050,9 +1087,9 @@
           '<div><span>IRRF a recolher (DCTFWeb)</span><strong>' + brl(t.irrf) + '</strong></div>' +
           '<div><span>Custo total da empresa no mês</span><strong>' + brl(t.custo) + '</strong><small>Inclui vale-transporte pago pela empresa</small></div>' +
           '</div>' +
-          '<table class="tabela doc-tabela"><thead><tr><th>Colaborador</th><th>Salário base</th><th>Proventos</th><th>INSS</th><th>IRRF</th><th>Outros desc.</th><th>Líquido</th><th>FGTS</th></tr></thead><tbody>' +
+          '<table class="tabela doc-tabela"><thead><tr><th>Colaborador</th><th>Salário base</th><th>Proventos</th><th>INSS</th><th>IRRF</th><th>Outros desc.</th><th>Líquido</th><th>FGTS</th>' + (acoes ? '<th class="nao-imprimir col-acoes"><span class="sr-only">Ações</span></th>' : '') + '</tr></thead><tbody>' +
           linhas +
-          '<tr class="total"><td>Totais (' + d.itens.length + ')</td><td>' + brl(t.salario) + '</td><td>' + brl(t.bruto) + '</td><td>' + brl(t.inss) + '</td><td>' + brl(t.irrf) + '</td><td>' + brl(t.outros) + '</td><td>' + brl(t.liquido) + '</td><td>' + brl(t.fgts) + '</td></tr>' +
+          '<tr class="total"><td>Totais (' + d.itens.length + ')</td><td>' + brl(t.salario) + '</td><td>' + brl(t.bruto) + '</td><td>' + brl(t.inss) + '</td><td>' + brl(t.irrf) + '</td><td>' + brl(t.outros) + '</td><td>' + brl(t.liquido) + '</td><td>' + brl(t.fgts) + '</td>' + (acoes ? '<td class="nao-imprimir"></td>' : '') + '</tr>' +
           '</tbody></table>' +
           '<p class="doc-nota">Outros descontos: vale-transporte (até 6% do salário), vale-refeição/alimentação e demais descontos lançados. ' +
           'Valores calculados a partir dos lançamentos do mês com as tabelas de INSS e IRRF de ' + P.ano + '; os valores oficiais são os das guias emitidas no FGTS Digital e na DCTFWeb.</p>' +
@@ -1062,6 +1099,7 @@
       '</article>';
     document.getElementById('imprimir-doc').addEventListener('click', function () { window.print(); });
     ligarGerar(d, query);
+    ligarExclusao(d, query);
   }
 
   function fmtQtd(v) {
