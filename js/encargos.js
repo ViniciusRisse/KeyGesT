@@ -232,10 +232,12 @@
   }
 
   /*
-   * IRRF mensal: usa a dedução mais vantajosa (INSS + dependentes ou desconto
-   * simplificado) e aplica a redução de 2026 para rendimentos até R$ 7.350.
+   * IRRF mensal: usa a dedução mais vantajosa (INSS + dependentes + pensão ou
+   * desconto simplificado) e aplica a redução de 2026 para rendimentos até
+   * R$ 7.350. op.semSimplificado: não usa o desconto simplificado (13º salário).
    */
-  function irrfMensal(bruto, inss, dependentes, p) {
+  function irrfMensal(bruto, inss, dependentes, p, op) {
+    op = op || {};
     function imposto(base) {
       for (var i = 0; i < p.irrfFaixas.length; i++) {
         var f = p.irrfFaixas[i];
@@ -243,12 +245,18 @@
       }
       return 0;
     }
-    var baseLegal = bruto - inss - num(dependentes) * p.irrfDependente;
-    var baseSimples = bruto - p.irrfSimplificado;
+    var baseLegal = bruto - inss - num(dependentes) * p.irrfDependente - num(op.pensao);
     var legal = imposto(baseLegal);
-    var simples = imposto(baseSimples);
-    var ir = Math.min(legal, simples);
-    irrfMensal.base = Math.max(0, simples < legal ? baseSimples : baseLegal);
+    var ir = legal;
+    irrfMensal.base = Math.max(0, baseLegal);
+    if (!op.semSimplificado) {
+      var baseSimples = bruto - p.irrfSimplificado;
+      var simples = imposto(baseSimples);
+      if (simples < legal) {
+        ir = simples;
+        irrfMensal.base = Math.max(0, baseSimples);
+      }
+    }
     var r = p.irrfReducao;
     var reducao = 0;
     if (bruto <= r.isencaoAte) reducao = r.maximo;
@@ -258,49 +266,168 @@
   }
 
   /*
+   * Campos de um lançamento da folha (nomes das colunas no banco).
+   * tipo: provento ou desconto; un: R$, h (horas) ou d (dias);
+   * extra: coluna que fica escondida na planilha até ser usada.
+   */
+  var CAMPOS_FOLHA = [
+    { k: 'salario', t: 'Salário base', tipo: 'provento', un: 'R$', dica: 'Salário mensal do colaborador' },
+    { k: 'he50', t: 'HE 50% (h)', tipo: 'provento', un: 'h', dica: 'Horas extras em dias úteis' },
+    { k: 'he100', t: 'HE 100% (h)', tipo: 'provento', un: 'h', dica: 'Horas extras em domingos e feriados' },
+    { k: 'adicional_noturno', t: 'Adicional noturno', tipo: 'provento', un: 'R$', extra: true, dica: 'Valor do adicional noturno do mês' },
+    { k: 'insalubridade', t: 'Insalubridade', tipo: 'provento', un: 'R$', extra: true, dica: 'Adicional de insalubridade' },
+    { k: 'periculosidade', t: 'Periculosidade', tipo: 'provento', un: 'R$', extra: true, dica: 'Adicional de periculosidade (30% do salário)' },
+    { k: 'comissoes', t: 'Comissões', tipo: 'provento', un: 'R$', extra: true, dica: 'Comissões sobre vendas' },
+    { k: 'gratificacoes', t: 'Gratificações', tipo: 'provento', un: 'R$', extra: true, dica: 'Gratificações e prêmios' },
+    { k: 'dsr', t: 'DSR', tipo: 'provento', un: 'R$', extra: true, dica: 'Descanso semanal remunerado sobre horas extras, comissões e adicionais' },
+    { k: 'ferias', t: 'Férias', tipo: 'provento', un: 'R$', extra: true, dica: 'Salário dos dias de férias pagos no mês' },
+    { k: 'terco_ferias', t: '1/3 de férias', tipo: 'provento', un: 'R$', extra: true, dica: 'Adicional de 1/3 sobre as férias' },
+    { k: 'decimo_terceiro', t: '13º salário', tipo: 'provento', un: 'R$', extra: true, dica: '13º pago no mês (INSS e IRRF calculados em separado)' },
+    { k: 'adicionais', t: 'Outros proventos', tipo: 'provento', un: 'R$', dica: 'Bônus e outros valores a receber' },
+    { k: 'faltas', t: 'Faltas (dias)', tipo: 'desconto', un: 'd', dica: 'Dias de falta sem justificativa' },
+    { k: 'atrasos', t: 'Atrasos (h)', tipo: 'desconto', un: 'h', extra: true, dica: 'Horas de atraso descontadas' },
+    { k: 'vt', t: 'Vale-transporte (mês)', tipo: 'desconto', un: 'R$', dica: 'Valor total das passagens do mês (desconto de até 6% do salário)' },
+    { k: 'desc_vr', t: 'Desc. VR/VA', tipo: 'desconto', un: 'R$', dica: 'Parte do vale-refeição/alimentação paga pelo colaborador' },
+    { k: 'plano_saude', t: 'Plano de saúde', tipo: 'desconto', un: 'R$', extra: true, dica: 'Plano de saúde ou odontológico' },
+    { k: 'adiantamento', t: 'Adiantamento', tipo: 'desconto', un: 'R$', extra: true, dica: 'Adiantamento salarial (vale) já pago' },
+    { k: 'pensao', t: 'Pensão alimentícia', tipo: 'desconto', un: 'R$', extra: true, dica: 'Pensão judicial (deduz da base do IRRF)' },
+    { k: 'outros_descontos', t: 'Outros descontos', tipo: 'desconto', un: 'R$', dica: 'Empréstimo, convênios e outros' },
+  ];
+
+  /*
    * Uma linha da folha do mês.
-   * e: { salario, jornada, dependentes, faltas, he50, he100, adicionais, vt, descVr, outrosDescontos }
-   * emp: empresa (regime, rat, fap, terceiros) para o custo patronal.
+   * e: campos de CAMPOS_FOLHA + jornada e dependentes do colaborador
+   *    (aceita também descVr e outrosDescontos, nomes antigos).
+   * emp: empresa (regime, rat, fap, terceiros) para os encargos.
+   * Proventos e descontos saem detalhados (com código) para o holerite e o relatório.
    */
   function linhaFolha(e, emp, p) {
-    var salario = num(e.salario);
+    function v(k, antigo) {
+      var x = e[k];
+      if ((x == null || x === '') && antigo) x = e[antigo];
+      return Math.max(0, num(x));
+    }
+    var salario = v('salario');
     var horasMes = (num(e.jornada) || 44) * 5;
     var valorHora = horasMes ? salario / horasMes : 0;
-    var descFaltas = (salario / 30) * num(e.faltas);
-    var horasExtras = valorHora * 1.5 * num(e.he50) + valorHora * 2 * num(e.he100);
-    var bruto = arred(Math.max(0, salario - descFaltas + horasExtras + num(e.adicionais)));
-    var inss = inssEmpregado(bruto, p);
-    var irrf = irrfMensal(bruto, inss, e.dependentes, p);
+    var proventos = [], descontos = [];
+    function item(lista, codigo, nome, ref, unidade, valor) {
+      valor = arred(valor);
+      if (valor > 0.004) lista.push({ codigo: codigo, nome: nome, ref: ref, unidade: unidade, valor: valor });
+      return valor;
+    }
+
+    // Proventos
+    var he50 = item(proventos, '0150', 'Horas extras 50%', v('he50'), 'Horas', valorHora * 1.5 * v('he50'));
+    var he100 = item(proventos, '0200', 'Horas extras 100%', v('he100'), 'Horas', valorHora * 2 * v('he100'));
+    item(proventos, '0010', 'Salário mensal', 30, 'Dias', salario);
+    proventos.unshift(proventos.pop()); // salário em primeiro
+    var fixos = [
+      ['0250', 'Adicional noturno', 'adicional_noturno'],
+      ['0260', 'Adicional de insalubridade', 'insalubridade'],
+      ['0270', 'Adicional de periculosidade', 'periculosidade'],
+      ['0280', 'Comissões', 'comissoes'],
+      ['0290', 'Gratificações', 'gratificacoes'],
+      ['0295', 'DSR (descanso semanal remunerado)', 'dsr'],
+      ['0400', 'Férias', 'ferias'],
+      ['0410', '1/3 constitucional de férias', 'terco_ferias'],
+      ['0300', 'Outros proventos', 'adicionais'],
+    ];
+    var outrosMes = 0;
+    fixos.forEach(function (f) { outrosMes += item(proventos, f[0], f[1], '', 'Valor', v(f[2])); });
+    var d13 = item(proventos, '0500', '13º salário', '', 'Valor', v('decimo_terceiro'));
+    var ferias = arred(v('ferias') + v('terco_ferias'));
+
+    // Base do mês (sem o 13º, que tem tributação exclusiva)
+    var descFaltas = arred((salario / 30) * v('faltas'));
+    var descAtrasos = arred(valorHora * v('atrasos'));
+    var proventosMes = arred(salario + he50 + he100 + outrosMes);
+    var baseMes = arred(Math.max(0, proventosMes - descFaltas - descAtrasos));
+    var bruto = arred(proventosMes + d13);
+
+    var pensao = v('pensao');
+    var inssMes = inssEmpregado(baseMes, p);
+    var irrfMes = irrfMensal(baseMes, inssMes, e.dependentes, p, { pensao: pensao });
     var baseIrrf = arred(irrfMensal.base);
-    var vt = num(e.vt);
+    var inss13 = d13 ? inssEmpregado(d13, p) : 0;
+    var irrf13 = d13 ? irrfMensal(d13, inss13, e.dependentes, p, { semSimplificado: true }) : 0;
+    var baseIrrf13 = d13 ? arred(irrfMensal.base) : 0;
+
+    // Descontos
+    var vt = v('vt');
     var descVt = arred(Math.min(vt, salario * p.descontoMaxVt));
-    var descVr = num(e.descVr);
-    var outros = num(e.outrosDescontos);
-    var descontos = arred(inss + irrf + descVt + descVr + outros);
+    function pct(a, b) { return b ? arred(a / b * 100) : 0; }
+    item(descontos, '2030', 'Faltas', v('faltas'), 'Dias', descFaltas);
+    item(descontos, '2040', 'Atrasos', v('atrasos'), 'Horas', descAtrasos);
+    item(descontos, '0314', 'INSS sobre salário', pct(inssMes, baseMes), '%', inssMes);
+    item(descontos, '0316', 'INSS sobre 13º salário', pct(inss13, d13), '%', inss13);
+    item(descontos, '0315', 'IRRF sobre salário', pct(irrfMes, baseIrrf), '%', irrfMes);
+    item(descontos, '0317', 'IRRF sobre 13º salário', pct(irrf13, baseIrrf13), '%', irrf13);
+    item(descontos, '0507', 'Vale-transporte (até 6%)', vt, 'Valor', descVt);
+    item(descontos, '2807', 'Vale-refeição / alimentação', '', 'Valor', v('desc_vr', 'descVr'));
+    item(descontos, '2810', 'Plano de saúde / odontológico', '', 'Valor', v('plano_saude'));
+    item(descontos, '2820', 'Adiantamento salarial', '', 'Valor', v('adiantamento'));
+    item(descontos, '2830', 'Pensão alimentícia', '', 'Valor', pensao);
+    item(descontos, '2900', 'Outros descontos', '', 'Valor', v('outros_descontos', 'outrosDescontos'));
+    var totalDescontos = arred(descontos.reduce(function (s, d) { return s + d.valor; }, 0));
+
+    // Encargos da empresa (não são descontados do colaborador)
     var a = aliquotas({
       regime: emp ? emp.regime : 'normal',
       rat: emp ? emp.rat : p.ratPadrao,
       fap: emp ? emp.fap : p.fapPadrao,
       terceiros: emp ? emp.terceiros : p.terceirosPadrao,
     }, p);
-    var fgts = arred(bruto * a.fgts);
-    var patronal = arred(bruto * (a.inss + a.rat + a.terceiros));
+    var baseEncargos = arred(baseMes + d13);
+    var fgts = arred(baseEncargos * a.fgts);
+    var inssPatronal = arred(baseEncargos * a.inss);
+    var rat = arred(baseEncargos * a.rat);
+    var terceiros = arred(baseEncargos * a.terceiros);
+    var patronal = arred(inssPatronal + rat + terceiros);
+
+    // Provisões mensais (1/12 de 13º e 1/12 de férias + 1/3) sobre a remuneração do mês
+    var baseProvisao = Math.max(0, baseMes - ferias);
+    var prov13 = arred(baseProvisao / 12);
+    var provFerias = arred(baseProvisao / 12 * 4 / 3);
+    var provEncargos = arred((prov13 + provFerias) * (a.fgts + a.inss + a.rat + a.terceiros));
+    var vtEmpresa = arred(vt - descVt);
+    var custo = arred(baseEncargos + fgts + patronal + vtEmpresa);
+
     return {
       valorHora: valorHora,
-      descFaltas: arred(descFaltas),
-      horasExtras: arred(horasExtras),
+      descFaltas: descFaltas,
+      descAtrasos: descAtrasos,
+      horasExtras: arred(he50 + he100),
+      proventos: proventos,
+      descontosLista: descontos,
       bruto: bruto,
+      baseMes: baseMes,
+      decimoTerceiro: d13,
       baseIrrf: baseIrrf,
-      baseInss: arred(Math.min(bruto, p.inssFaixas[p.inssFaixas.length - 1].ate)),
-      inss: inss,
-      irrf: irrf,
+      baseInss: arred(Math.min(baseMes, p.inssFaixas[p.inssFaixas.length - 1].ate)),
+      inssMes: inssMes,
+      inss13: inss13,
+      irrfMes: irrfMes,
+      irrf13: irrf13,
+      inss: arred(inssMes + inss13),
+      irrf: arred(irrfMes + irrf13),
       descVt: descVt,
-      descontos: descontos,
-      liquido: arred(bruto - descontos),
+      descontos: totalDescontos,
+      liquido: arred(bruto - totalDescontos),
+      baseFgts: baseEncargos,
       fgts: fgts,
+      inssPatronal: inssPatronal,
+      rat: rat,
+      terceiros: terceiros,
       patronal: patronal,
-      vtEmpresa: arred(vt - descVt),
-      custo: arred(bruto + fgts + patronal + (vt - descVt)),
+      encargos: arred(fgts + patronal),
+      prov13: prov13,
+      provFerias: provFerias,
+      provEncargos: provEncargos,
+      provisoes: arred(prov13 + provFerias + provEncargos),
+      aliquotas: a,
+      vtEmpresa: vtEmpresa,
+      custo: custo,
     };
   }
 
@@ -317,6 +444,7 @@
     inssEmpregado: inssEmpregado,
     irrfMensal: irrfMensal,
     linhaFolha: linhaFolha,
+    CAMPOS_FOLHA: CAMPOS_FOLHA,
     num: num,
   };
 

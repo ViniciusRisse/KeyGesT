@@ -308,3 +308,22 @@ alter table colaboradores add column if not exists ctps_serie text;
 alter table colaboradores add column if not exists banco text;
 alter table colaboradores add column if not exists agencia text;
 alter table colaboradores add column if not exists conta text;
+
+-- Relatório da folha: dados da empresa e novos proventos e descontos
+alter table empresas add column if not exists endereco text;
+alter table empresas add column if not exists setor_responsavel text;
+alter table folha add column if not exists adicional_noturno numeric(12,2) not null default 0;
+alter table folha add column if not exists insalubridade numeric(12,2) not null default 0;
+alter table folha add column if not exists periculosidade numeric(12,2) not null default 0;
+alter table folha add column if not exists comissoes numeric(12,2) not null default 0;
+alter table folha add column if not exists gratificacoes numeric(12,2) not null default 0;
+alter table folha add column if not exists dsr numeric(12,2) not null default 0;
+alter table folha add column if not exists ferias numeric(12,2) not null default 0;
+alter table folha add column if not exists terco_ferias numeric(12,2) not null default 0;
+alter table folha add column if not exists decimo_terceiro numeric(12,2) not null default 0;
+alter table folha add column if not exists atrasos numeric(6,2) not null default 0;
+alter table folha add column if not exists plano_saude numeric(12,2) not null default 0;
+alter table folha add column if not exists adiantamento numeric(12,2) not null default 0;
+alter table folha add column if not exists pensao numeric(12,2) not null default 0;
+alter table folha add column if not exists descontos numeric(12,2);
+alter table folha add column if not exists data_pagamento date;

@@ -1914,3 +1914,360 @@ body.sistema {
 .janela-campos label {
   font-size: 0.85rem;
 }
+
+/* Planilha: grupos de colunas e colunas extras */
+.planilha thead tr.grupos th {
+  position: static;
+  cursor: default;
+  text-align: center;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+}
+
+.planilha thead tr.grupos .g-desc {
+  background: #5b2f2f;
+}
+
+.planilha td.desc input {
+  background: #fdf7f6;
+}
+
+.planilha-opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+}
+
+.planilha-opcoes .ajuda {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+/* Janela de edição agrupada */
+.janela-grupo {
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 10px 14px 4px;
+  margin: 0 0 12px;
+}
+
+.janela-grupo legend {
+  font-weight: 700;
+  color: var(--petroleo);
+  padding: 0 6px;
+  font-size: 0.9rem;
+}
+
+.janela {
+  overflow-y: auto;
+}
+
+/* Relatório de folha de pagamento */
+.doc-secao {
+  font-size: 0.95rem;
+  color: var(--petroleo);
+  border-bottom: 2px solid var(--esmeralda);
+  padding-bottom: 4px;
+  margin: 22px 0 12px;
+}
+
+.doc-secao small {
+  font-weight: 500;
+  color: var(--texto-suave);
+  font-size: 0.78rem;
+}
+
+.doc-dados {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0 0 8px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.doc-dados div {
+  padding: 7px 10px;
+  border-right: 1px solid var(--borda);
+  border-bottom: 1px solid var(--borda);
+  min-width: 0;
+}
+
+.doc-dados .largo {
+  grid-column: span 2;
+}
+
+.doc-dados dt {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--texto-suave);
+}
+
+.doc-dados dd {
+  margin: 2px 0 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.doc-dados dd input[type='date'] {
+  font: inherit;
+  font-weight: 500;
+  padding: 3px 6px;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  max-width: 100%;
+}
+
+.doc-dados dd small {
+  display: block;
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: var(--texto-suave);
+}
+
+.so-impressao-inline {
+  display: none;
+}
+
+.doc-controle {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.doc-formula {
+  font-size: 0.78rem;
+  color: var(--texto-suave);
+  text-align: right;
+  margin: 6px 0 0;
+}
+
+.doc-encargos td:nth-child(2) {
+  white-space: normal;
+}
+
+.doc-bloco,
+.doc-funcionario {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.doc-funcionario {
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.doc-funcionario h4 {
+  margin: 0 0 8px;
+  color: var(--petroleo);
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.doc-funcionario .doc-dados {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.doc-colunas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 10px 0;
+}
+
+.doc-eventos {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.doc-eventos th,
+.doc-eventos td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--borda);
+  text-align: right;
+}
+
+.doc-eventos th:first-child,
+.doc-eventos td:first-child {
+  text-align: left;
+}
+
+.doc-eventos thead th {
+  background: var(--petroleo);
+  color: var(--branco);
+  font-weight: 600;
+}
+
+.doc-eventos td:nth-child(2) {
+  color: var(--texto-suave);
+  white-space: nowrap;
+}
+
+.doc-eventos tfoot td {
+  font-weight: 700;
+  border-bottom: 0;
+  border-top: 2px solid var(--petroleo);
+}
+
+.doc-resumo-func {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.doc-resumo-func div {
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+.doc-resumo-func span {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--texto-suave);
+}
+
+.doc-resumo-func strong {
+  font-size: 0.88rem;
+  color: var(--petroleo);
+}
+
+.doc-resumo-func .forte {
+  background: var(--petroleo);
+  border-color: var(--petroleo);
+}
+
+.doc-resumo-func .forte span {
+  color: #b8d6cf;
+}
+
+.doc-resumo-func .forte strong {
+  color: var(--branco);
+}
+
+.doc-assinaturas-3 {
+  grid-template-columns: 1fr 1fr 0.6fr;
+}
+
+.doc-assinaturas small {
+  display: block;
+  font-size: 0.72rem;
+  margin-top: 2px;
+}
+
+.dp-pagamento {
+  font-size: 0.8rem;
+  margin: 8px 0 0;
+}
+
+@media (max-width: 900px) {
+  .doc-controle,
+  .doc-resumo-func {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .doc-dados,
+  .doc-funcionario .doc-dados {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .doc-colunas {
+    grid-template-columns: 1fr;
+  }
+
+  .doc-assinaturas-3 {
+    grid-template-columns: 1fr;
+    gap: 34px;
+  }
+}
+
+@media print {
+  .so-impressao-inline {
+    display: inline !important;
+  }
+
+  .doc-dados {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .doc-funcionario .doc-dados {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .doc-controle {
+    grid-template-columns: repeat(6, 1fr) !important;
+  }
+
+  .doc-resumo-func {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  .doc-colunas {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .doc-assinaturas-3 {
+    grid-template-columns: 1fr 1fr 0.6fr !important;
+  }
+
+  .doc-quebra {
+    break-before: page;
+    page-break-before: always;
+  }
+}
+
+/* Detalhamento mais compacto */
+.doc-funcionario .doc-dados div {
+  padding: 4px 8px;
+}
+
+.doc-funcionario .doc-dados dd {
+  font-size: 0.8rem;
+}
+
+.doc-funcionario .doc-dados dt {
+  font-size: 0.62rem;
+}
+
+.doc-resumo-func {
+  grid-template-columns: 1fr 1fr 1fr 1fr 1.3fr;
+}
+
+.doc-resumo-func div {
+  padding: 4px 8px;
+}
+
+.doc-resumo-func strong {
+  font-size: 0.82rem;
+}
+
+@media print {
+  .doc-funcionario {
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+
+  .doc-resumo-func {
+    grid-template-columns: 1fr 1fr 1fr 1fr 1.3fr !important;
+  }
+
+  .doc-colunas {
+    margin: 6px 0;
+  }
+}
+
+.doc-colunas {
+  align-items: start;
+}

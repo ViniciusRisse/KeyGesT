@@ -146,8 +146,8 @@
     col(e2, 'Elisa Prado (exemplo)', '390.533.447-05', 'Atendente', 1900, dataRelativa(0, -5, 0), { dep: 'Salão' });
     return {
       empresas: [
-        { id: e1, razao_social: 'Comércio Exemplo Ltda', nome_fantasia: 'Loja Exemplo', cnpj: '11.222.333/0001-81', regime: 'simples', rat: 0.02, fap: 1, terceiros: 0.058, responsavel: 'Fulano', email: '', telefone: '', ativo: true, observacoes: 'Empresa fictícia de demonstração.' },
-        { id: e2, razao_social: 'Restaurante Modelo Ltda', nome_fantasia: 'Restaurante Modelo', cnpj: '12.ABC.345/01DE-35', regime: 'normal', rat: 0.02, fap: 1, terceiros: 0.058, responsavel: 'Beltrano', email: '', telefone: '', ativo: true, observacoes: 'Empresa fictícia de demonstração.' },
+        { id: e1, razao_social: 'Comércio Exemplo Ltda', nome_fantasia: 'Loja Exemplo', cnpj: '11.222.333/0001-81', endereco: 'Rua das Flores, 100 – Centro, São Paulo/SP – 01000-000', setor_responsavel: 'Departamento Pessoal', regime: 'simples', rat: 0.02, fap: 1, terceiros: 0.058, responsavel: 'Fulano', email: '', telefone: '', ativo: true, observacoes: 'Empresa fictícia de demonstração.' },
+        { id: e2, razao_social: 'Restaurante Modelo Ltda', nome_fantasia: 'Restaurante Modelo', cnpj: '12.ABC.345/01DE-35', endereco: 'Av. Exemplo, 2000 – Jardim, São Paulo/SP – 04000-000', setor_responsavel: 'Recursos Humanos', regime: 'normal', rat: 0.02, fap: 1, terceiros: 0.058, responsavel: 'Beltrano', email: '', telefone: '', ativo: true, observacoes: 'Empresa fictícia de demonstração.' },
       ],
       colaboradores: c,
       ferias: [
@@ -160,6 +160,7 @@
           competencia: a.getFullYear() + '-' + String(a.getMonth() + 1).padStart(2, '0'),
           salario: x.salario, faltas: 0, he50: i === 0 ? 6 : 0, he100: 0, adicionais: 0,
           vt: 220, desc_vr: 0, outros_descontos: 0,
+          plano_saude: i === 1 ? 150 : 0, adiantamento: i === 1 ? 800 : 0, insalubridade: i === 2 ? 324.2 : 0,
         };
       }),
     };

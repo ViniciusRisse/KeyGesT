@@ -262,6 +262,8 @@
         { n: 'razao_social', l: 'Razão social *', req: true, cls: 'dois' },
         { n: 'nome_fantasia', l: 'Nome fantasia' },
         { n: 'cnpj', l: 'CNPJ', mask: 'cnpj', valida: 'cnpj' },
+        { n: 'endereco', l: 'Endereço', cls: 'dois', dica: 'Rua, número, bairro, cidade/UF e CEP' },
+        { n: 'setor_responsavel', l: 'Setor responsável pela folha', dica: 'Ex.: Recursos Humanos, Departamento Pessoal' },
         { n: 'regime', l: 'Regime tributário *', tipo: 'select', ops: REGIMES, req: true },
         { n: 'ativo', l: 'Situação', tipo: 'select', ops: { 'true': 'Ativa', 'false': 'Inativa' }, conv: 'bool' },
       ],
@@ -892,47 +894,25 @@
   var MARCA = '<img class="marca-dagua" src="../assets/marca-dagua.png" alt="" aria-hidden="true">';
 
   function calcularLancamento(f, c, emp) {
-    return C.linhaFolha({
-      salario: f.salario, jornada: c.jornada_semanal, dependentes: c.dependentes, faltas: f.faltas,
-      he50: f.he50, he100: f.he100, adicionais: f.adicionais, vt: f.vt, descVr: f.desc_vr, outrosDescontos: f.outros_descontos,
-    }, emp, P);
-  }
-
-  function cabecalhoDocumento(titulo, emp, competencia) {
-    return '<header class="doc-topo"><div class="doc-marca"><img src="../assets/logo.png" alt="" width="40" height="40"><div><strong>KeyGest</strong><small>Gestão inteligente de pessoas</small></div></div>' +
-      '<div class="doc-titulo"><strong>' + esc(titulo) + '</strong><span>' + esc(nomeCompetencia(competencia)) + '</span></div></header>' +
-      '<div class="doc-empresa"><strong>' + esc(emp ? emp.razao_social : '') + '</strong>' +
-      (emp && emp.cnpj ? '<span>CNPJ ' + esc(emp.cnpj) + '</span>' : '') +
-      (emp ? '<span>' + esc(REGIMES[emp.regime] || '') + '</span>' : '') + '</div>';
+    return C.linhaFolha(Object.assign({}, f, { jornada: c.jornada_semanal, dependentes: c.dependentes }), emp, P);
   }
 
   // Demonstrativo de pagamento (holerite) no formato tradicional
   function htmlHolerite(f, c, emp) {
     var calc = calcularLancamento(f, c, emp);
-    var vh = calc.valorHora;
     function q(v) { return (+v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
     function v(n) { return n > 0.004 ? q(n) : ''; }
-    var aliqInss = calc.bruto ? calc.inss / calc.bruto * 100 : 0;
-    var aliqIr = calc.baseIrrf ? calc.irrf / calc.baseIrrf * 100 : 0;
-    var eventos = [
-      ['0010', 'Salário mensal', q(30), 'Dias', +f.salario, 0],
-      ['0150', 'Horas extras 50%', q(f.he50), 'Horas', vh * 1.5 * f.he50, 0],
-      ['0200', 'Horas extras 100%', q(f.he100), 'Horas', vh * 2 * f.he100, 0],
-      ['0300', 'Outros proventos', '', 'Valor', +f.adicionais, 0],
-      ['2030', 'Desc. faltas', q(f.faltas), 'Dias', 0, calc.descFaltas],
-      ['0314', 'Contr. INSS remuneração', q(aliqInss), '%', 0, calc.inss],
-      ['0315', 'IRRF sobre salário', q(aliqIr), '%', 0, calc.irrf],
-      ['0507', 'Vale-transporte – empregado', q(f.vt), 'Valor', 0, calc.descVt],
-      ['2807', 'Vale-refeição / alimentação', '', 'Valor', 0, +f.desc_vr],
-      ['2900', 'Outros descontos', '', 'Valor', 0, +f.outros_descontos],
-    ].filter(function (e) { return e[4] > 0.004 || e[5] > 0.004; });
-    var prov = eventos.reduce(function (s, e) { return s + e[4]; }, 0);
-    var desc = eventos.reduce(function (s, e) { return s + e[5]; }, 0);
+    function ref(e) { return e.ref === '' || e.ref == null ? '' : e.unidade === 'Dias' || e.unidade === 'Horas' ? fmtQtd(e.ref) : q(e.ref); }
+    var eventos = calc.proventos.map(function (e) { return [e.codigo, e.nome, ref(e), e.unidade, e.valor, 0]; })
+      .concat(calc.descontosLista.map(function (e) { return [e.codigo, e.nome, ref(e), e.unidade, 0, e.valor]; }));
+    var prov = calc.bruto;
+    var desc = calc.descontos;
     function cel(rot, val, extra) {
       return '<td' + (extra || '') + '><span class="dp-rot">' + rot + '</span><span class="dp-val">' + (val == null || val === '' ? '&nbsp;' : val) + '</span></td>';
     }
     var mesAno = String(f.competencia).split('-').reverse().join('/');
     var vazias = Math.max(0, 9 - eventos.length);
+    var pagamento = f.data_pagamento ? fmtData(f.data_pagamento) : '';
     return '<article class="painel documento holerite demonstrativo">' + MARCA +
       '<table class="dp-grade dp-topo"><colgroup><col style="width:24%"><col><col style="width:20%"></colgroup><tr>' +
       '<td class="dp-logo"><img src="../assets/logo.png" alt="" width="34" height="34"><span><strong>KeyGest</strong><small>Gestão de pessoas</small></span></td>' +
@@ -956,8 +936,9 @@
       '<table class="dp-grade dp-totais"><colgroup><col><col style="width:24%"><col style="width:22%"><col style="width:22%"></colgroup><tr>' +
       cel('Base de cálculo IRRF', q(calc.baseIrrf), ' class="num"') + cel('Sal. contrib. INSS', q(calc.baseInss), ' class="num"') +
       cel('Total proventos', q(prov), ' class="num"') + cel('Total descontos', q(desc), ' class="num"') + '</tr><tr>' +
-      cel('Base FGTS mês', q(calc.bruto), ' class="num"') + cel('FGTS mês', q(calc.fgts), ' class="num"') +
+      cel('Base FGTS mês', q(calc.baseFgts), ' class="num"') + cel('FGTS mês', q(calc.fgts), ' class="num"') +
       cel('Líquido a receber', 'R$ ' + q(prov - desc), ' colspan="2" class="num dp-liquido"') + '</tr></table>' +
+      (pagamento ? '<p class="dp-pagamento">Data de pagamento: <strong>' + pagamento + '</strong></p>' : '') +
       '<div class="doc-assinaturas"><div><span></span>Data</div><div><span></span>Assinatura do colaborador</div></div>' +
       '<p class="doc-rodape">Declaro ter recebido a importância líquida discriminada neste demonstrativo. · Documento gerado pelo sistema KeyGest.</p>' +
       '</article>';
@@ -1008,6 +989,17 @@
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
   }
 
+  // Valores que se repetem de um mês para o outro
+  var REPETE_NO_MES = { vt: 1, desc_vr: 1, outros_descontos: 1, plano_saude: 1, pensao: 1, insalubridade: 1, periculosidade: 1 };
+
+  // Totais calculados que ficam gravados no lançamento
+  function totaisLancamento(calc) {
+    return {
+      bruto: calc.bruto, inss: calc.inss, irrf: calc.irrf, desc_vt: calc.descVt, descontos: calc.descontos,
+      liquido: calc.liquido, fgts: calc.fgts, custo: calc.custo,
+    };
+  }
+
   // Cria os lançamentos que faltam com o salário do cadastro e os valores fixos do mês anterior
   async function gerarLancamentos(d, query) {
     var anteriores = {};
@@ -1015,14 +1007,11 @@
       .forEach(function (f) { anteriores[f.colaborador_id] = f; });
     for (var i = 0; i < d.faltando.length; i++) {
       var c = d.faltando[i], ant = anteriores[c.id] || {};
-      var f = {
-        colaborador_id: c.id, empresa_id: query.empresa, competencia: query.competencia,
-        salario: +c.salario || 0, faltas: 0, he50: 0, he100: 0, adicionais: 0,
-        vt: +ant.vt || 0, desc_vr: +ant.desc_vr || 0, outros_descontos: +ant.outros_descontos || 0,
-      };
-      var calc = calcularLancamento(f, c, d.emp);
-      f.bruto = calc.bruto; f.inss = calc.inss; f.irrf = calc.irrf; f.desc_vt = calc.descVt;
-      f.liquido = calc.liquido; f.fgts = calc.fgts; f.custo = calc.custo;
+      var f = { colaborador_id: c.id, empresa_id: query.empresa, competencia: query.competencia };
+      C.CAMPOS_FOLHA.forEach(function (k) { f[k.k] = REPETE_NO_MES[k.k] ? +ant[k.k] || 0 : 0; });
+      f.salario = +c.salario || 0;
+      if (d.dataPagamento) f.data_pagamento = d.dataPagamento;
+      Object.assign(f, totaisLancamento(calcularLancamento(f, c, d.emp)));
       await DB.inserir('folha', f);
     }
   }
@@ -1069,10 +1058,11 @@
   }
 
   // Edição de um lançamento direto no relatório
-  var CAMPOS_LANC = [
-    ['salario', 'Salário base (R$)'], ['faltas', 'Faltas (dias)'], ['he50', 'Horas extras 50% (h)'], ['he100', 'Horas extras 100% (h)'],
-    ['adicionais', 'Outros proventos (R$)'], ['vt', 'Vale-transporte do mês (R$)'], ['desc_vr', 'Desconto VR/VA (R$)'], ['outros_descontos', 'Outros descontos (R$)'],
-  ];
+  var CAMPOS_LANC = C.CAMPOS_FOLHA.map(function (k) {
+    var rot = k.t.replace(/ \((h|dias|mês)\)$/, '');
+    var un = k.un === 'h' ? ' (horas)' : k.un === 'd' ? ' (dias)' : ' (R$)';
+    return [k.k, rot + un, k.tipo, k.un !== 'R$', k.dica];
+  });
 
   function numBR(v) {
     var s = String(v == null ? '' : v).trim().replace(/[R$\s]/g, '');
@@ -1097,14 +1087,14 @@
       '<form method="dialog" class="form-sistema" novalidate>' +
       '<div class="janela-topo"><div><h2>Editar lançamento</h2><p>' + esc(c.nome) + ' · ' + esc(nomeCompetencia(query.competencia)) + '</p></div>' +
       '<button type="button" class="janela-fechar" aria-label="Fechar">×</button></div>' +
-      '<div class="campos janela-campos">' +
-      CAMPOS_LANC.map(function (k) {
-        var inteiro = k[0] === 'faltas' || k[0] === 'he50' || k[0] === 'he100';
-        var val = +f[k[0]] || 0;
-        return '<div class="campo"><label for="ed-' + k[0] + '">' + k[1] + '</label><input type="text" id="ed-' + k[0] + '" name="' + k[0] + '" inputmode="decimal" autocomplete="off" value="' +
-          (val ? val.toLocaleString('pt-BR', { minimumFractionDigits: inteiro ? 0 : 2, maximumFractionDigits: 2 }) : '') + '"></div>';
+      [['provento', 'Proventos'], ['desconto', 'Descontos']].map(function (g) {
+        return '<fieldset class="janela-grupo"><legend>' + g[1] + '</legend><div class="campos janela-campos">' +
+          CAMPOS_LANC.filter(function (k) { return k[2] === g[0]; }).map(function (k) {
+            var val = +f[k[0]] || 0;
+            return '<div class="campo"><label for="ed-' + k[0] + '" title="' + esc(k[4]) + '">' + esc(k[1]) + '</label><input type="text" id="ed-' + k[0] + '" name="' + k[0] + '" inputmode="decimal" autocomplete="off" value="' +
+              (val ? val.toLocaleString('pt-BR', { minimumFractionDigits: k[3] ? 0 : 2, maximumFractionDigits: 2 }) : '') + '"></div>';
+          }).join('') + '</div></fieldset>';
       }).join('') +
-      '</div>' +
       '<div class="janela-previa" id="ed-previa"></div>' +
       '<div class="acoes"><button type="submit" class="botao" value="salvar">Salvar alterações</button><button type="button" class="botao botao-secundario janela-cancelar">Cancelar</button></div>' +
       '</form>';
@@ -1123,7 +1113,7 @@
         '<div><span>Proventos</span><strong>' + brl(calc.bruto) + '</strong></div>' +
         '<div><span>INSS</span><strong>' + brl(calc.inss) + '</strong></div>' +
         '<div><span>IRRF</span><strong>' + brl(calc.irrf) + '</strong></div>' +
-        '<div><span>Desc. VT</span><strong>' + brl(calc.descVt) + '</strong></div>' +
+        '<div><span>Total descontos</span><strong>' + brl(calc.descontos) + '</strong></div>' +
         '<div class="forte"><span>Líquido</span><strong>' + brl(calc.liquido) + '</strong></div>';
       return { v: v, calc: calc };
     }
@@ -1138,10 +1128,7 @@
     form.addEventListener('submit', async function (ev) {
       ev.preventDefault();
       var r = previa();
-      var dados = Object.assign({}, r.v, {
-        bruto: r.calc.bruto, inss: r.calc.inss, irrf: r.calc.irrf, desc_vt: r.calc.descVt,
-        liquido: r.calc.liquido, fgts: r.calc.fgts, custo: r.calc.custo,
-      });
+      var dados = Object.assign({}, r.v, totaisLancamento(r.calc));
       var bt = form.querySelector('[type=submit]');
       bt.disabled = true;
       bt.textContent = 'Salvando...';
@@ -1202,29 +1189,57 @@
   }
 
   // Relatório da folha de pagamento para a empresa cliente
+  function proximoMes(c) {
+    var p = String(c).split('-');
+    var d = new Date(+p[0], +p[1], 1);
+    return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  }
+
+  function dl(itens) {
+    return '<dl class="doc-dados">' + itens.map(function (x) {
+      return '<div' + (x[2] ? ' class="' + x[2] + '"' : '') + '><dt>' + x[0] + '</dt><dd>' + (x[1] == null || x[1] === '' ? '—' : x[1]) + '</dd></div>';
+    }).join('') + '</dl>';
+  }
+
+  function listaEventos(titulo, lista, total) {
+    return '<table class="doc-eventos"><thead><tr><th>' + titulo + '</th><th>Ref.</th><th>Valor</th></tr></thead><tbody>' +
+      (lista.length ? lista.map(function (e) {
+        var ref = e.ref === '' || e.ref == null ? '' : e.unidade === '%' ? fmtQtd(e.ref) + '%' : e.unidade === 'Dias' ? fmtQtd(e.ref) + ' d' : e.unidade === 'Horas' ? fmtQtd(e.ref) + ' h' : '';
+        return '<tr><td>' + esc(e.nome) + '</td><td>' + ref + '</td><td>' + brl(e.valor) + '</td></tr>';
+      }).join('') : '<tr><td colspan="3" class="ajuda">Nenhum</td></tr>') +
+      '</tbody><tfoot><tr><td colspan="2">Total</td><td>' + brl(total) + '</td></tr></tfoot></table>';
+  }
+
   async function telaRelatorio(query) {
     var d = await dadosDoMes(query.empresa, query.competencia);
     if (!d.emp) return naoEncontrado();
-    var t = { salario: 0, bruto: 0, inss: 0, irrf: 0, vt: 0, outros: 0, liquido: 0, fgts: 0, patronal: 0, custo: 0 };
+    var emp = d.emp;
+    var campos = ['salario', 'bruto', 'descontos', 'liquido', 'inss', 'irrf', 'fgts', 'inssPatronal', 'rat', 'terceiros', 'patronal', 'encargos',
+      'prov13', 'provFerias', 'provEncargos', 'provisoes', 'custo', 'baseFgts', 'vtEmpresa'];
+    var t = {};
+    campos.forEach(function (k) { t[k] = 0; });
     d.itens.forEach(function (i) {
-      t.salario += +i.f.salario || 0;
-      t.bruto += i.calc.bruto;
-      t.inss += i.calc.inss;
-      t.irrf += i.calc.irrf;
-      t.vt += i.calc.descVt;
-      t.outros += (+i.f.desc_vr || 0) + (+i.f.outros_descontos || 0);
-      t.liquido += i.calc.liquido;
-      t.fgts += i.calc.fgts;
-      t.patronal += i.calc.patronal;
-      t.custo += i.calc.custo;
+      campos.forEach(function (k) { t[k] += k === 'salario' ? +i.f.salario || 0 : i.calc[k]; });
     });
+    var a = d.itens.length ? d.itens[0].calc.aliquotas : C.aliquotas({ regime: emp.regime, rat: emp.rat, fap: emp.fap, terceiros: emp.terceiros }, P);
+    var pct = C.formatarPct;
+
+    // Data de pagamento: a mesma para todos os lançamentos do mês
+    var datas = {};
+    d.itens.forEach(function (i) { if (i.f.data_pagamento) datas[i.f.data_pagamento] = 1; });
+    var dataPagamento = Object.keys(datas).length === 1 ? Object.keys(datas)[0] : '';
+    d.dataPagamento = dataPagamento;
+    var textoPagamento = dataPagamento ? fmtData(dataPagamento)
+      : Object.keys(datas).length > 1 ? 'Datas diferentes por colaborador'
+      : 'Até o 5º dia útil de ' + proximoMes(query.competencia);
+    var editarData = PODE.folha && d.itens.length;
+    var emissao = hoje().toLocaleDateString('pt-BR');
+    var elaborador = ACESSO ? (ACESSO.nome || ACESSO.email) : '';
     var acoes = PODE.folha;
+
     var linhas = d.itens.map(function (i, n) {
-      var outros = (+i.f.desc_vr || 0) + (+i.f.outros_descontos || 0);
-      return '<tr><td>' + esc(i.c.nome) + '<small>' + esc(i.c.cargo || '') + '</small>' +
-        '<small class="doc-base">Salário base: <b>' + brl(i.f.salario) + '</b></small></td>' +
-        '<td>' + brl(i.calc.bruto) + '</td><td>' + brl(i.calc.inss) + '</td><td>' + brl(i.calc.irrf) + '</td>' +
-        '<td>' + brl(i.calc.descVt) + '</td><td>' + brl(outros) + '</td><td>' + brl(i.calc.fgts) + '</td>' +
+      return '<tr><td>' + esc(i.c.nome) + '<small>' + esc(i.c.cargo || '') + '</small></td>' +
+        '<td>' + brl(i.f.salario) + '</td><td>' + brl(i.calc.bruto) + '</td><td>' + brl(i.calc.descontos) + '</td>' +
         '<td class="col-liquido">' + brl(i.calc.liquido) + '</td>' +
         (acoes ? '<td class="nao-imprimir col-acoes"><div class="acoes-linha">' +
           '<button type="button" class="icone-editar" data-editar-lanc="' + n + '" title="Editar ' + esc(i.c.nome) + '" aria-label="Editar ' + esc(i.c.nome) + '">' + ICONE_LAPIS + '</button>' +
@@ -1232,33 +1247,118 @@
           '</div></td>' : '') +
         '</tr>';
     }).join('');
-    vista.innerHTML = topoDocumentos('Relatório da folha – ' + nomeEmpresa(d.emp), query, d.itens.length > 0) +
+
+    function aliq(x) { return x ? pct(x) : emp.regime === 'mei' || /^simples/.test(emp.regime) ? 'No DAS' : pct(0); }
+    var encargos = [
+      ['FGTS', t.baseFgts, pct(a.fgts), t.fgts],
+      ['INSS patronal (cota da empresa)', t.baseFgts, aliq(a.inss), t.inssPatronal],
+      ['RAT ajustado pelo FAP', t.baseFgts, aliq(a.rat), t.rat],
+      ['Terceiros (Sistema S, salário-educação, Incra)', t.baseFgts, aliq(a.terceiros), t.terceiros],
+    ];
+    var provisoes = [
+      ['Provisão de 13º salário', '1/12 da remuneração', t.prov13],
+      ['Provisão de férias + 1/3', '1/12 + 1/3 da remuneração', t.provFerias],
+      ['Encargos sobre as provisões', 'FGTS, INSS, RAT e terceiros', t.provEncargos],
+    ];
+
+    var detalhes = d.itens.map(function (i, n) {
+      var c = i.c;
+      var conta = [c.banco, c.agencia ? 'ag. ' + c.agencia : '', c.conta ? 'c/c ' + c.conta : ''].filter(Boolean).join(' · ');
+      return '<section class="doc-funcionario">' +
+        '<h4>' + esc(c.nome) + (acoes ? ' <button type="button" class="icone-editar nao-imprimir" data-editar-lanc="' + n + '" title="Editar ' + esc(c.nome) + '" aria-label="Editar ' + esc(c.nome) + '">' + ICONE_LAPIS + '</button>' : '') + '</h4>' +
+        dl([
+          ['CPF', esc(c.cpf)], ['Matrícula', esc(c.matricula)], ['Cargo', esc(c.cargo)], ['Departamento', esc(c.departamento)],
+          ['Admissão', fmtData(c.data_admissao)], ['Tipo de contrato', esc(CONTRATOS[c.tipo_contrato] || c.tipo_contrato)],
+          ['Salário-base', brl(i.f.salario)], ['Jornada', c.jornada_semanal ? esc(c.jornada_semanal) + ' h semanais' : ''],
+          ['Banco / agência / conta', esc(conta), 'largo'],
+        ]) +
+        '<div class="doc-colunas">' + listaEventos('Proventos', i.calc.proventos, i.calc.bruto) + listaEventos('Descontos', i.calc.descontosLista, i.calc.descontos) + '</div>' +
+        '<div class="doc-resumo-func">' +
+        '<div><span>Salário-base</span><strong>' + brl(i.f.salario) + '</strong></div>' +
+        '<div><span>Total de proventos</span><strong>' + brl(i.calc.bruto) + '</strong></div>' +
+        '<div><span>Total de descontos</span><strong>' + brl(i.calc.descontos) + '</strong></div>' +
+        '<div class="forte"><span>Líquido a receber</span><strong>' + brl(i.calc.liquido) + '</strong></div>' +
+        '<div><span>Data de pagamento</span><strong>' + esc(i.f.data_pagamento ? fmtData(i.f.data_pagamento) : textoPagamento) + '</strong></div>' +
+        '</div></section>';
+    }).join('');
+
+    vista.innerHTML = topoDocumentos('Relatório da folha – ' + nomeEmpresa(emp), query, d.itens.length > 0) +
       avisoFaltando(d, query) +
       '<article class="painel documento relatorio">' + MARCA +
-      cabecalhoDocumento('Relatório da folha de pagamento', d.emp, query.competencia) +
+      '<header class="doc-topo"><div class="doc-marca"><img src="../assets/logo.png" alt="" width="40" height="40"><div><strong>KeyGest</strong><small>Gestão inteligente de pessoas</small></div></div>' +
+      '<div class="doc-titulo"><strong>Relatório de Folha de Pagamento</strong><span>' + esc(nomeCompetencia(query.competencia)) + '</span></div></header>' +
+
+      '<h3 class="doc-secao">Dados da empresa</h3>' +
+      dl([
+        ['Razão social', esc(emp.razao_social), 'largo'], ['Nome fantasia', esc(emp.nome_fantasia)], ['CNPJ', esc(emp.cnpj)],
+        ['Endereço', esc(emp.endereco), 'largo'], ['Setor responsável', esc(emp.setor_responsavel)], ['Regime tributário', esc(REGIMES[emp.regime] || '')],
+        ['Mês/ano de referência', esc(String(query.competencia).split('-').reverse().join('/'))],
+        ['Data de pagamento', '<span class="so-impressao-inline">' + esc(textoPagamento) + '</span>' +
+          (editarData ? '<input type="date" id="data-pagamento" class="nao-imprimir" value="' + esc(dataPagamento) + '" aria-label="Data de pagamento">' +
+            (dataPagamento ? '' : '<small class="nao-imprimir">' + esc(textoPagamento) + '</small>') : '<span class="nao-imprimir">' + esc(textoPagamento) + '</span>')],
+        ['Data de emissão', esc(emissao)],
+      ]) +
+
       (d.itens.length
-        ? '<div class="doc-resumo">' +
-          '<div><span>Total de salários base</span><strong>' + brl(t.salario) + '</strong><small>' + d.itens.length + ' colaborador(es)</small></div>' +
-          '<div><span>FGTS a recolher (FGTS Digital)</span><strong>' + brl(t.fgts) + '</strong></div>' +
-          '<div><span>INSS a recolher (DCTFWeb)</span><strong>' + brl(t.inss + t.patronal) + '</strong><small>Colaboradores ' + brl(t.inss) + ' + empresa ' + brl(t.patronal) + '</small></div>' +
-          '<div><span>IRRF a recolher (DCTFWeb)</span><strong>' + brl(t.irrf) + '</strong></div>' +
-          '<div><span>Custo total da empresa no mês</span><strong>' + brl(t.custo) + '</strong></div>' +
+        ? '<h3 class="doc-secao">Controle do fechamento</h3>' +
+          '<div class="doc-resumo doc-controle">' +
+          '<div><span>Competência</span><strong>' + esc(nomeCompetencia(query.competencia)) + '</strong></div>' +
+          '<div><span>Funcionários</span><strong>' + d.itens.length + '</strong></div>' +
+          '<div><span>Total bruto (proventos)</span><strong>' + brl(t.bruto) + '</strong></div>' +
+          '<div><span>Total de descontos</span><strong>' + brl(t.descontos) + '</strong></div>' +
+          '<div class="forte"><span>Total líquido</span><strong>' + brl(t.liquido) + '</strong></div>' +
+          '<div><span>Total de encargos patronais</span><strong>' + brl(t.encargos) + '</strong><small>FGTS + INSS empresa, RAT e terceiros</small></div>' +
           '</div>' +
-          '<table class="tabela doc-tabela"><thead><tr><th>Colaborador</th><th>Proventos</th><th>INSS</th><th>IRRF</th><th>Desc. VT</th><th>Outros desc.</th><th>FGTS</th><th class="col-liquido">Líquido</th>' +
+
+          '<h3 class="doc-secao">Funcionários</h3>' +
+          '<table class="tabela doc-tabela"><thead><tr><th>Funcionário</th><th>Salário-base</th><th>Proventos</th><th>Descontos</th><th class="col-liquido">Líquido</th>' +
           (acoes ? '<th class="nao-imprimir col-acoes"><span class="sr-only">Ações</span></th>' : '') + '</tr></thead><tbody>' +
           linhas +
-          '<tr class="total"><td>Totais (' + d.itens.length + ')</td><td>' + brl(t.bruto) + '</td><td>' + brl(t.inss) + '</td><td>' + brl(t.irrf) + '</td>' +
-          '<td>' + brl(t.vt) + '</td><td>' + brl(t.outros) + '</td><td>' + brl(t.fgts) + '</td><td class="col-liquido">' + brl(t.liquido) + '</td>' +
-          (acoes ? '<td class="nao-imprimir"></td>' : '') + '</tr>' +
+          '<tr class="total"><td>Totais (' + d.itens.length + ')</td><td>' + brl(t.salario) + '</td><td>' + brl(t.bruto) + '</td><td>' + brl(t.descontos) + '</td>' +
+          '<td class="col-liquido">' + brl(t.liquido) + '</td>' + (acoes ? '<td class="nao-imprimir"></td>' : '') + '</tr>' +
           '</tbody></table>' +
-          '<div class="doc-liquido"><span>Líquido a pagar aos colaboradores</span><strong>' + brl(t.liquido) + '</strong></div>' +
-          '<p class="doc-nota">Valores calculados a partir dos lançamentos do mês com as tabelas de INSS e IRRF de ' + P.ano +
-          '; os valores oficiais são os das guias emitidas no FGTS Digital e na DCTFWeb.</p>' +
-          '<div class="doc-assinaturas"><div><span></span>KeyGest – responsável pela folha</div><div><span></span>' + esc(d.emp.razao_social) + '</div></div>'
+          '<p class="doc-formula">Líquido = total de proventos − total de descontos</p>' +
+
+          '<section class="doc-bloco"><h3 class="doc-secao">Encargos da empresa <small>(relatório complementar)</small></h3>' +
+          '<table class="tabela doc-tabela doc-encargos"><thead><tr><th>Encargo</th><th>Base</th><th>Alíquota</th><th>Valor</th></tr></thead><tbody>' +
+          encargos.map(function (e) { return '<tr><td>' + e[0] + '</td><td>' + brl(e[1]) + '</td><td>' + e[2] + '</td><td>' + brl(e[3]) + '</td></tr>'; }).join('') +
+          '<tr class="total"><td colspan="3">Total de encargos sobre a folha</td><td>' + brl(t.encargos) + '</td></tr>' +
+          provisoes.map(function (e) { return '<tr><td>' + e[0] + '</td><td colspan="2">' + e[1] + '</td><td>' + brl(e[2]) + '</td></tr>'; }).join('') +
+          '<tr class="total"><td colspan="3">Total de provisões do mês</td><td>' + brl(t.provisoes) + '</td></tr>' +
+          '</tbody></table>' +
+          '<div class="doc-resumo">' +
+          '<div><span>FGTS a recolher (FGTS Digital)</span><strong>' + brl(t.fgts) + '</strong></div>' +
+          '<div><span>INSS a recolher (DCTFWeb)</span><strong>' + brl(t.inss + t.patronal) + '</strong><small>Funcionários ' + brl(t.inss) + ' + empresa ' + brl(t.patronal) + '</small></div>' +
+          '<div><span>IRRF a recolher (DCTFWeb)</span><strong>' + brl(t.irrf) + '</strong></div>' +
+          '<div><span>Custo da folha no mês</span><strong>' + brl(t.custo) + '</strong><small>Remuneração + encargos + VT pago pela empresa</small></div>' +
+          '<div><span>Custo com provisões</span><strong>' + brl(t.custo + t.provisoes) + '</strong></div>' +
+          '</div>' +
+          '<p class="doc-nota">Os encargos da empresa não são descontados do salário: são pagos pela empresa além da remuneração. ' +
+          'Valores calculados com as tabelas de INSS e IRRF de ' + P.ano + '; os valores oficiais são os das guias emitidas no FGTS Digital e na DCTFWeb.</p></section>' +
+
+          '<h3 class="doc-secao doc-quebra">Detalhamento por funcionário</h3>' + detalhes +
+
+          '<div class="doc-assinaturas doc-assinaturas-3">' +
+          '<div><span></span>Responsável pela elaboração<small>' + esc(elaborador) + '</small></div>' +
+          '<div><span></span>Responsável pela conferência<small>' + esc(emp.razao_social) + '</small></div>' +
+          '<div><span></span>Data<small>' + esc(emissao) + '</small></div></div>'
         : '<div class="vazio">Nenhum lançamento salvo neste mês. Use o botão acima para gerar a folha com os valores do cadastro, ou abra a Folha do mês para conferir os valores e salvar.</div>') +
-      '<p class="doc-rodape">Documento gerado pelo sistema KeyGest em ' + hoje().toLocaleDateString('pt-BR') + '.</p>' +
+      '<p class="doc-rodape">Documento gerado pelo sistema KeyGest em ' + emissao + '.</p>' +
       '</article>';
     document.getElementById('imprimir-doc').addEventListener('click', function () { window.print(); });
+    var campoData = document.getElementById('data-pagamento');
+    if (campoData) campoData.addEventListener('change', async function () {
+      var valor = campoData.value || null;
+      campoData.disabled = true;
+      try {
+        for (var k = 0; k < d.itens.length; k++) await DB.atualizar('folha', d.itens[k].f.id, { data_pagamento: valor });
+        aviso(valor ? 'Data de pagamento salva.' : 'Data de pagamento removida.');
+        rotear();
+      } catch (e) {
+        aviso(e.message, true);
+        campoData.disabled = false;
+      }
+    });
     ligarGerar(d, query);
     ligarExclusao(d, query);
     ligarEdicao(d, query);

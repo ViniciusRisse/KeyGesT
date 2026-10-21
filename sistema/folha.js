@@ -10,24 +10,19 @@
   var P = window.KEYGEST_CONFIG.parametros;
   var brl = C.formatarBRL;
 
-  // Colunas editáveis (mesma ordem da tela)
-  var ENTRADAS = [
-    { k: 'salario', t: 'Salário base', dica: 'Salário mensal do colaborador' },
-    { k: 'faltas', t: 'Faltas (dias)', dica: 'Dias de falta sem justificativa' },
-    { k: 'he50', t: 'HE 50% (h)', dica: 'Horas extras em dias úteis' },
-    { k: 'he100', t: 'HE 100% (h)', dica: 'Horas extras em domingos e feriados' },
-    { k: 'adicionais', t: 'Outros proventos', dica: 'Comissões, bônus, adicional noturno, insalubridade' },
-    { k: 'vt', t: 'Vale-transporte (mês)', dica: 'Valor total das passagens do mês' },
-    { k: 'desc_vr', t: 'Desc. VR/VA', dica: 'Parte do vale-refeição/alimentação paga pelo colaborador' },
-    { k: 'outros_descontos', t: 'Outros descontos', dica: 'Adiantamento, plano de saúde, empréstimo etc.' },
-  ];
+  // Colunas editáveis (proventos e depois descontos). As "extras" ficam
+  // escondidas até serem usadas ou até clicar em "Mais colunas".
+  var TODAS = C.CAMPOS_FOLHA;
+  var CHAVE_EXTRAS = 'keygest-folha-extras';
+  var INTEIROS = { faltas: 1, he50: 1, he100: 1, atrasos: 1 };
 
   // Colunas calculadas
   var SAIDAS = [
-    { k: 'bruto', t: 'Total bruto' },
+    { k: 'bruto', t: 'Proventos' },
     { k: 'inss', t: 'INSS' },
     { k: 'irrf', t: 'IRRF' },
     { k: 'descVt', t: 'Desc. VT (6%)' },
+    { k: 'descontos', t: 'Total descontos' },
     { k: 'liquido', t: 'Líquido', destaque: true },
     { k: 'fgts', t: 'FGTS (8%)' },
     { k: 'custo', t: 'Custo empresa' },
@@ -97,16 +92,19 @@
     r[1].forEach(function (f) { lancados[f.colaborador_id] = f; });
     r[2].forEach(function (f) { anteriores[f.colaborador_id] = f; });
 
+    // Valores que se repetem todo mês
+    var FIXOS = { vt: 1, desc_vr: 1, outros_descontos: 1, plano_saude: 1, pensao: 1, insalubridade: 1, periculosidade: 1 };
+
     // Uma linha por colaborador. Mês novo: traz salário do cadastro e os
     // valores fixos (VT, VR, outros descontos) do mês anterior.
     var linhas = cols.map(function (c) {
       var l = lancados[c.id];
       var ant = anteriores[c.id] || {};
       var v = {};
-      ENTRADAS.forEach(function (e) {
+      TODAS.forEach(function (e) {
         if (l) v[e.k] = +l[e.k] || 0;
         else if (e.k === 'salario') v[e.k] = +c.salario || 0;
-        else if (e.k === 'vt' || e.k === 'desc_vr' || e.k === 'outros_descontos') v[e.k] = +ant[e.k] || 0;
+        else if (FIXOS[e.k]) v[e.k] = +ant[e.k] || 0;
         else v[e.k] = 0;
       });
       return { col: c, id: l ? l.id : null, v: v, salvo: !!l, calc: null, fila: null, repetir: false };
@@ -134,30 +132,13 @@
           '<div class="indicador"><span>FGTS a recolher</span><strong data-r="fgts"></strong></div>' +
           '<div class="indicador"><span>Custo total da empresa</span><strong data-r="custo"></strong></div>' +
           '</div>' +
-          '<div class="planilha-caixa"><table class="planilha" id="planilha"><thead><tr><th class="fixa">Colaborador</th>' +
-          ENTRADAS.map(function (e) { return '<th title="' + esc(e.dica) + '">' + esc(e.t) + '</th>'; }).join('') +
-          SAIDAS.map(function (s) { return '<th class="calc' + (s.destaque ? ' forte' : '') + '">' + esc(s.t) + '</th>'; }).join('') +
-          '</tr></thead><tbody>' +
-          linhas.map(function (l, i) {
-            return '<tr data-i="' + i + '"><th class="fixa" scope="row"><a href="#/colaboradores/' + esc(l.col.id) + '">' + esc(l.col.nome) + '</a>' +
-              '<small>' + esc(l.col.cargo || '') + (l.col.dependentes ? ' · ' + l.col.dependentes + ' dep.' : '') +
-              ' · <a class="link-holerite" data-holerite="' + i + '" href="' + (l.id ? '#/holerite/' + esc(l.id) : '#') + '"' + (l.id ? '' : ' hidden') + '>holerite</a></small></th>' +
-              ENTRADAS.map(function (e, j) {
-                var inteiro = e.k === 'faltas' || e.k === 'he50' || e.k === 'he100';
-                return '<td><input class="celula" inputmode="decimal" autocomplete="off"' + (leitura ? ' readonly tabindex="-1"' : '') + ' data-l="' + i + '" data-c="' + j + '" ' +
-                  'aria-label="' + esc(e.t + ' de ' + l.col.nome) + '" value="' + esc(fmtNum(l.v[e.k], inteiro)) + '"></td>';
-              }).join('') +
-              SAIDAS.map(function (s) { return '<td class="calc' + (s.destaque ? ' forte' : '') + '" data-s="' + s.k + '"></td>'; }).join('') +
-              '</tr>';
-          }).join('') +
-          '</tbody><tfoot><tr><th class="fixa">Totais (' + linhas.length + ')</th>' +
-          ENTRADAS.map(function (e) { return '<td data-t="' + e.k + '"></td>'; }).join('') +
-          SAIDAS.map(function (s) { return '<td class="calc' + (s.destaque ? ' forte' : '') + '" data-t="' + s.k + '"></td>'; }).join('') +
-          '</tr></tfoot></table></div>' +
+          '<div class="planilha-opcoes"><button type="button" class="botao botao-secundario botao-pequeno" id="fl-extras" aria-pressed="false"></button>' +
+          '<span class="ajuda">Adicional noturno, insalubridade, periculosidade, comissões, gratificações, DSR, férias, 13º, atrasos, plano de saúde, adiantamento e pensão.</span></div>' +
+          '<div class="planilha-caixa" id="planilha-caixa"></div>' +
           (leitura ? '' : '<p class="aviso" style="margin-top:16px"><strong>Dicas:</strong> use Enter ou as setas ↑ ↓ ← → para andar entre as células, como no Excel. ' +
           'Você pode copiar várias células do Excel e colar aqui de uma vez. ' +
           'O desconto do vale-transporte é de até 6% do salário base (se as passagens custarem menos, desconta só o valor delas). ' +
-          'Hora extra calculada sobre ' + 'a jornada do cadastro; DSR sobre horas extras e médias não estão incluídos. INSS e IRRF pelas tabelas de ' + P.ano + '.</p>')
+          'Hora extra e atrasos calculados sobre a jornada do cadastro; o DSR é lançado em valor. O 13º tem INSS e IRRF calculados em separado. INSS e IRRF pelas tabelas de ' + P.ano + '.</p>')
         : '<div class="painel vazio">Nenhum colaborador ativo nesta empresa em ' + esc(nomeMes(comp)) + '.<br>' +
           '<a class="botao" style="margin-top:14px" href="#/colaboradores/novo?empresa=' + esc(emp.id) + '">Cadastrar colaborador</a></div>');
 
@@ -177,7 +158,52 @@
       return;
     }
 
-    var tabela = document.getElementById('planilha');
+    var caixa = document.getElementById('planilha-caixa');
+    var tabela = null;
+    var ENTRADAS = [];
+    var temExtras = linhas.some(function (l) { return TODAS.some(function (e) { return e.extra && l.v[e.k]; }); });
+    var extras = temExtras;
+    try { if (localStorage.getItem(CHAVE_EXTRAS) === '1') extras = true; } catch (e) { /* sem armazenamento */ }
+
+    function desenharTabela() {
+      ENTRADAS = TODAS.filter(function (e) { return extras || !e.extra; });
+      var nProv = ENTRADAS.filter(function (e) { return e.tipo === 'provento'; }).length;
+      caixa.innerHTML = '<table class="planilha" id="planilha"><thead>' +
+        '<tr class="grupos"><th class="fixa"></th><th colspan="' + nProv + '" class="g-prov">Proventos</th>' +
+        '<th colspan="' + (ENTRADAS.length - nProv) + '" class="g-desc">Descontos</th><th colspan="' + SAIDAS.length + '" class="calc">Cálculo automático</th></tr>' +
+        '<tr><th class="fixa">Colaborador</th>' +
+        ENTRADAS.map(function (e) { return '<th title="' + esc(e.dica) + '">' + esc(e.t) + '</th>'; }).join('') +
+        SAIDAS.map(function (s) { return '<th class="calc' + (s.destaque ? ' forte' : '') + '">' + esc(s.t) + '</th>'; }).join('') +
+        '</tr></thead><tbody>' +
+        linhas.map(function (l, i) {
+          return '<tr data-i="' + i + '"><th class="fixa" scope="row"><a href="#/colaboradores/' + esc(l.col.id) + '">' + esc(l.col.nome) + '</a>' +
+            '<small>' + esc(l.col.cargo || '') + (l.col.dependentes ? ' · ' + l.col.dependentes + ' dep.' : '') +
+            ' · <a class="link-holerite" data-holerite="' + i + '" href="' + (l.id ? '#/holerite/' + esc(l.id) : '#') + '"' + (l.id ? '' : ' hidden') + '>holerite</a></small></th>' +
+            ENTRADAS.map(function (e, j) {
+              return '<td' + (e.tipo === 'desconto' ? ' class="desc"' : '') + '><input class="celula" inputmode="decimal" autocomplete="off"' + (leitura ? ' readonly tabindex="-1"' : '') + ' data-l="' + i + '" data-c="' + j + '" ' +
+                'aria-label="' + esc(e.t + ' de ' + l.col.nome) + '" value="' + esc(fmtNum(l.v[e.k], INTEIROS[e.k])) + '"></td>';
+            }).join('') +
+            SAIDAS.map(function (s) { return '<td class="calc' + (s.destaque ? ' forte' : '') + '" data-s="' + s.k + '"></td>'; }).join('') +
+            '</tr>';
+        }).join('') +
+        '</tbody><tfoot><tr><th class="fixa">Totais (' + linhas.length + ')</th>' +
+        ENTRADAS.map(function (e) { return '<td data-t="' + e.k + '"></td>'; }).join('') +
+        SAIDAS.map(function (s) { return '<td class="calc' + (s.destaque ? ' forte' : '') + '" data-t="' + s.k + '"></td>'; }).join('') +
+        '</tr></tfoot></table>';
+      tabela = document.getElementById('planilha');
+      var bt = document.getElementById('fl-extras');
+      bt.textContent = extras ? 'Menos colunas' : 'Mais colunas (proventos e descontos)';
+      bt.setAttribute('aria-pressed', String(extras));
+      linhas.forEach(function (l, i) { calcular(i); });
+      totais();
+    }
+
+    document.getElementById('fl-extras').addEventListener('click', function () {
+      extras = !extras;
+      try { localStorage.setItem(CHAVE_EXTRAS, extras ? '1' : '0'); } catch (e) { /* sem armazenamento */ }
+      desenharTabela();
+    });
+
     var status = document.getElementById('fl-status');
     var pendentes = 0;
 
@@ -192,11 +218,7 @@
 
     function calcular(i) {
       var l = linhas[i];
-      l.calc = C.linhaFolha({
-        salario: l.v.salario, jornada: l.col.jornada_semanal, dependentes: l.col.dependentes,
-        faltas: l.v.faltas, he50: l.v.he50, he100: l.v.he100, adicionais: l.v.adicionais,
-        vt: l.v.vt, descVr: l.v.desc_vr, outrosDescontos: l.v.outros_descontos,
-      }, emp, P);
+      l.calc = C.linhaFolha(Object.assign({}, l.v, { jornada: l.col.jornada_semanal, dependentes: l.col.dependentes }), emp, P);
       var tr = tabela.querySelector('tr[data-i="' + i + '"]');
       SAIDAS.forEach(function (s) {
         tr.querySelector('[data-s="' + s.k + '"]').textContent = brl(l.calc[s.k]);
@@ -207,7 +229,7 @@
     function totais() {
       ENTRADAS.forEach(function (e) {
         var soma = linhas.reduce(function (s, l) { return s + l.v[e.k]; }, 0);
-        var inteiro = e.k === 'faltas' || e.k === 'he50' || e.k === 'he100';
+        var inteiro = INTEIROS[e.k];
         tabela.querySelector('tfoot [data-t="' + e.k + '"]').textContent = inteiro ? fmtNum(soma, true) : brl(soma);
       });
       SAIDAS.forEach(function (s) {
@@ -222,8 +244,8 @@
 
     function registro(l) {
       var o = { colaborador_id: l.col.id, empresa_id: emp.id, competencia: comp };
-      ENTRADAS.forEach(function (e) { o[e.k] = Math.round(l.v[e.k] * 100) / 100; });
-      o.bruto = l.calc.bruto; o.inss = l.calc.inss; o.irrf = l.calc.irrf; o.desc_vt = l.calc.descVt;
+      TODAS.forEach(function (e) { o[e.k] = Math.round(l.v[e.k] * 100) / 100; });
+      o.bruto = l.calc.bruto; o.inss = l.calc.inss; o.irrf = l.calc.irrf; o.desc_vt = l.calc.descVt; o.descontos = l.calc.descontos;
       o.liquido = l.calc.liquido; o.fgts = l.calc.fgts; o.custo = l.calc.custo;
       return o;
     }
@@ -300,7 +322,7 @@
       return tabela.querySelector('input[data-l="' + l + '"][data-c="' + c + '"]');
     }
 
-    tabela.addEventListener('input', function (ev) {
+    caixa.addEventListener('input', function (ev) {
       var el = ev.target;
       if (leitura || !el.classList.contains('celula')) return;
       var i = +el.dataset.l;
@@ -309,19 +331,19 @@
     });
 
     // Formata o número ao sair da célula
-    tabela.addEventListener('focusout', function (ev) {
+    caixa.addEventListener('focusout', function (ev) {
       var el = ev.target;
       if (!el.classList.contains('celula')) return;
       var e = ENTRADAS[+el.dataset.c];
-      el.value = fmtNum(linhas[+el.dataset.l].v[e.k], e.k === 'faltas' || e.k === 'he50' || e.k === 'he100');
+      el.value = fmtNum(linhas[+el.dataset.l].v[e.k], INTEIROS[e.k]);
     });
 
-    tabela.addEventListener('focusin', function (ev) {
+    caixa.addEventListener('focusin', function (ev) {
       if (ev.target.classList.contains('celula')) ev.target.select();
     });
 
     // Navegação estilo Excel
-    tabela.addEventListener('keydown', function (ev) {
+    caixa.addEventListener('keydown', function (ev) {
       var el = ev.target;
       if (!el.classList.contains('celula')) return;
       var l = +el.dataset.l, c = +el.dataset.c, alvo = null;
@@ -337,7 +359,7 @@
     });
 
     // Colar várias células copiadas do Excel
-    tabela.addEventListener('paste', function (ev) {
+    caixa.addEventListener('paste', function (ev) {
       var el = ev.target;
       if (leitura || !el.classList.contains('celula')) return;
       var texto = (ev.clipboardData || window.clipboardData).getData('text');
@@ -352,7 +374,7 @@
           var i = l0 + dl;
           var e = ENTRADAS[c0 + dc];
           linhas[i].v[e.k] = Math.max(0, numBR(valor));
-          alvo.value = fmtNum(linhas[i].v[e.k], e.k === 'faltas' || e.k === 'he50' || e.k === 'he100');
+          alvo.value = fmtNum(linhas[i].v[e.k], INTEIROS[e.k]);
           mudou[i] = true;
         });
       });
@@ -361,7 +383,7 @@
     });
 
     document.getElementById('fl-exportar').addEventListener('click', function () {
-      var cab = ['Colaborador', 'CPF'].concat(ENTRADAS.map(function (e) { return e.t; }), SAIDAS.map(function (s) { return s.t; }));
+      var cab = ['Colaborador', 'CPF'].concat(TODAS.map(function (e) { return e.t; }), SAIDAS.map(function (s) { return s.t; }));
       function cel(v) {
         var s = typeof v === 'number' ? v.toFixed(2).replace('.', ',') : String(v == null ? '' : v);
         if (/^[=+\-@]/.test(s) && typeof v !== 'number') s = "'" + s;
@@ -369,7 +391,7 @@
       }
       var corpo = linhas.map(function (l) {
         return [l.col.nome, l.col.cpf].concat(
-          ENTRADAS.map(function (e) { return l.v[e.k]; }),
+          TODAS.map(function (e) { return l.v[e.k]; }),
           SAIDAS.map(function (s) { return l.calc[s.k]; })
         ).map(cel).join(';');
       });
@@ -383,8 +405,7 @@
       setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
     });
 
-    linhas.forEach(function (l, i) { calcular(i); });
-    totais();
+    desenharTabela();
     mostrarStatus();
   };
 })();
