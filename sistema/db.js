@@ -48,6 +48,12 @@
    * grava sem ela e avisa a tela, em vez de perder o registro inteiro.
    */
   var colunasAusentes = {};
+  var COLUNAS_NOVAS = {
+    folha: ['adicional_noturno', 'insalubridade', 'periculosidade', 'comissoes', 'gratificacoes', 'dsr', 'ferias', 'terco_ferias',
+      'decimo_terceiro', 'atrasos', 'plano_saude', 'adiantamento', 'pensao', 'descontos', 'data_pagamento'],
+    empresas: ['endereco', 'setor_responsavel'],
+    colaboradores: ['matricula', 'ctps_numero', 'ctps_serie', 'banco', 'agencia', 'conta'],
+  };
 
   function semAusentes(tabela, obj) {
     var aus = colunasAusentes[tabela] || {};
@@ -67,6 +73,9 @@
         if (x && tentativas++ < 40 && Object.prototype.hasOwnProperty.call(obj, x[1])) {
           colunasAusentes[tabela] = colunasAusentes[tabela] || {};
           colunasAusentes[tabela][x[1]] = true;
+          // As colunas novas entram juntas no mesmo SQL: se falta uma, faltam todas
+          var grupo = COLUNAS_NOVAS[tabela] || [];
+          if (grupo.indexOf(x[1]) !== -1) grupo.forEach(function (k) { colunasAusentes[tabela][k] = true; });
           try {
             window.dispatchEvent(new CustomEvent('keygest-colunas-ausentes', { detail: { tabela: tabela, colunas: Object.keys(colunasAusentes[tabela]) } }));
           } catch (e) { /* navegador antigo */ }
