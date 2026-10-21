@@ -300,3 +300,11 @@ $$;
 drop trigger if exists validar_cadastro on auth.users;
 create trigger validar_cadastro before insert on auth.users
   for each row execute function public.validar_cadastro();
+
+-- Dados do demonstrativo de pagamento (holerite)
+alter table colaboradores add column if not exists matricula text;
+alter table colaboradores add column if not exists ctps_numero text;
+alter table colaboradores add column if not exists ctps_serie text;
+alter table colaboradores add column if not exists banco text;
+alter table colaboradores add column if not exists agencia text;
+alter table colaboradores add column if not exists conta text;

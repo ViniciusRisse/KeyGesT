@@ -272,13 +272,16 @@
           { n: 'dependentes', l: 'Dependentes', tipo: 'number', step: '1', conv: 'int' },
           { n: 'email', l: 'E-mail', tipo: 'email', valida: 'email' },
           { n: 'telefone', l: 'Telefone', mask: 'telefone' },
-          { n: 'chave_pix', l: 'Chave PIX / dados bancários' },
+          { n: 'chave_pix', l: 'Chave PIX' },
         ],
       },
       {
         titulo: 'Contrato de trabalho',
         campos: [
           { n: 'empresa_id', l: 'Empresa *', tipo: 'select', ops: opsEmp, req: true, vazio: 'Selecione' },
+          { n: 'matricula', l: 'Matrícula' },
+          { n: 'ctps_numero', l: 'CTPS (número)' },
+          { n: 'ctps_serie', l: 'CTPS (série)' },
           { n: 'cargo', l: 'Cargo' },
           { n: 'departamento', l: 'Departamento' },
           { n: 'salario', l: 'Salário (R$) *', tipo: 'number', step: '0.01', conv: 'num', req: true },
@@ -287,6 +290,14 @@
           { n: 'jornada_semanal', l: 'Jornada semanal (horas)', tipo: 'number', step: '1', conv: 'int' },
           { n: 'status', l: 'Situação', tipo: 'select', ops: STATUS },
           { n: 'data_desligamento', l: 'Data de desligamento', tipo: 'date' },
+        ],
+      },
+      {
+        titulo: 'Dados bancários (para o holerite)',
+        campos: [
+          { n: 'banco', l: 'Banco', dica: 'Código ou nome' },
+          { n: 'agencia', l: 'Agência' },
+          { n: 'conta', l: 'Conta corrente' },
         ],
       },
       {
@@ -710,7 +721,9 @@
       '<section class="painel"><h2>Dados pessoais</h2><dl class="dados">' +
       item('CPF', esc(c.cpf)) + item('PIS/NIS', esc(c.pis)) +
       item('Nascimento', c.data_nascimento ? fmtData(c.data_nascimento) : '') + item('Dependentes', esc(c.dependentes)) +
-      item('E-mail', esc(c.email)) + item('Telefone', esc(c.telefone)) + item('PIX / banco', esc(c.chave_pix)) +
+      item('E-mail', esc(c.email)) + item('Telefone', esc(c.telefone)) + item('Chave PIX', esc(c.chave_pix)) +
+      item('Banco / agência / conta', esc([c.banco, c.agencia, c.conta].filter(Boolean).join(' · '))) +
+      item('Matrícula', esc(c.matricula)) + item('CTPS / série', esc([c.ctps_numero, c.ctps_serie].filter(Boolean).join(' / '))) +
       '</dl></section>' +
       '<section class="painel"><h2>Contrato</h2><dl class="dados">' +
       item('Empresa', esc(emp ? emp.razao_social : '')) + item('Departamento', esc(c.departamento)) +
@@ -866,43 +879,60 @@
       (emp ? '<span>' + esc(REGIMES[emp.regime] || '') + '</span>' : '') + '</div>';
   }
 
-  // Recibo de pagamento (holerite) de um colaborador
+  // Demonstrativo de pagamento (holerite) no formato tradicional
   function htmlHolerite(f, c, emp) {
     var calc = calcularLancamento(f, c, emp);
     var vh = calc.valorHora;
-    var linhas = [
-      ['Salário base', '30 dias', +f.salario, 0],
-      ['Horas extras 50%', fmtQtd(f.he50) + 'h', vh * 1.5 * f.he50, 0],
-      ['Horas extras 100%', fmtQtd(f.he100) + 'h', vh * 2 * f.he100, 0],
-      ['Outros proventos', '', +f.adicionais, 0],
-      ['Faltas', fmtQtd(f.faltas) + ' dia(s)', 0, calc.descFaltas],
-      ['INSS', '', 0, calc.inss],
-      ['IRRF', c.dependentes ? c.dependentes + ' dep.' : '', 0, calc.irrf],
-      ['Vale-transporte', '6%', 0, calc.descVt],
-      ['Vale-refeição / alimentação', '', 0, +f.desc_vr],
-      ['Outros descontos', '', 0, +f.outros_descontos],
-    ].filter(function (l) { return l[2] > 0.004 || l[3] > 0.004; });
-    var prov = linhas.reduce(function (s, l) { return s + l[2]; }, 0);
-    var desc = linhas.reduce(function (s, l) { return s + l[3]; }, 0);
-    return '<article class="painel documento holerite">' + MARCA +
-      cabecalhoDocumento('Recibo de pagamento de salário', emp, f.competencia) +
-      '<dl class="dados holerite-dados">' +
-      '<div><dt>Colaborador</dt><dd>' + esc(c.nome) + '</dd></div><div><dt>CPF</dt><dd>' + esc(c.cpf) + '</dd></div>' +
-      '<div><dt>Cargo</dt><dd>' + esc(c.cargo || '—') + '</dd></div><div><dt>Admissão</dt><dd>' + fmtData(c.data_admissao) + '</dd></div>' +
-      '</dl>' +
-      '<table class="tabela holerite-tabela"><thead><tr><th>Descrição</th><th>Referência</th><th>Proventos</th><th>Descontos</th></tr></thead><tbody>' +
-      linhas.map(function (l) {
-        return '<tr><td>' + l[0] + '</td><td>' + esc(l[1]) + '</td><td>' + (l[2] ? brl(l[2]) : '') + '</td><td>' + (l[3] ? brl(l[3]) : '') + '</td></tr>';
+    function q(v) { return (+v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function v(n) { return n > 0.004 ? q(n) : ''; }
+    var aliqInss = calc.bruto ? calc.inss / calc.bruto * 100 : 0;
+    var aliqIr = calc.baseIrrf ? calc.irrf / calc.baseIrrf * 100 : 0;
+    var eventos = [
+      ['0010', 'Salário mensal', q(30), 'Dias', +f.salario, 0],
+      ['0150', 'Horas extras 50%', q(f.he50), 'Horas', vh * 1.5 * f.he50, 0],
+      ['0200', 'Horas extras 100%', q(f.he100), 'Horas', vh * 2 * f.he100, 0],
+      ['0300', 'Outros proventos', '', 'Valor', +f.adicionais, 0],
+      ['2030', 'Desc. faltas', q(f.faltas), 'Dias', 0, calc.descFaltas],
+      ['0314', 'Contr. INSS remuneração', q(aliqInss), '%', 0, calc.inss],
+      ['0315', 'IRRF sobre salário', q(aliqIr), '%', 0, calc.irrf],
+      ['0507', 'Vale-transporte – empregado', q(6), '%', 0, calc.descVt],
+      ['2807', 'Vale-refeição / alimentação', '', 'Valor', 0, +f.desc_vr],
+      ['2900', 'Outros descontos', '', 'Valor', 0, +f.outros_descontos],
+    ].filter(function (e) { return e[4] > 0.004 || e[5] > 0.004; });
+    var prov = eventos.reduce(function (s, e) { return s + e[4]; }, 0);
+    var desc = eventos.reduce(function (s, e) { return s + e[5]; }, 0);
+    function cel(rot, val, extra) {
+      return '<td' + (extra || '') + '><span class="dp-rot">' + rot + '</span><span class="dp-val">' + (val == null || val === '' ? '&nbsp;' : val) + '</span></td>';
+    }
+    var mesAno = String(f.competencia).split('-').reverse().join('/');
+    var vazias = Math.max(0, 9 - eventos.length);
+    return '<article class="painel documento holerite demonstrativo">' + MARCA +
+      '<table class="dp-grade dp-topo"><colgroup><col style="width:24%"><col><col style="width:20%"></colgroup><tr>' +
+      '<td class="dp-logo"><img src="../assets/logo.png" alt="" width="34" height="34"><span><strong>KeyGest</strong><small>Gestão de pessoas</small></span></td>' +
+      '<td class="dp-titulo">DEMONSTRATIVO DE PAGAMENTO</td>' + cel('Mês/Ano', esc(mesAno)) + '</tr></table>' +
+      '<table class="dp-grade"><tr>' + cel('Empresa', esc((emp ? emp.razao_social : '') + (emp && emp.cnpj ? ' – ' + emp.cnpj : ''))) + '</tr></table>' +
+      '<table class="dp-grade"><colgroup><col><col style="width:20%"></colgroup><tr>' + cel('Nome', esc(c.nome)) + cel('Matrícula', esc(c.matricula)) + '</tr></table>' +
+      '<table class="dp-grade"><colgroup><col><col style="width:40%"></colgroup><tr>' + cel('Cargo', esc(c.cargo)) + cel('Departamento', esc(c.departamento)) + '</tr></table>' +
+      '<table class="dp-grade"><colgroup><col style="width:24%"><col><col style="width:20%"><col style="width:20%"></colgroup><tr>' +
+      cel('Data de admissão', fmtData(c.data_admissao)) + cel('Nº PIS', esc(c.pis)) + cel('CTPS', esc(c.ctps_numero)) + cel('Série', esc(c.ctps_serie)) + '</tr></table>' +
+      '<table class="dp-grade"><colgroup><col style="width:11%"><col style="width:21%"><col><col style="width:16%"><col style="width:20%"></colgroup><tr>' +
+      cel('Nº Dep IR', String(c.dependentes || 0).padStart(2, '0')) + cel('CPF', esc(c.cpf), ' class="dp-cpf"') +
+      cel('Banco', esc(c.banco)) + cel('Agência', esc(c.agencia)) + cel('Conta corrente', esc(c.conta)) + '</tr></table>' +
+      '<table class="dp-grade dp-eventos"><colgroup><col style="width:8%"><col><col style="width:9%"><col style="width:9%"><col style="width:17%"><col style="width:17%"></colgroup>' +
+      '<thead><tr><th>Cód.</th><th>Descrição</th><th>Qtde</th><th>Unidade</th><th>Proventos</th><th>Descontos</th></tr></thead><tbody>' +
+      eventos.map(function (e) {
+        return '<tr><td>' + e[0] + '</td><td>' + e[1] + '</td><td class="num">' + e[2] + '</td><td class="num">' + e[3] + '</td>' +
+          '<td class="num">' + v(e[4]) + '</td><td class="num">' + v(e[5]) + '</td></tr>';
       }).join('') +
-      '<tr class="sub-total"><td>Totais</td><td></td><td>' + brl(prov) + '</td><td>' + brl(desc) + '</td></tr>' +
-      '<tr class="total"><td>Valor líquido</td><td></td><td></td><td>' + brl(prov - desc) + '</td></tr>' +
+      (vazias ? '<tr class="dp-vazia" style="height:' + (vazias * 22) + 'px"><td></td><td></td><td></td><td></td><td></td><td></td></tr>' : '') +
       '</tbody></table>' +
-      '<div class="holerite-bases"><span>Salário base: <strong>' + brl(f.salario) + '</strong></span>' +
-      '<span>Base INSS: <strong>' + brl(Math.min(calc.bruto, P.inssFaixas[P.inssFaixas.length - 1].ate)) + '</strong></span>' +
-      '<span>Base FGTS: <strong>' + brl(calc.bruto) + '</strong></span>' +
-      '<span>FGTS do mês: <strong>' + brl(calc.fgts) + '</strong></span></div>' +
+      '<table class="dp-grade dp-totais"><colgroup><col><col style="width:24%"><col style="width:22%"><col style="width:22%"></colgroup><tr>' +
+      cel('Base de cálculo IRRF', q(calc.baseIrrf), ' class="num"') + cel('Sal. contrib. INSS', q(calc.baseInss), ' class="num"') +
+      cel('Total proventos', q(prov), ' class="num"') + cel('Total descontos', q(desc), ' class="num"') + '</tr><tr>' +
+      cel('Base FGTS mês', q(calc.bruto), ' class="num"') + cel('FGTS mês', q(calc.fgts), ' class="num"') +
+      cel('Líquido a receber', 'R$ ' + q(prov - desc), ' colspan="2" class="num dp-liquido"') + '</tr></table>' +
       '<div class="doc-assinaturas"><div><span></span>Data</div><div><span></span>Assinatura do colaborador</div></div>' +
-      '<p class="doc-rodape">Declaro ter recebido a importância líquida discriminada neste recibo. · Documento gerado pelo sistema KeyGest.</p>' +
+      '<p class="doc-rodape">Declaro ter recebido a importância líquida discriminada neste demonstrativo. · Documento gerado pelo sistema KeyGest.</p>' +
       '</article>';
   }
 

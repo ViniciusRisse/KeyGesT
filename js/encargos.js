@@ -243,9 +243,12 @@
       }
       return 0;
     }
-    var legal = imposto(bruto - inss - num(dependentes) * p.irrfDependente);
-    var simples = imposto(bruto - p.irrfSimplificado);
+    var baseLegal = bruto - inss - num(dependentes) * p.irrfDependente;
+    var baseSimples = bruto - p.irrfSimplificado;
+    var legal = imposto(baseLegal);
+    var simples = imposto(baseSimples);
     var ir = Math.min(legal, simples);
+    irrfMensal.base = Math.max(0, simples < legal ? baseSimples : baseLegal);
     var r = p.irrfReducao;
     var reducao = 0;
     if (bruto <= r.isencaoAte) reducao = r.maximo;
@@ -268,6 +271,7 @@
     var bruto = arred(Math.max(0, salario - descFaltas + horasExtras + num(e.adicionais)));
     var inss = inssEmpregado(bruto, p);
     var irrf = irrfMensal(bruto, inss, e.dependentes, p);
+    var baseIrrf = arred(irrfMensal.base);
     var vt = num(e.vt);
     var descVt = arred(Math.min(vt, salario * p.descontoMaxVt));
     var descVr = num(e.descVr);
@@ -286,6 +290,8 @@
       descFaltas: arred(descFaltas),
       horasExtras: arred(horasExtras),
       bruto: bruto,
+      baseIrrf: baseIrrf,
+      baseInss: arred(Math.min(bruto, p.inssFaixas[p.inssFaixas.length - 1].ate)),
       inss: inss,
       irrf: irrf,
       descVt: descVt,

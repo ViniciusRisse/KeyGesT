@@ -1269,3 +1269,159 @@ body.sistema {
     display: none !important;
   }
 }
+
+/* ---------- Demonstrativo de pagamento (holerite tradicional) ---------- */
+.demonstrativo {
+  max-width: 820px;
+}
+
+.dp-grade {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin-top: -1px;
+  font-size: 0.82rem;
+  background: transparent;
+}
+
+.dp-grade td,
+.dp-grade th {
+  border: 1px solid #1d3b38;
+  padding: 4px 7px 5px;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.dp-rot {
+  display: block;
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--petroleo);
+}
+
+.dp-val {
+  display: block;
+  color: var(--texto);
+  font-variant-numeric: tabular-nums;
+}
+
+.dp-topo td {
+  vertical-align: middle;
+}
+
+.dp-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dp-logo img {
+  border-radius: 7px;
+  flex: none;
+}
+
+.dp-logo strong {
+  display: block;
+  color: var(--petroleo);
+  font-size: 0.95rem;
+}
+
+.dp-logo small {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--texto-suave);
+}
+
+.dp-titulo {
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--petroleo);
+  font-size: 0.95rem;
+}
+
+.dp-eventos thead th {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--petroleo);
+  text-align: center;
+  background: rgba(229, 244, 238, 0.55);
+}
+
+.dp-eventos tbody td {
+  border-top: 0;
+  border-bottom: 0;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.dp-eventos tbody tr:last-child td {
+  border-bottom: 1px solid #1d3b38;
+}
+
+.dp-grade .num,
+.dp-grade .num .dp-val {
+  text-align: right;
+}
+
+.dp-grade .num .dp-rot {
+  text-align: left;
+}
+
+.dp-liquido {
+  background: rgba(229, 244, 238, 0.7);
+}
+
+.dp-liquido .dp-val {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--petroleo);
+}
+
+@media (max-width: 640px) {
+  .dp-grade {
+    font-size: 0.7rem;
+  }
+
+  .dp-grade td,
+  .dp-grade th {
+    padding: 3px 4px;
+  }
+
+  .dp-logo small {
+    display: none;
+  }
+}
+
+@media print {
+  .dp-eventos thead th,
+  .dp-liquido {
+    background: #eef6f3 !important;
+  }
+}
+
+.dp-cpf .dp-val {
+  white-space: nowrap;
+}
+
+@media print {
+  #toast,
+  .toast {
+    display: none !important;
+  }
+}
+
+/* No celular, o demonstrativo mantém o formato de papel e rola para o lado */
+@media (max-width: 720px) {
+  #vista {
+    overflow-x: auto;
+  }
+
+  .demonstrativo {
+    min-width: 680px;
+  }
+
+  .demonstrativo.painel {
+    padding: 18px;
+  }
+}
