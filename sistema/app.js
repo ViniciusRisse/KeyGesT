@@ -84,7 +84,27 @@
     return true;
   }
 
+  // PIS/PASEP/NIT: 11 dígitos com dígito verificador
+  function validarPIS(v) {
+    var d = String(v || '').replace(/\D/g, '');
+    if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+    var pesos = [3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    var soma = 0;
+    for (var i = 0; i < 10; i++) soma += +d[i] * pesos[i];
+    var dv = 11 - (soma % 11);
+    if (dv >= 10) dv = 0;
+    return dv === +d[10];
+  }
+
   var MASCARAS = {
+    pis: function (v) {
+      var d = v.replace(/\D/g, '').slice(0, 11);
+      var o = d.slice(0, 3);
+      if (d.length > 3) o += '.' + d.slice(3, 8);
+      if (d.length > 8) o += '.' + d.slice(8, 10);
+      if (d.length > 10) o += '-' + d.slice(10, 11);
+      return o;
+    },
     cpf: function (v) {
       var d = v.replace(/\D/g, '').slice(0, 11);
       return d.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})\.(\d{3})(\d)/, '$1.$2.$3').replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
@@ -125,6 +145,8 @@
   function nomeEmpresa(e) {
     return e ? e.nome_fantasia || e.razao_social : '—';
   }
+
+  var ICONE_LAPIS = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
 
   var STATUS = { ativo: 'Ativo', ferias: 'Em férias', afastado: 'Afastado', desligado: 'Desligado' };
   var CONTRATOS = {
@@ -245,7 +267,7 @@
           { n: 'nome', l: 'Nome completo *', req: true, cls: 'dois' },
           { n: 'cpf', l: 'CPF *', req: true, mask: 'cpf', valida: 'cpf' },
           { n: 'data_nascimento', l: 'Data de nascimento', tipo: 'date' },
-          { n: 'pis', l: 'PIS/NIS' },
+          { n: 'pis', l: 'PIS/NIS', mask: 'pis', valida: 'pis', max: 14, dica: '11 dígitos' },
           { n: 'dependentes', l: 'Dependentes', tipo: 'number', step: '1', conv: 'int' },
           { n: 'email', l: 'E-mail', tipo: 'email', valida: 'email' },
           { n: 'telefone', l: 'Telefone', mask: 'telefone' },
@@ -294,6 +316,7 @@
       entrada = '<input id="' + id + '" name="' + c.n + '" type="' + tipo + '" value="' + esc(v) + '"' +
         (c.step ? ' step="' + c.step + '" min="0"' : '') +
         (c.mask ? ' data-mascara="' + c.mask + '"' : '') +
+        (c.max ? ' maxlength="' + c.max + '" inputmode="numeric" placeholder="000.00000.00-0"' : '') +
         (tipo === 'number' ? ' inputmode="decimal"' : '') + '>';
     }
     return '<div class="' + classe + '"><label for="' + id + '">' + esc(c.l) + '</label>' + entrada +
@@ -337,6 +360,7 @@
             v = bruto === 'true';
           }
           if (c.valida === 'cpf' && !validarCPF(bruto)) msg = 'CPF inválido.';
+          if (c.valida === 'pis' && !validarPIS(bruto)) msg = bruto.replace(/\D/g, '').length !== 11 ? 'O PIS deve ter 11 dígitos.' : 'PIS inválido. Confira os números.';
           if (c.valida === 'cnpj' && !C.validarCNPJ(bruto)) msg = 'CNPJ inválido.';
           if (c.valida === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(bruto)) msg = 'E-mail inválido.';
         } else if (c.req) {
@@ -561,11 +585,14 @@
       var novo = document.getElementById('novo');
       if (novo) novo.href = '#/colaboradores/novo' + (filtros.empresa ? '?empresa=' + encodeURIComponent(filtros.empresa) : '');
       document.getElementById('tabela').innerHTML = lista.length
-        ? '<table class="lista"><thead><tr><th>Nome</th><th>Empresa</th><th>Cargo</th><th class="num">Salário</th><th>Admissão</th><th>Situação</th></tr></thead><tbody>' +
+        ? '<table class="lista"><thead><tr><th>Nome</th><th>Empresa</th><th>Cargo</th><th class="num">Salário</th><th>Admissão</th><th>Situação</th>' +
+          (PODE.editar ? '<th class="col-acoes"><span class="sr-only">Ações</span></th>' : '') + '</tr></thead><tbody>' +
           lista.map(function (c) {
             return '<tr><td><a href="#/colaboradores/' + esc(c.id) + '">' + esc(c.nome) + '</a></td>' +
               '<td>' + esc(nomeEmpresa(mapaEmp[c.empresa_id])) + '</td><td>' + esc(c.cargo || '—') + '</td>' +
-              '<td class="num">' + brl(c.salario) + '</td><td>' + fmtData(c.data_admissao) + '</td><td>' + etiquetaStatus(c.status) + '</td></tr>';
+              '<td class="num">' + brl(c.salario) + '</td><td>' + fmtData(c.data_admissao) + '</td><td>' + etiquetaStatus(c.status) + '</td>' +
+              (PODE.editar ? '<td class="col-acoes"><a class="icone-editar" href="#/colaboradores/' + esc(c.id) + '/editar" title="Editar ' + esc(c.nome) + '" aria-label="Editar ' + esc(c.nome) + '">' + ICONE_LAPIS + '</a></td>' : '') +
+              '</tr>';
           }).join('') + '</tbody></table>' +
           '<div class="rodape-lista"><span>' + lista.length + ' colaborador(es)</span><span>Total de salários: <strong>' + brl(total) + '</strong></span></div>'
         : '<div class="vazio">' + (cols.length ? 'Nenhum colaborador encontrado com esses filtros.' : 'Nenhum colaborador cadastrado ainda.') + '</div>';
@@ -1165,8 +1192,9 @@
   function montarMenu() {
     var itens = PODE.colaborador
       ? [['meus-dados', 'Meus dados'], ['holerites', 'Meus holerites']]
-      : [['painel', 'Painel'], ['colaboradores', 'Colaboradores'], ['folha', 'Folha do mês']]
+      : [['painel', 'Painel']]
         .concat(PODE.equipe ? [['empresas', 'Empresas']] : [])
+        .concat([['colaboradores', 'Colaboradores'], ['folha', 'Folha do mês']])
         .concat(PODE.usuarios ? [['usuarios', 'Usuários']] : []);
     document.getElementById('menu-sistema').innerHTML = itens.map(function (i) {
       return '<a href="#/' + i[0] + '" data-rota="' + i[0] + '">' + i[1] + '</a>';

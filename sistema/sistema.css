@@ -1188,3 +1188,27 @@ body.sistema {
     print-color-adjust: exact;
   }
 }
+
+/* Ícone de editar na lista */
+.lista .col-acoes {
+  width: 56px;
+  text-align: center;
+}
+
+.icone-editar {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  border: 1.5px solid var(--borda);
+  color: var(--esmeralda-escuro) !important;
+  background: var(--branco);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.icone-editar:hover,
+.icone-editar:focus-visible {
+  background: var(--esmeralda-claro);
+  border-color: var(--esmeralda);
+}
