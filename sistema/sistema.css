@@ -1781,3 +1781,136 @@ body.sistema {
 .doc-tabela .doc-base b {
   white-space: nowrap;
 }
+
+/* Ações por linha no relatório */
+.acoes-linha {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.acoes-linha .icone-editar {
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+
+.doc-tabela .col-acoes {
+  width: 84px;
+}
+
+/* Janela de edição */
+.janela {
+  border: 0;
+  border-radius: 18px;
+  padding: 0;
+  width: min(640px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  color: var(--texto);
+}
+
+.janela::backdrop {
+  background: rgba(15, 61, 58, 0.55);
+}
+
+.janela form {
+  padding: 22px;
+}
+
+.janela-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.janela-topo h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.janela-topo p {
+  margin: 2px 0 0;
+  color: var(--texto-suave);
+}
+
+.janela-fechar {
+  border: 0;
+  background: var(--fundo);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--texto-suave);
+}
+
+.form-sistema .janela-campos {
+  grid-template-columns: repeat(2, 1fr);
+  margin-bottom: 16px;
+}
+
+.janela-previa {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.janela-previa div {
+  background: var(--fundo);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.janela-previa span {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--texto-suave);
+}
+
+.janela-previa strong {
+  font-size: 0.92rem;
+  color: var(--petroleo);
+}
+
+.janela-previa .forte {
+  background: var(--petroleo);
+}
+
+.janela-previa .forte span {
+  color: #b8d6cf;
+}
+
+.janela-previa .forte strong {
+  color: var(--branco);
+}
+
+@media (max-width: 560px) {
+  .form-sistema .janela-campos {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .janela-previa {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .janela-previa .forte {
+    grid-column: 1 / -1;
+  }
+
+  .janela form {
+    padding: 16px;
+  }
+}
+
+.janela-campos .campo {
+  min-width: 0;
+}
+
+.janela-campos label {
+  font-size: 0.85rem;
+}

@@ -1063,9 +1063,103 @@
     return '<a class="voltar" href="' + linkFolha(query) + '">← Folha do mês</a>' +
       '<div class="topo-vista"><div><h1>' + esc(titulo) + '</h1><p>Confira e use "Imprimir / salvar PDF" para gerar o documento.</p></div>' +
       '<div class="acoes">' +
-      (temItens && PODE.folha ? '<a class="botao botao-secundario" href="' + linkFolha(query) + '">' + ICONE_LAPIS + ' Editar valores</a>' : '') +
+      (temItens && PODE.folha ? '<a class="botao botao-secundario" href="' + linkFolha(query) + '">' + ICONE_LAPIS + ' Editar na planilha</a>' : '') +
       (temItens && PODE.editar ? '<button type="button" class="botao botao-perigo" id="excluir-doc">Excluir relatório</button>' : '') +
       '<button type="button" class="botao" id="imprimir-doc">Imprimir / salvar PDF</button></div></div>';
+  }
+
+  // Edição de um lançamento direto no relatório
+  var CAMPOS_LANC = [
+    ['salario', 'Salário base (R$)'], ['faltas', 'Faltas (dias)'], ['he50', 'Horas extras 50% (h)'], ['he100', 'Horas extras 100% (h)'],
+    ['adicionais', 'Outros proventos (R$)'], ['vt', 'Vale-transporte do mês (R$)'], ['desc_vr', 'Desconto VR/VA (R$)'], ['outros_descontos', 'Outros descontos (R$)'],
+  ];
+
+  function numBR(v) {
+    var s = String(v == null ? '' : v).trim().replace(/[R$\s]/g, '');
+    if (!s) return 0;
+    if (s.indexOf(',') !== -1) s = s.replace(/\./g, '').replace(',', '.');
+    else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+    var n = parseFloat(s);
+    return isFinite(n) && n > 0 ? n : 0;
+  }
+
+  function ligarEdicao(d, query) {
+    vista.querySelectorAll('[data-editar-lanc]').forEach(function (b) {
+      b.addEventListener('click', function () { abrirEdicao(d.itens[+b.getAttribute('data-editar-lanc')], d, query); });
+    });
+  }
+
+  function abrirEdicao(item, d, query) {
+    var f = item.f, c = item.c;
+    var dlg = document.createElement('dialog');
+    dlg.className = 'janela';
+    dlg.innerHTML =
+      '<form method="dialog" class="form-sistema" novalidate>' +
+      '<div class="janela-topo"><div><h2>Editar lançamento</h2><p>' + esc(c.nome) + ' · ' + esc(nomeCompetencia(query.competencia)) + '</p></div>' +
+      '<button type="button" class="janela-fechar" aria-label="Fechar">×</button></div>' +
+      '<div class="campos janela-campos">' +
+      CAMPOS_LANC.map(function (k) {
+        var inteiro = k[0] === 'faltas' || k[0] === 'he50' || k[0] === 'he100';
+        var val = +f[k[0]] || 0;
+        return '<div class="campo"><label for="ed-' + k[0] + '">' + k[1] + '</label><input type="text" id="ed-' + k[0] + '" name="' + k[0] + '" inputmode="decimal" autocomplete="off" value="' +
+          (val ? val.toLocaleString('pt-BR', { minimumFractionDigits: inteiro ? 0 : 2, maximumFractionDigits: 2 }) : '') + '"></div>';
+      }).join('') +
+      '</div>' +
+      '<div class="janela-previa" id="ed-previa"></div>' +
+      '<div class="acoes"><button type="submit" class="botao" value="salvar">Salvar alterações</button><button type="button" class="botao botao-secundario janela-cancelar">Cancelar</button></div>' +
+      '</form>';
+    document.body.appendChild(dlg);
+    var form = dlg.querySelector('form');
+
+    function valores() {
+      var v = {};
+      CAMPOS_LANC.forEach(function (k) { v[k[0]] = numBR(form.elements[k[0]].value); });
+      return v;
+    }
+    function previa() {
+      var v = valores();
+      var calc = calcularLancamento(v, c, d.emp);
+      document.getElementById('ed-previa').innerHTML =
+        '<div><span>Proventos</span><strong>' + brl(calc.bruto) + '</strong></div>' +
+        '<div><span>INSS</span><strong>' + brl(calc.inss) + '</strong></div>' +
+        '<div><span>IRRF</span><strong>' + brl(calc.irrf) + '</strong></div>' +
+        '<div><span>Desc. VT</span><strong>' + brl(calc.descVt) + '</strong></div>' +
+        '<div class="forte"><span>Líquido</span><strong>' + brl(calc.liquido) + '</strong></div>';
+      return { v: v, calc: calc };
+    }
+    form.addEventListener('input', previa);
+    previa();
+
+    function fechar() { dlg.close(); dlg.remove(); }
+    dlg.querySelector('.janela-fechar').addEventListener('click', fechar);
+    dlg.querySelector('.janela-cancelar').addEventListener('click', fechar);
+    dlg.addEventListener('cancel', function () { setTimeout(function () { dlg.remove(); }, 0); });
+
+    form.addEventListener('submit', async function (ev) {
+      ev.preventDefault();
+      var r = previa();
+      var dados = Object.assign({}, r.v, {
+        bruto: r.calc.bruto, inss: r.calc.inss, irrf: r.calc.irrf, desc_vt: r.calc.descVt,
+        liquido: r.calc.liquido, fgts: r.calc.fgts, custo: r.calc.custo,
+      });
+      var bt = form.querySelector('[type=submit]');
+      bt.disabled = true;
+      bt.textContent = 'Salvando...';
+      try {
+        await DB.atualizar('folha', f.id, dados);
+        fechar();
+        aviso('Lançamento de ' + c.nome + ' atualizado.');
+        rotear();
+      } catch (e) {
+        aviso(e.message, true);
+        bt.disabled = false;
+        bt.textContent = 'Salvar alterações';
+      }
+    });
+
+    dlg.showModal();
+    form.elements.salario.focus();
+    form.elements.salario.select();
   }
 
   // Exclusão do relatório inteiro ou de um colaborador do mês
@@ -1124,7 +1218,7 @@
       t.patronal += i.calc.patronal;
       t.custo += i.calc.custo;
     });
-    var acoes = PODE.editar;
+    var acoes = PODE.folha;
     var linhas = d.itens.map(function (i, n) {
       var outros = (+i.f.desc_vr || 0) + (+i.f.outros_descontos || 0);
       return '<tr><td>' + esc(i.c.nome) + '<small>' + esc(i.c.cargo || '') + '</small>' +
@@ -1132,7 +1226,10 @@
         '<td>' + brl(i.calc.bruto) + '</td><td>' + brl(i.calc.inss) + '</td><td>' + brl(i.calc.irrf) + '</td>' +
         '<td>' + brl(i.calc.descVt) + '</td><td>' + brl(outros) + '</td><td>' + brl(i.calc.fgts) + '</td>' +
         '<td class="col-liquido">' + brl(i.calc.liquido) + '</td>' +
-        (acoes ? '<td class="nao-imprimir col-acoes"><button type="button" class="icone-excluir" data-excluir-lanc="' + n + '" title="Tirar ' + esc(i.c.nome) + ' do relatório" aria-label="Tirar ' + esc(i.c.nome) + ' do relatório">' + ICONE_LIXEIRA + '</button></td>' : '') +
+        (acoes ? '<td class="nao-imprimir col-acoes"><div class="acoes-linha">' +
+          '<button type="button" class="icone-editar" data-editar-lanc="' + n + '" title="Editar ' + esc(i.c.nome) + '" aria-label="Editar ' + esc(i.c.nome) + '">' + ICONE_LAPIS + '</button>' +
+          (PODE.editar ? '<button type="button" class="icone-excluir" data-excluir-lanc="' + n + '" title="Tirar ' + esc(i.c.nome) + ' do relatório" aria-label="Tirar ' + esc(i.c.nome) + ' do relatório">' + ICONE_LIXEIRA + '</button>' : '') +
+          '</div></td>' : '') +
         '</tr>';
     }).join('');
     vista.innerHTML = topoDocumentos('Relatório da folha – ' + nomeEmpresa(d.emp), query, d.itens.length > 0) +
@@ -1164,6 +1261,7 @@
     document.getElementById('imprimir-doc').addEventListener('click', function () { window.print(); });
     ligarGerar(d, query);
     ligarExclusao(d, query);
+    ligarEdicao(d, query);
   }
 
   function fmtQtd(v) {
