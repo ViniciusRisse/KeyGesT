@@ -2271,3 +2271,15 @@ body.sistema {
 .doc-colunas {
   align-items: start;
 }
+
+.aviso-banco {
+  border-left-color: #c0392b;
+  background: #fdf1ef;
+  margin-bottom: 16px;
+}
+
+@media print {
+  .aviso-banco {
+    display: none !important;
+  }
+}

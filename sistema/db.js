@@ -43,6 +43,41 @@
     return r.data;
   }
 
+  /*
+   * Se o banco ainda não tem uma coluna nova (SQL de atualização não rodado),
+   * grava sem ela e avisa a tela, em vez de perder o registro inteiro.
+   */
+  var colunasAusentes = {};
+
+  function semAusentes(tabela, obj) {
+    var aus = colunasAusentes[tabela] || {};
+    var o = {};
+    Object.keys(obj).forEach(function (k) { if (!aus[k]) o[k] = obj[k]; });
+    return o;
+  }
+
+  function gravar(tabela, obj, executar) {
+    var tentativas = 0;
+    function tentar() {
+      var o = semAusentes(tabela, obj);
+      if (!Object.keys(o).length) return Promise.resolve(null);
+      return executar(o).then(function (r) {
+        var m = r.error && (r.error.message || '');
+        var x = m && /Could not find the '([^']+)' column/i.exec(m);
+        if (x && tentativas++ < 40 && Object.prototype.hasOwnProperty.call(obj, x[1])) {
+          colunasAusentes[tabela] = colunasAusentes[tabela] || {};
+          colunasAusentes[tabela][x[1]] = true;
+          try {
+            window.dispatchEvent(new CustomEvent('keygest-colunas-ausentes', { detail: { tabela: tabela, colunas: Object.keys(colunasAusentes[tabela]) } }));
+          } catch (e) { /* navegador antigo */ }
+          return tentar();
+        }
+        return resultado(r);
+      });
+    }
+    return tentar();
+  }
+
   // ---------------- Supabase ----------------
   var remoto = {
     modo: 'online',
@@ -81,10 +116,10 @@
       return sb.from(tabela).select('*').eq(chave(tabela), id).maybeSingle().then(resultado);
     },
     inserir: function (tabela, obj) {
-      return sb.from(tabela).insert(obj).select().single().then(resultado);
+      return gravar(tabela, obj, function (o) { return sb.from(tabela).insert(o).select().single(); });
     },
     atualizar: function (tabela, id, obj) {
-      return sb.from(tabela).update(obj).eq(chave(tabela), id).select().single().then(resultado);
+      return gravar(tabela, obj, function (o) { return sb.from(tabela).update(o).eq(chave(tabela), id).select().single(); });
     },
     excluir: function (tabela, id) {
       return sb.from(tabela).delete().eq(chave(tabela), id).then(resultado);

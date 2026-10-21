@@ -1794,6 +1794,22 @@
     DB.sessao().then(iniciarSessao);
   });
 
+  // Banco sem as colunas novas: salva o resto e avisa uma vez
+  var avisouColunas = false;
+  window.addEventListener('keygest-colunas-ausentes', function () {
+    if (avisouColunas) return;
+    avisouColunas = true;
+    var faixa = document.createElement('div');
+    faixa.className = 'aviso aviso-banco';
+    faixa.setAttribute('role', 'alert');
+    faixa.innerHTML = '<strong>O banco de dados precisa ser atualizado.</strong> Os lançamentos estão sendo salvos, mas os campos novos ' +
+      '(adicionais, 13º, férias, plano de saúde, adiantamento, pensão, data de pagamento, endereço da empresa etc.) só ficam gravados depois de rodar no Supabase ' +
+      'o SQL de atualização (final do arquivo supabase/schema.sql). <button type="button" class="link">Fechar</button>';
+    faixa.querySelector('button').addEventListener('click', function () { faixa.remove(); });
+    var area = document.getElementById('conteudo');
+    area.insertBefore(faixa, document.getElementById('vista'));
+  });
+
   window.addEventListener('hashchange', function () {
     if (ACESSO && ACESSO.ativo) rotear();
   });
