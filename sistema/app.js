@@ -922,7 +922,7 @@
       ['2030', 'Desc. faltas', q(f.faltas), 'Dias', 0, calc.descFaltas],
       ['0314', 'Contr. INSS remuneração', q(aliqInss), '%', 0, calc.inss],
       ['0315', 'IRRF sobre salário', q(aliqIr), '%', 0, calc.irrf],
-      ['0507', 'Vale-transporte – empregado', q(6), '%', 0, calc.descVt],
+      ['0507', 'Vale-transporte – empregado', q(f.vt), 'Valor', 0, calc.descVt],
       ['2807', 'Vale-refeição / alimentação', '', 'Valor', 0, +f.desc_vr],
       ['2900', 'Outros descontos', '', 'Valor', 0, +f.outros_descontos],
     ].filter(function (e) { return e[4] > 0.004 || e[5] > 0.004; });
@@ -1111,13 +1111,14 @@
   async function telaRelatorio(query) {
     var d = await dadosDoMes(query.empresa, query.competencia);
     if (!d.emp) return naoEncontrado();
-    var t = { salario: 0, bruto: 0, inss: 0, irrf: 0, outros: 0, liquido: 0, fgts: 0, patronal: 0, custo: 0 };
+    var t = { salario: 0, bruto: 0, inss: 0, irrf: 0, vt: 0, outros: 0, liquido: 0, fgts: 0, patronal: 0, custo: 0 };
     d.itens.forEach(function (i) {
       t.salario += +i.f.salario || 0;
       t.bruto += i.calc.bruto;
       t.inss += i.calc.inss;
       t.irrf += i.calc.irrf;
-      t.outros += i.calc.descVt + (+i.f.desc_vr || 0) + (+i.f.outros_descontos || 0);
+      t.vt += i.calc.descVt;
+      t.outros += (+i.f.desc_vr || 0) + (+i.f.outros_descontos || 0);
       t.liquido += i.calc.liquido;
       t.fgts += i.calc.fgts;
       t.patronal += i.calc.patronal;
@@ -1125,10 +1126,12 @@
     });
     var acoes = PODE.editar;
     var linhas = d.itens.map(function (i, n) {
-      var outros = i.calc.descVt + (+i.f.desc_vr || 0) + (+i.f.outros_descontos || 0);
-      return '<tr><td>' + esc(i.c.nome) + '<small>' + esc(i.c.cargo || '') + '</small></td>' +
-        '<td>' + brl(i.f.salario) + '</td><td>' + brl(i.calc.bruto) + '</td><td>' + brl(i.calc.inss) + '</td>' +
-        '<td>' + brl(i.calc.irrf) + '</td><td>' + brl(outros) + '</td><td class="forte">' + brl(i.calc.liquido) + '</td><td>' + brl(i.calc.fgts) + '</td>' +
+      var outros = (+i.f.desc_vr || 0) + (+i.f.outros_descontos || 0);
+      return '<tr><td>' + esc(i.c.nome) + '<small>' + esc(i.c.cargo || '') + '</small>' +
+        '<small class="doc-base">Salário base: <b>' + brl(i.f.salario) + '</b></small></td>' +
+        '<td>' + brl(i.calc.bruto) + '</td><td>' + brl(i.calc.inss) + '</td><td>' + brl(i.calc.irrf) + '</td>' +
+        '<td>' + brl(i.calc.descVt) + '</td><td>' + brl(outros) + '</td><td>' + brl(i.calc.fgts) + '</td>' +
+        '<td class="col-liquido">' + brl(i.calc.liquido) + '</td>' +
         (acoes ? '<td class="nao-imprimir col-acoes"><button type="button" class="icone-excluir" data-excluir-lanc="' + n + '" title="Tirar ' + esc(i.c.nome) + ' do relatório" aria-label="Tirar ' + esc(i.c.nome) + ' do relatório">' + ICONE_LIXEIRA + '</button></td>' : '') +
         '</tr>';
     }).join('');
@@ -1138,18 +1141,22 @@
       cabecalhoDocumento('Relatório da folha de pagamento', d.emp, query.competencia) +
       (d.itens.length
         ? '<div class="doc-resumo">' +
-          '<div class="forte"><span>Líquido a pagar aos colaboradores</span><strong>' + brl(t.liquido) + '</strong></div>' +
+          '<div><span>Total de salários base</span><strong>' + brl(t.salario) + '</strong><small>' + d.itens.length + ' colaborador(es)</small></div>' +
           '<div><span>FGTS a recolher (FGTS Digital)</span><strong>' + brl(t.fgts) + '</strong></div>' +
           '<div><span>INSS a recolher (DCTFWeb)</span><strong>' + brl(t.inss + t.patronal) + '</strong><small>Colaboradores ' + brl(t.inss) + ' + empresa ' + brl(t.patronal) + '</small></div>' +
           '<div><span>IRRF a recolher (DCTFWeb)</span><strong>' + brl(t.irrf) + '</strong></div>' +
-          '<div><span>Custo total da empresa no mês</span><strong>' + brl(t.custo) + '</strong><small>Inclui vale-transporte pago pela empresa</small></div>' +
+          '<div><span>Custo total da empresa no mês</span><strong>' + brl(t.custo) + '</strong></div>' +
           '</div>' +
-          '<table class="tabela doc-tabela"><thead><tr><th>Colaborador</th><th>Salário base</th><th>Proventos</th><th>INSS</th><th>IRRF</th><th>Outros desc.</th><th>Líquido</th><th>FGTS</th>' + (acoes ? '<th class="nao-imprimir col-acoes"><span class="sr-only">Ações</span></th>' : '') + '</tr></thead><tbody>' +
+          '<table class="tabela doc-tabela"><thead><tr><th>Colaborador</th><th>Proventos</th><th>INSS</th><th>IRRF</th><th>Desc. VT</th><th>Outros desc.</th><th>FGTS</th><th class="col-liquido">Líquido</th>' +
+          (acoes ? '<th class="nao-imprimir col-acoes"><span class="sr-only">Ações</span></th>' : '') + '</tr></thead><tbody>' +
           linhas +
-          '<tr class="total"><td>Totais (' + d.itens.length + ')</td><td>' + brl(t.salario) + '</td><td>' + brl(t.bruto) + '</td><td>' + brl(t.inss) + '</td><td>' + brl(t.irrf) + '</td><td>' + brl(t.outros) + '</td><td>' + brl(t.liquido) + '</td><td>' + brl(t.fgts) + '</td>' + (acoes ? '<td class="nao-imprimir"></td>' : '') + '</tr>' +
+          '<tr class="total"><td>Totais (' + d.itens.length + ')</td><td>' + brl(t.bruto) + '</td><td>' + brl(t.inss) + '</td><td>' + brl(t.irrf) + '</td>' +
+          '<td>' + brl(t.vt) + '</td><td>' + brl(t.outros) + '</td><td>' + brl(t.fgts) + '</td><td class="col-liquido">' + brl(t.liquido) + '</td>' +
+          (acoes ? '<td class="nao-imprimir"></td>' : '') + '</tr>' +
           '</tbody></table>' +
-          '<p class="doc-nota">Outros descontos: vale-transporte (até 6% do salário), vale-refeição/alimentação e demais descontos lançados. ' +
-          'Valores calculados a partir dos lançamentos do mês com as tabelas de INSS e IRRF de ' + P.ano + '; os valores oficiais são os das guias emitidas no FGTS Digital e na DCTFWeb.</p>' +
+          '<div class="doc-liquido"><span>Líquido a pagar aos colaboradores</span><strong>' + brl(t.liquido) + '</strong></div>' +
+          '<p class="doc-nota">Valores calculados a partir dos lançamentos do mês com as tabelas de INSS e IRRF de ' + P.ano +
+          '; os valores oficiais são os das guias emitidas no FGTS Digital e na DCTFWeb.</p>' +
           '<div class="doc-assinaturas"><div><span></span>KeyGest – responsável pela folha</div><div><span></span>' + esc(d.emp.razao_social) + '</div></div>'
         : '<div class="vazio">Nenhum lançamento salvo neste mês. Use o botão acima para gerar a folha com os valores do cadastro, ou abra a Folha do mês para conferir os valores e salvar.</div>') +
       '<p class="doc-rodape">Documento gerado pelo sistema KeyGest em ' + hoje().toLocaleDateString('pt-BR') + '.</p>' +
