@@ -944,6 +944,59 @@
     return { emp: emp, itens: itens, faltando: faltando };
   }
 
+  function competenciaAnterior(c) {
+    var p = String(c).split('-');
+    var d = new Date(+p[0], +p[1] - 2, 1);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+
+  // Cria os lançamentos que faltam com o salário do cadastro e os valores fixos do mês anterior
+  async function gerarLancamentos(d, query) {
+    var anteriores = {};
+    (await DB.listar('folha', { empresa_id: query.empresa, competencia: competenciaAnterior(query.competencia) }))
+      .forEach(function (f) { anteriores[f.colaborador_id] = f; });
+    for (var i = 0; i < d.faltando.length; i++) {
+      var c = d.faltando[i], ant = anteriores[c.id] || {};
+      var f = {
+        colaborador_id: c.id, empresa_id: query.empresa, competencia: query.competencia,
+        salario: +c.salario || 0, faltas: 0, he50: 0, he100: 0, adicionais: 0,
+        vt: +ant.vt || 0, desc_vr: +ant.desc_vr || 0, outros_descontos: +ant.outros_descontos || 0,
+      };
+      var calc = calcularLancamento(f, c, d.emp);
+      f.bruto = calc.bruto; f.inss = calc.inss; f.irrf = calc.irrf; f.desc_vt = calc.descVt;
+      f.liquido = calc.liquido; f.fgts = calc.fgts; f.custo = calc.custo;
+      await DB.inserir('folha', f);
+    }
+  }
+
+  function avisoFaltando(d, query) {
+    if (!d.faltando.length) return '';
+    var nomes = esc(d.faltando.map(function (c) { return c.nome; }).join(', '));
+    var link = '#/folha?empresa=' + encodeURIComponent(query.empresa) + '&competencia=' + encodeURIComponent(query.competencia);
+    return '<div class="aviso aviso-acao"><div><strong>' + (d.itens.length ? 'Sem lançamento neste mês: ' : 'A folha deste mês ainda não foi salva. ') + '</strong>' +
+      (d.itens.length ? nomes + '.' : 'Colaboradores: ' + nomes + '.') + '</div>' +
+      (PODE.folha ? '<div class="acoes"><button type="button" class="botao botao-pequeno" id="gerar-lancamentos">Gerar com os valores do cadastro</button>' +
+        '<a class="botao botao-secundario botao-pequeno" href="' + link + '">Abrir a folha do mês</a></div>' : '') + '</div>';
+  }
+
+  function ligarGerar(d, query) {
+    var bt = document.getElementById('gerar-lancamentos');
+    if (!bt) return;
+    bt.addEventListener('click', async function () {
+      bt.disabled = true;
+      bt.textContent = 'Gerando...';
+      try {
+        await gerarLancamentos(d, query);
+        aviso('Lançamentos gerados com os salários do cadastro.');
+        rotear();
+      } catch (e) {
+        aviso(e.message, true);
+        bt.disabled = false;
+        bt.textContent = 'Gerar com os valores do cadastro';
+      }
+    });
+  }
+
   function topoDocumentos(titulo, query) {
     return '<a class="voltar" href="#/folha?empresa=' + encodeURIComponent(query.empresa || '') + '&competencia=' + encodeURIComponent(query.competencia || '') + '">← Folha do mês</a>' +
       '<div class="topo-vista"><div><h1>' + esc(titulo) + '</h1><p>Confira e use "Imprimir / salvar PDF" para gerar o documento.</p></div>' +
@@ -955,11 +1008,12 @@
     var d = await dadosDoMes(query.empresa, query.competencia);
     if (!d.emp) return naoEncontrado();
     vista.innerHTML = topoDocumentos('Holerites – ' + nomeEmpresa(d.emp), query) +
-      (d.faltando.length ? '<p class="aviso">Sem lançamento neste mês (não entram no lote): ' + esc(d.faltando.map(function (c) { return c.nome; }).join(', ')) + '.</p>' : '') +
+      avisoFaltando(d, query) +
       (d.itens.length
         ? '<div class="lote-holerites">' + d.itens.map(function (i) { return htmlHolerite(i.f, i.c, d.emp); }).join('') + '</div>'
-        : '<div class="painel vazio">Nenhum lançamento nesta competência. Preencha a folha do mês primeiro.</div>');
+        : '<div class="painel vazio">Nenhum holerite para gerar neste mês.</div>');
     document.getElementById('imprimir-doc').addEventListener('click', function () { window.print(); });
+    ligarGerar(d, query);
   }
 
   // Relatório da folha de pagamento para a empresa cliente
@@ -985,7 +1039,7 @@
         '<td>' + brl(i.calc.irrf) + '</td><td>' + brl(outros) + '</td><td class="forte">' + brl(i.calc.liquido) + '</td><td>' + brl(i.calc.fgts) + '</td></tr>';
     }).join('');
     vista.innerHTML = topoDocumentos('Relatório da folha – ' + nomeEmpresa(d.emp), query) +
-      (d.faltando.length ? '<p class="aviso">Sem lançamento neste mês: ' + esc(d.faltando.map(function (c) { return c.nome; }).join(', ')) + '.</p>' : '') +
+      avisoFaltando(d, query) +
       '<article class="painel documento relatorio">' + MARCA +
       cabecalhoDocumento('Relatório da folha de pagamento', d.emp, query.competencia) +
       (d.itens.length
@@ -1003,10 +1057,11 @@
           '<p class="doc-nota">Outros descontos: vale-transporte (até 6% do salário), vale-refeição/alimentação e demais descontos lançados. ' +
           'Valores calculados a partir dos lançamentos do mês com as tabelas de INSS e IRRF de ' + P.ano + '; os valores oficiais são os das guias emitidas no FGTS Digital e na DCTFWeb.</p>' +
           '<div class="doc-assinaturas"><div><span></span>KeyGest – responsável pela folha</div><div><span></span>' + esc(d.emp.razao_social) + '</div></div>'
-        : '<div class="vazio">Nenhum lançamento nesta competência. Preencha a folha do mês primeiro.</div>') +
+        : '<div class="vazio">Nenhum lançamento salvo neste mês. Use o botão acima para gerar a folha com os valores do cadastro, ou abra a Folha do mês para conferir os valores e salvar.</div>') +
       '<p class="doc-rodape">Documento gerado pelo sistema KeyGest em ' + hoje().toLocaleDateString('pt-BR') + '.</p>' +
       '</article>';
     document.getElementById('imprimir-doc').addEventListener('click', function () { window.print(); });
+    ligarGerar(d, query);
   }
 
   function fmtQtd(v) {

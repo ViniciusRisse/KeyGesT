@@ -1212,3 +1212,16 @@ body.sistema {
   background: var(--esmeralda-claro);
   border-color: var(--esmeralda);
 }
+
+.aviso-acao {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.carregando-botao {
+  opacity: 0.6;
+  pointer-events: none;
+}

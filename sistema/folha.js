@@ -114,8 +114,9 @@
 
     vista.innerHTML =
       '<div class="topo-vista"><div><h1>Folha do mês</h1><p>' + (leitura ? 'Consulta dos lançamentos do mês (somente leitura).' : 'Preencha como numa planilha: os cálculos e o salvamento são automáticos.') + '</p></div>' +
-      '<div class="acoes"><a class="botao" href="#/relatorio?empresa=' + encodeURIComponent(emp.id) + '&competencia=' + encodeURIComponent(comp) + '">Relatório da folha</a>' +
-      '<a class="botao botao-secundario" href="#/holerites-lote?empresa=' + encodeURIComponent(emp.id) + '&competencia=' + encodeURIComponent(comp) + '">Holerites de todos</a>' +
+      '<div class="acoes">' + (leitura ? '' : '<button type="button" class="botao" id="fl-salvar">Salvar folha</button>') +
+      '<a class="botao' + (leitura ? '' : ' botao-secundario') + '" data-doc href="#/relatorio?empresa=' + encodeURIComponent(emp.id) + '&competencia=' + encodeURIComponent(comp) + '">Relatório da folha</a>' +
+      '<a class="botao botao-secundario" data-doc href="#/holerites-lote?empresa=' + encodeURIComponent(emp.id) + '&competencia=' + encodeURIComponent(comp) + '">Holerites de todos</a>' +
       '<button type="button" class="botao botao-secundario" id="fl-exportar">Exportar planilha</button>' +
       '<button type="button" class="botao botao-secundario" id="fl-imprimir">Imprimir</button></div></div>' +
       '<div class="filtros filtros-folha">' +
@@ -171,6 +172,8 @@
 
     if (!linhas.length) {
       document.getElementById('fl-exportar').disabled = true;
+      var bs = document.getElementById('fl-salvar');
+      if (bs) bs.disabled = true;
       return;
     }
 
@@ -182,8 +185,9 @@
       if (leitura) { status.textContent = 'Somente leitura'; return; }
       var naoSalvas = linhas.filter(function (l) { return !l.salvo; }).length;
       if (pendentes) status.textContent = 'Salvando...';
-      else if (naoSalvas === linhas.length) status.textContent = 'Mês ainda não lançado — os valores serão salvos ao editar.';
-      else status.textContent = '✓ Salvo';
+      else if (naoSalvas === linhas.length) status.textContent = 'Folha deste mês ainda não salva — confira os valores e clique em "Salvar folha".';
+      else if (naoSalvas) status.textContent = naoSalvas + ' colaborador(es) ainda não salvo(s) — clique em "Salvar folha".';
+      else status.textContent = '✓ Folha salva';
     }
 
     function calcular(i) {
@@ -237,7 +241,7 @@
           var link = tabela.querySelector('[data-holerite="' + linhas.indexOf(l) + '"]');
           if (link) { link.href = '#/holerite/' + salvo.id; link.hidden = false; }
         })
-        .catch(function (e) { aviso('Não foi possível salvar: ' + e.message, true); })
+        .catch(function (e) { l.erro = true; aviso('Não foi possível salvar: ' + e.message, true); })
         .then(function () {
           l.fila = null;
           pendentes--;
@@ -247,12 +251,49 @@
     }
 
     var timers = {};
+
+    // Salva todas as linhas (inclusive as que não foram alteradas) e espera terminar
+    async function salvarTodas() {
+      Object.keys(timers).forEach(function (i) { clearTimeout(timers[i]); delete timers[i]; });
+      linhas.forEach(function (l) {
+        l.erro = false;
+        if (!l.salvo || l.alterada) { l.alterada = false; salvar(l); }
+      });
+      for (var volta = 0; volta < 50; volta++) {
+        var filas = linhas.map(function (l) { return l.fila; }).filter(Boolean);
+        if (!filas.length) break;
+        await Promise.all(filas);
+      }
+      return !linhas.some(function (l) { return l.erro || !l.salvo; });
+    }
+
+    var btSalvar = document.getElementById('fl-salvar');
+    if (btSalvar) btSalvar.addEventListener('click', async function () {
+      btSalvar.disabled = true;
+      var ok = await salvarTodas();
+      btSalvar.disabled = false;
+      if (ok) aviso('Folha do mês salva.');
+    });
+
+    // Relatório e holerites: salva antes de abrir, para nada ficar de fora
+    vista.querySelectorAll('[data-doc]').forEach(function (a) {
+      a.addEventListener('click', async function (ev) {
+        if (leitura) return;
+        ev.preventDefault();
+        a.classList.add('carregando-botao');
+        var ok = await salvarTodas();
+        a.classList.remove('carregando-botao');
+        if (!ok && !confirm('Alguns lançamentos não foram salvos. Abrir o documento mesmo assim?')) return;
+        location.hash = a.getAttribute('href');
+      });
+    });
     function alterado(i) {
       calcular(i);
       totais();
       clearTimeout(timers[i]);
       status.textContent = 'Alterações não salvas...';
-      timers[i] = setTimeout(function () { salvar(linhas[i]); }, 600);
+      linhas[i].alterada = true;
+      timers[i] = setTimeout(function () { delete timers[i]; linhas[i].alterada = false; salvar(linhas[i]); }, 600);
     }
 
     function celula(l, c) {
