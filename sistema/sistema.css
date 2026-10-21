@@ -25,9 +25,8 @@ body.sistema {
   color: var(--petroleo);
 }
 
-.marca-escura img {
-  background: var(--petroleo);
-  border-radius: 10px;
+.lateral .marca img {
+  height: 36px;
 }
 
 .app {
