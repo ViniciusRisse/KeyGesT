@@ -1148,7 +1148,7 @@ body.sistema {
 }
 
 @media print {
-  /* Margem de 0,5 cm fica dentro do documento, então vale mesmo com
+  /* Margem de 1 cm fica dentro do documento, então vale mesmo com
      "Margens: Nenhuma" na janela de impressão */
   @page {
     size: A4;
@@ -1159,10 +1159,11 @@ body.sistema {
     background: #fff;
   }
 
-  .documento {
-    border: 0;
-    box-shadow: none;
-    padding: 5mm;
+  .documento,
+  .painel.documento {
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 10mm !important;
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
     margin: 0;
