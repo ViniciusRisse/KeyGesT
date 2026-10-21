@@ -123,6 +123,7 @@ p {
 .marca img {
   width: auto;
   height: 46px;
+  border-radius: 10px;
 }
 
 .menu {
