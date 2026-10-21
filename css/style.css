@@ -1208,3 +1208,18 @@ textarea:focus {
     position: static;
   }
 }
+
+/* Celular: campos com 16px evitam o zoom automático do iPhone ao digitar */
+@media (max-width: 720px) {
+  input[type='text'],
+  input[type='email'],
+  input[type='tel'],
+  input[type='number'],
+  input[type='date'],
+  input[type='month'],
+  input[type='password'],
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

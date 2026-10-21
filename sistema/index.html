@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/style.css?v=20261021c">
-  <link rel="stylesheet" href="sistema.css?v=20261021c">
+  <link rel="stylesheet" href="../css/style.css?v=20261021d">
+  <link rel="stylesheet" href="sistema.css?v=20261021d">
 </head>
 <body class="sistema">
   <!-- Login -->
@@ -52,13 +52,14 @@
       </nav>
       <div class="usuario">
         <span id="usuario-email"></span>
+        <a class="link-site" href="../index.html" aria-label="Voltar ao site">Site</a>
         <button type="button" class="botao botao-contorno botao-pequeno" id="sair">Sair</button>
       </div>
     </aside>
     <main class="area" id="conteudo">
       <div id="aviso-demo" class="faixa-demo" hidden>
-        <strong>Modo demonstração:</strong> os dados ficam salvos só neste navegador e os registros de exemplo são fictícios.
-        Para usar de verdade, configure o banco de dados (veja o README).
+        <strong>Modo demonstração</strong><span class="demo-texto">: os dados ficam salvos só neste navegador e os registros de exemplo são fictícios.
+        Para usar de verdade, configure o banco de dados (veja o README).</span>
         <button type="button" class="link" id="limpar-demo">Apagar exemplos</button>
         <label class="ver-como"><span>Testar como:</span> <select id="ver-como" aria-label="Testar o sistema como outro perfil"></select></label>
       </div>
@@ -69,11 +70,11 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
-  <script src="../js/config.js?v=20261021c"></script>
-  <script src="../js/encargos.js?v=20261021c"></script>
-  <script src="senha.js?v=20261021c"></script>
-  <script src="db.js?v=20261021c"></script>
-  <script src="folha.js?v=20261021c"></script>
-  <script src="app.js?v=20261021c"></script>
+  <script src="../js/config.js?v=20261021d"></script>
+  <script src="../js/encargos.js?v=20261021d"></script>
+  <script src="senha.js?v=20261021d"></script>
+  <script src="db.js?v=20261021d"></script>
+  <script src="folha.js?v=20261021d"></script>
+  <script src="app.js?v=20261021d"></script>
 </body>
 </html>

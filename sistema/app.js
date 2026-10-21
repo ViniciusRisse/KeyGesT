@@ -146,6 +146,33 @@
     return e ? e.nome_fantasia || e.razao_social : '—';
   }
 
+  function svgIcone(d) {
+    return '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+  }
+  var ICONES_MENU = {
+    painel: svgIcone('<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>'),
+    empresas: svgIcone('<path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/><path d="M16 9h2a2 2 0 0 1 2 2v10"/><path d="M8 7h4M8 11h4M8 15h4M2 21h20"/>'),
+    colaboradores: svgIcone('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.5a5 5 0 0 1 5.5 5.5"/>'),
+    folha: svgIcone('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>'),
+    usuarios: svgIcone('<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><circle cx="12" cy="11" r="2.5"/><path d="M8.5 17a4 4 0 0 1 7 0"/>'),
+    'meus-dados': svgIcone('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
+    holerites: svgIcone('<path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h7M9 17h7"/>'),
+  };
+
+  // No celular, as listas viram cartões: cada célula ganha o nome da sua coluna
+  function rotularTabelas(raiz) {
+    raiz.querySelectorAll('table.lista').forEach(function (t) {
+      var nomes = Array.prototype.map.call(t.querySelectorAll('thead th'), function (th) { return th.textContent.trim(); });
+      t.querySelectorAll('tbody tr').forEach(function (tr) {
+        Array.prototype.forEach.call(tr.children, function (td, i) {
+          if (!td.hasAttribute('data-label')) td.setAttribute('data-label', nomes[i] === 'Ações' ? '' : (nomes[i] || ''));
+          if (td.querySelector('.botao, .icone-editar')) td.classList.add('celula-acoes');
+        });
+      });
+    });
+  }
+  new MutationObserver(function () { rotularTabelas(vista); }).observe(vista, { childList: true, subtree: true });
+
   var ICONE_LIXEIRA = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
   var ICONE_LAPIS = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
 
@@ -1319,8 +1346,10 @@
         .concat(PODE.equipe ? [['empresas', 'Empresas']] : [])
         .concat([['colaboradores', 'Colaboradores'], ['folha', 'Folha do mês']])
         .concat(PODE.usuarios ? [['usuarios', 'Usuários']] : []);
+    var curtos = { 'colaboradores': 'Pessoas', 'folha': 'Folha', 'meus-dados': 'Meus dados', 'holerites': 'Holerites', 'usuarios': 'Acessos' };
     document.getElementById('menu-sistema').innerHTML = itens.map(function (i) {
-      return '<a href="#/' + i[0] + '" data-rota="' + i[0] + '">' + i[1] + '</a>';
+      return '<a href="#/' + i[0] + '" data-rota="' + i[0] + '">' + (ICONES_MENU[i[0]] || '') +
+        '<span class="rot-longo">' + i[1] + '</span><span class="rot-curto">' + (curtos[i[0]] || i[1]) + '</span></a>';
     }).join('');
     document.querySelectorAll('.so-equipe').forEach(function (el) { el.hidden = PODE.colaborador; });
   }
