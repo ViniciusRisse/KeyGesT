@@ -114,7 +114,9 @@
 
     vista.innerHTML =
       '<div class="topo-vista"><div><h1>Folha do mês</h1><p>' + (leitura ? 'Consulta dos lançamentos do mês (somente leitura).' : 'Preencha como numa planilha: os cálculos e o salvamento são automáticos.') + '</p></div>' +
-      '<div class="acoes"><button type="button" class="botao botao-secundario" id="fl-exportar">Exportar planilha</button>' +
+      '<div class="acoes"><a class="botao" href="#/relatorio?empresa=' + encodeURIComponent(emp.id) + '&competencia=' + encodeURIComponent(comp) + '">Relatório da folha</a>' +
+      '<a class="botao botao-secundario" href="#/holerites-lote?empresa=' + encodeURIComponent(emp.id) + '&competencia=' + encodeURIComponent(comp) + '">Holerites de todos</a>' +
+      '<button type="button" class="botao botao-secundario" id="fl-exportar">Exportar planilha</button>' +
       '<button type="button" class="botao botao-secundario" id="fl-imprimir">Imprimir</button></div></div>' +
       '<div class="filtros filtros-folha">' +
       '<select id="fl-empresa" aria-label="Empresa">' + empresas.map(function (e) {

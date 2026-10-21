@@ -821,16 +821,26 @@
       '<div style="max-width:640px">' + htmlListaHolerites(lista) + '</div>';
   }
 
-  async function telaHolerite(id) {
-    var f = await DB.obter('folha', id);
-    if (!f || (PODE.colaborador && f.competencia >= competenciaAtual())) return naoEncontrado();
-    var r = await Promise.all([DB.obter('colaboradores', f.colaborador_id), DB.obter('empresas', f.empresa_id)]);
-    var c = r[0], emp = r[1];
-    if (!c) return naoEncontrado();
-    var calc = C.linhaFolha({
+  var MARCA = '<img class="marca-dagua" src="../assets/marca-dagua.png" alt="" aria-hidden="true">';
+
+  function calcularLancamento(f, c, emp) {
+    return C.linhaFolha({
       salario: f.salario, jornada: c.jornada_semanal, dependentes: c.dependentes, faltas: f.faltas,
       he50: f.he50, he100: f.he100, adicionais: f.adicionais, vt: f.vt, descVr: f.desc_vr, outrosDescontos: f.outros_descontos,
     }, emp, P);
+  }
+
+  function cabecalhoDocumento(titulo, emp, competencia) {
+    return '<header class="doc-topo"><div class="doc-marca"><img src="../assets/logo.png" alt="" width="40" height="40"><div><strong>KeyGest</strong><small>Gestão inteligente de pessoas</small></div></div>' +
+      '<div class="doc-titulo"><strong>' + esc(titulo) + '</strong><span>' + esc(nomeCompetencia(competencia)) + '</span></div></header>' +
+      '<div class="doc-empresa"><strong>' + esc(emp ? emp.razao_social : '') + '</strong>' +
+      (emp && emp.cnpj ? '<span>CNPJ ' + esc(emp.cnpj) + '</span>' : '') +
+      (emp ? '<span>' + esc(REGIMES[emp.regime] || '') + '</span>' : '') + '</div>';
+  }
+
+  // Recibo de pagamento (holerite) de um colaborador
+  function htmlHolerite(f, c, emp) {
+    var calc = calcularLancamento(f, c, emp);
     var vh = calc.valorHora;
     var linhas = [
       ['Salário base', '30 dias', +f.salario, 0],
@@ -846,14 +856,8 @@
     ].filter(function (l) { return l[2] > 0.004 || l[3] > 0.004; });
     var prov = linhas.reduce(function (s, l) { return s + l[2]; }, 0);
     var desc = linhas.reduce(function (s, l) { return s + l[3]; }, 0);
-    var voltar = PODE.colaborador ? '#/holerites' : '#/colaboradores/' + c.id;
-
-    vista.innerHTML =
-      '<a class="voltar" href="' + esc(voltar) + '">← Voltar</a>' +
-      '<div class="topo-vista"><h1>Holerite</h1><div class="acoes"><button type="button" class="botao" id="imprimir-holerite">Imprimir / salvar PDF</button></div></div>' +
-      '<article class="painel holerite">' +
-      '<header class="holerite-topo"><div><strong>' + esc(emp ? emp.razao_social : '') + '</strong><br>' + (emp && emp.cnpj ? 'CNPJ ' + esc(emp.cnpj) : '') + '</div>' +
-      '<div class="holerite-titulo"><strong>Recibo de pagamento de salário</strong><br>' + esc(nomeCompetencia(f.competencia)) + '</div></header>' +
+    return '<article class="painel documento holerite">' + MARCA +
+      cabecalhoDocumento('Recibo de pagamento de salário', emp, f.competencia) +
       '<dl class="dados holerite-dados">' +
       '<div><dt>Colaborador</dt><dd>' + esc(c.nome) + '</dd></div><div><dt>CPF</dt><dd>' + esc(c.cpf) + '</dd></div>' +
       '<div><dt>Cargo</dt><dd>' + esc(c.cargo || '—') + '</dd></div><div><dt>Admissão</dt><dd>' + fmtData(c.data_admissao) + '</dd></div>' +
@@ -869,10 +873,113 @@
       '<span>Base INSS: <strong>' + brl(Math.min(calc.bruto, P.inssFaixas[P.inssFaixas.length - 1].ate)) + '</strong></span>' +
       '<span>Base FGTS: <strong>' + brl(calc.bruto) + '</strong></span>' +
       '<span>FGTS do mês: <strong>' + brl(calc.fgts) + '</strong></span></div>' +
-      '<p class="holerite-assinatura">Declaro ter recebido a importância líquida discriminada neste recibo.<br><br>' +
-      '____/____/______ &nbsp;&nbsp;&nbsp; ______________________________________<br><small>Data &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Assinatura do colaborador</small></p>' +
+      '<div class="doc-assinaturas"><div><span></span>Data</div><div><span></span>Assinatura do colaborador</div></div>' +
+      '<p class="doc-rodape">Declaro ter recebido a importância líquida discriminada neste recibo. · Documento gerado pelo sistema KeyGest.</p>' +
       '</article>';
-    document.getElementById('imprimir-holerite').addEventListener('click', function () { window.print(); });
+  }
+
+  async function telaHolerite(id) {
+    var f = await DB.obter('folha', id);
+    if (!f || (PODE.colaborador && f.competencia >= competenciaAtual())) return naoEncontrado();
+    var r = await Promise.all([DB.obter('colaboradores', f.colaborador_id), DB.obter('empresas', f.empresa_id)]);
+    var c = r[0], emp = r[1];
+    if (!c) return naoEncontrado();
+    var voltar = PODE.colaborador ? '#/holerites' : '#/colaboradores/' + c.id;
+    vista.innerHTML =
+      '<a class="voltar" href="' + esc(voltar) + '">← Voltar</a>' +
+      '<div class="topo-vista"><h1>Holerite</h1><div class="acoes"><button type="button" class="botao" id="imprimir-doc">Imprimir / salvar PDF</button></div></div>' +
+      htmlHolerite(f, c, emp);
+    document.getElementById('imprimir-doc').addEventListener('click', function () { window.print(); });
+  }
+
+  // Dados de uma empresa num mês: lançamentos com colaborador e cálculo
+  async function dadosDoMes(empresaId, competencia) {
+    var r = await Promise.all([
+      DB.obter('empresas', empresaId),
+      DB.listar('colaboradores', { empresa_id: empresaId }),
+      DB.listar('folha', { empresa_id: empresaId, competencia: competencia }),
+    ]);
+    var emp = r[0];
+    var mapa = {};
+    r[1].forEach(function (c) { mapa[c.id] = c; });
+    var itens = r[2].filter(function (f) { return mapa[f.colaborador_id]; }).map(function (f) {
+      var c = mapa[f.colaborador_id];
+      return { f: f, c: c, calc: calcularLancamento(f, c, emp) };
+    }).sort(function (a, b) { return String(a.c.nome).localeCompare(String(b.c.nome), 'pt-BR'); });
+    var lancados = {};
+    itens.forEach(function (i) { lancados[i.c.id] = true; });
+    var inicio = competencia + '-01';
+    var faltando = r[1].filter(function (c) {
+      if (lancados[c.id]) return false;
+      if (c.data_admissao && c.data_admissao.slice(0, 7) > competencia) return false;
+      return c.status !== 'desligado' || (c.data_desligamento && c.data_desligamento >= inicio);
+    });
+    return { emp: emp, itens: itens, faltando: faltando };
+  }
+
+  function topoDocumentos(titulo, query) {
+    return '<a class="voltar" href="#/folha?empresa=' + encodeURIComponent(query.empresa || '') + '&competencia=' + encodeURIComponent(query.competencia || '') + '">← Folha do mês</a>' +
+      '<div class="topo-vista"><div><h1>' + esc(titulo) + '</h1><p>Confira e use "Imprimir / salvar PDF" para gerar o documento.</p></div>' +
+      '<div class="acoes"><button type="button" class="botao" id="imprimir-doc">Imprimir / salvar PDF</button></div></div>';
+  }
+
+  // Todos os holerites da empresa no mês, um por página
+  async function telaHoleritesLote(query) {
+    var d = await dadosDoMes(query.empresa, query.competencia);
+    if (!d.emp) return naoEncontrado();
+    vista.innerHTML = topoDocumentos('Holerites – ' + nomeEmpresa(d.emp), query) +
+      (d.faltando.length ? '<p class="aviso">Sem lançamento neste mês (não entram no lote): ' + esc(d.faltando.map(function (c) { return c.nome; }).join(', ')) + '.</p>' : '') +
+      (d.itens.length
+        ? '<div class="lote-holerites">' + d.itens.map(function (i) { return htmlHolerite(i.f, i.c, d.emp); }).join('') + '</div>'
+        : '<div class="painel vazio">Nenhum lançamento nesta competência. Preencha a folha do mês primeiro.</div>');
+    document.getElementById('imprimir-doc').addEventListener('click', function () { window.print(); });
+  }
+
+  // Relatório da folha de pagamento para a empresa cliente
+  async function telaRelatorio(query) {
+    var d = await dadosDoMes(query.empresa, query.competencia);
+    if (!d.emp) return naoEncontrado();
+    var t = { salario: 0, bruto: 0, inss: 0, irrf: 0, outros: 0, liquido: 0, fgts: 0, patronal: 0, custo: 0 };
+    d.itens.forEach(function (i) {
+      t.salario += +i.f.salario || 0;
+      t.bruto += i.calc.bruto;
+      t.inss += i.calc.inss;
+      t.irrf += i.calc.irrf;
+      t.outros += i.calc.descVt + (+i.f.desc_vr || 0) + (+i.f.outros_descontos || 0);
+      t.liquido += i.calc.liquido;
+      t.fgts += i.calc.fgts;
+      t.patronal += i.calc.patronal;
+      t.custo += i.calc.custo;
+    });
+    var linhas = d.itens.map(function (i) {
+      var outros = i.calc.descVt + (+i.f.desc_vr || 0) + (+i.f.outros_descontos || 0);
+      return '<tr><td>' + esc(i.c.nome) + '<small>' + esc(i.c.cargo || '') + '</small></td>' +
+        '<td>' + brl(i.f.salario) + '</td><td>' + brl(i.calc.bruto) + '</td><td>' + brl(i.calc.inss) + '</td>' +
+        '<td>' + brl(i.calc.irrf) + '</td><td>' + brl(outros) + '</td><td class="forte">' + brl(i.calc.liquido) + '</td><td>' + brl(i.calc.fgts) + '</td></tr>';
+    }).join('');
+    vista.innerHTML = topoDocumentos('Relatório da folha – ' + nomeEmpresa(d.emp), query) +
+      (d.faltando.length ? '<p class="aviso">Sem lançamento neste mês: ' + esc(d.faltando.map(function (c) { return c.nome; }).join(', ')) + '.</p>' : '') +
+      '<article class="painel documento relatorio">' + MARCA +
+      cabecalhoDocumento('Relatório da folha de pagamento', d.emp, query.competencia) +
+      (d.itens.length
+        ? '<div class="doc-resumo">' +
+          '<div class="forte"><span>Líquido a pagar aos colaboradores</span><strong>' + brl(t.liquido) + '</strong></div>' +
+          '<div><span>FGTS a recolher (FGTS Digital)</span><strong>' + brl(t.fgts) + '</strong></div>' +
+          '<div><span>INSS a recolher (DCTFWeb)</span><strong>' + brl(t.inss + t.patronal) + '</strong><small>Colaboradores ' + brl(t.inss) + ' + empresa ' + brl(t.patronal) + '</small></div>' +
+          '<div><span>IRRF a recolher (DCTFWeb)</span><strong>' + brl(t.irrf) + '</strong></div>' +
+          '<div><span>Custo total da empresa no mês</span><strong>' + brl(t.custo) + '</strong><small>Inclui vale-transporte pago pela empresa</small></div>' +
+          '</div>' +
+          '<table class="tabela doc-tabela"><thead><tr><th>Colaborador</th><th>Salário base</th><th>Proventos</th><th>INSS</th><th>IRRF</th><th>Outros desc.</th><th>Líquido</th><th>FGTS</th></tr></thead><tbody>' +
+          linhas +
+          '<tr class="total"><td>Totais (' + d.itens.length + ')</td><td>' + brl(t.salario) + '</td><td>' + brl(t.bruto) + '</td><td>' + brl(t.inss) + '</td><td>' + brl(t.irrf) + '</td><td>' + brl(t.outros) + '</td><td>' + brl(t.liquido) + '</td><td>' + brl(t.fgts) + '</td></tr>' +
+          '</tbody></table>' +
+          '<p class="doc-nota">Outros descontos: vale-transporte (até 6% do salário), vale-refeição/alimentação e demais descontos lançados. ' +
+          'Valores calculados a partir dos lançamentos do mês com as tabelas de INSS e IRRF de ' + P.ano + '; os valores oficiais são os das guias emitidas no FGTS Digital e na DCTFWeb.</p>' +
+          '<div class="doc-assinaturas"><div><span></span>KeyGest – responsável pela folha</div><div><span></span>' + esc(d.emp.razao_social) + '</div></div>'
+        : '<div class="vazio">Nenhum lançamento nesta competência. Preencha a folha do mês primeiro.</div>') +
+      '<p class="doc-rodape">Documento gerado pelo sistema KeyGest em ' + hoje().toLocaleDateString('pt-BR') + '.</p>' +
+      '</article>';
+    document.getElementById('imprimir-doc').addEventListener('click', function () { window.print(); });
   }
 
   function fmtQtd(v) {
@@ -1080,7 +1187,8 @@
 
     document.querySelectorAll('.nav-sistema a').forEach(function (a) {
       var rota = a.getAttribute('data-rota');
-      a.classList.toggle('ativo', rota === caminho[0] || (rota === 'holerites' && caminho[0] === 'holerite'));
+      a.classList.toggle('ativo', rota === caminho[0] || (rota === 'holerites' && caminho[0] === 'holerite') ||
+        (rota === 'folha' && (caminho[0] === 'relatorio' || caminho[0] === 'holerites-lote')));
     });
     vista.innerHTML = '<div class="carregando">Carregando...</div>';
     window.scrollTo(0, 0);
@@ -1098,6 +1206,10 @@
         await telaHolerites();
       } else if (caminho[0] === 'holerite') {
         await telaHolerite(caminho[1]);
+      } else if (caminho[0] === 'relatorio') {
+        await telaRelatorio(query);
+      } else if (caminho[0] === 'holerites-lote') {
+        await telaHoleritesLote(query);
       } else if (caminho[0] === 'usuarios') {
         if (caminho[1] === 'novo') await telaFormUsuario(null, query);
         else if (caminho[1] === 'editar') await telaFormUsuario(query.email, query);

@@ -954,3 +954,237 @@ body.sistema {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* ---------- Documentos (holerite e relatório) com marca d'água ---------- */
+.documento {
+  position: relative;
+  overflow: hidden;
+  max-width: 900px;
+}
+
+.documento > *:not(.marca-dagua) {
+  position: relative;
+  z-index: 1;
+}
+
+.marca-dagua {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 62%;
+  max-width: 440px;
+  transform: translate(-50%, -50%);
+  opacity: 0.07;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.doc-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid var(--petroleo);
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+}
+
+.doc-marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--petroleo);
+}
+
+.doc-marca img {
+  border-radius: 9px;
+}
+
+.doc-marca small {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+}
+
+.doc-titulo {
+  text-align: right;
+  color: var(--petroleo);
+}
+
+.doc-titulo span {
+  display: block;
+  color: var(--texto-suave);
+}
+
+.doc-empresa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  font-size: 0.92rem;
+  margin-bottom: 18px;
+}
+
+.doc-empresa strong {
+  color: var(--petroleo);
+}
+
+.doc-empresa span {
+  color: var(--texto-suave);
+}
+
+.doc-resumo {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.doc-resumo div {
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.doc-resumo span {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--texto-suave);
+  line-height: 1.3;
+}
+
+.doc-resumo strong {
+  display: block;
+  font-size: 1.05rem;
+  color: var(--petroleo);
+  margin-top: 4px;
+}
+
+.doc-resumo small {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--texto-suave);
+  margin-top: 2px;
+}
+
+.doc-resumo .forte {
+  background: var(--petroleo);
+  border-color: var(--petroleo);
+}
+
+.doc-resumo .forte span {
+  color: #b8d6cf;
+}
+
+.doc-resumo .forte strong {
+  color: var(--branco);
+}
+
+@media (max-width: 900px) {
+  .doc-resumo {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.doc-tabela {
+  font-size: 0.84rem;
+}
+
+.doc-tabela th,
+.doc-tabela td {
+  padding: 8px 6px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.doc-tabela th:first-child,
+.doc-tabela td:first-child {
+  text-align: left;
+  white-space: normal;
+}
+
+.doc-tabela td.forte {
+  font-weight: 700;
+  color: var(--petroleo);
+}
+
+.documento .tabela-rolagem,
+.relatorio {
+  overflow-x: auto;
+}
+
+.doc-nota {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.doc-assinaturas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-top: 44px;
+  font-size: 0.82rem;
+  color: var(--texto-suave);
+  text-align: center;
+}
+
+.doc-assinaturas span {
+  display: block;
+  border-top: 1px solid var(--texto-suave);
+  margin-bottom: 6px;
+}
+
+.doc-rodape {
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+  margin: 18px 0 0;
+  text-align: center;
+}
+
+.lote-holerites .holerite + .holerite {
+  margin-top: 24px;
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  body.sistema {
+    background: #fff;
+  }
+
+  .documento {
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+    max-width: none;
+    overflow: visible;
+  }
+
+  .relatorio .marca-dagua {
+    position: fixed;
+  }
+
+  .lote-holerites .holerite {
+    break-after: page;
+    page-break-after: always;
+    min-height: 250mm;
+  }
+
+  .lote-holerites .holerite:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .doc-resumo {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
