@@ -1253,8 +1253,8 @@
           '<button type="button" class="botao-editar-lanc" data-editar-lanc="' + n + '" aria-label="Editar ' + esc(i.c.nome) + '">' + ICONE_LAPIS + '<span>Editar</span></button>' +
           (PODE.editar ? '<button type="button" class="icone-excluir" data-excluir-lanc="' + n + '" title="Tirar ' + esc(i.c.nome) + ' do relatório" aria-label="Tirar ' + esc(i.c.nome) + ' do relatório">' + ICONE_LIXEIRA + '</button>' : '') +
           '</div>' : '') + '</div></td>' +
-        '<td>' + brl(i.f.salario) + '</td><td>' + brl(i.calc.bruto) + '</td><td>' + brl(i.calc.descontos) + '</td>' +
-        '<td class="col-liquido">' + brl(i.calc.liquido) + '</td></tr>';
+        '<td data-rot="Salário-base">' + brl(i.f.salario) + '</td><td data-rot="Proventos">' + brl(i.calc.bruto) + '</td><td data-rot="Descontos">' + brl(i.calc.descontos) + '</td>' +
+        '<td class="col-liquido" data-rot="Líquido">' + brl(i.calc.liquido) + '</td></tr>';
     }).join('');
 
     function aliq(x) { return x ? pct(x) : emp.regime === 'mei' || /^simples/.test(emp.regime) ? 'No DAS' : pct(0); }
@@ -1304,6 +1304,11 @@
         '<td><b>Salário:</b> ' + q2(i.f.salario) + '</td></tr></table>' +
         '<table class="ex-eventos"><colgroup><col class="c-cod"><col><col class="c-ref"><col class="c-val"><col class="c-sep"><col class="c-cod"><col><col class="c-ref"><col class="c-val"></colgroup>' +
         '<tbody>' + ev + '</tbody></table>' +
+        '<div class="ex-mob">' + [['Proventos', k.proventos, 'P'], ['Descontos', k.descontosLista, 'D']].map(function (g) {
+          return '<div class="ex-mob-grupo"><b>' + g[0] + '</b>' + (g[1].length ? g[1].map(function (e) {
+            return '<div class="ex-mob-item"><span>' + e.codigo + ' ' + esc(e.nome) + (refEvento(e) ? ' <small>(' + refEvento(e) + ')</small>' : '') + '</span><span>' + q2(e.valor) + ' ' + g[2] + '</span></div>';
+          }).join('') : '<div class="ex-mob-item"><span>—</span></div>') + '</div>';
+        }).join('') + '</div>' +
         '<table class="ex-rodape"><tr>' +
         '<td><b>ND:</b> ' + (+c.dependentes || 0) + '</td>' +
         '<td><b>Proventos:</b> ' + q2(k.bruto) + '</td>' +
@@ -1406,12 +1411,12 @@
           '</div>' +
 
           '<h3 class="doc-secao">Funcionários</h3>' +
-          '<table class="tabela doc-tabela"><thead><tr><th>Funcionário</th><th>Salário-base</th><th>Proventos</th><th>Descontos</th><th class="col-liquido">Líquido</th>' +
+          '<div class="doc-rolagem"><table class="tabela doc-tabela doc-func"><thead><tr><th>Funcionário</th><th>Salário-base</th><th>Proventos</th><th>Descontos</th><th class="col-liquido">Líquido</th>' +
           '</tr></thead><tbody>' +
           linhas +
-          '<tr class="total"><td>Totais (' + d.itens.length + ')</td><td>' + brl(t.salario) + '</td><td>' + brl(t.bruto) + '</td><td>' + brl(t.descontos) + '</td>' +
-          '<td class="col-liquido">' + brl(t.liquido) + '</td></tr>' +
-          '</tbody></table>' +
+          '<tr class="total"><td>Totais (' + d.itens.length + ')</td><td data-rot="Salário-base">' + brl(t.salario) + '</td><td data-rot="Proventos">' + brl(t.bruto) + '</td><td data-rot="Descontos">' + brl(t.descontos) + '</td>' +
+          '<td class="col-liquido" data-rot="Líquido">' + brl(t.liquido) + '</td></tr>' +
+          '</tbody></table></div>' +
           '<p class="doc-formula">Líquido = total de proventos − total de descontos</p>' +
 
           '<h3 class="ex-titulo doc-quebra">Extrato mensal</h3>' + extrato +
@@ -1420,20 +1425,20 @@
           '<td class="ex-liq"><b>Líquido geral:</b> ' + q2(t.liquido) + '</td></tr></table>' +
 
           '<section class="doc-bloco"><h3 class="ex-titulo">Resumo por rubrica</h3>' +
-          '<table class="ex-eventos ex-rubricas"><colgroup><col class="c-cod"><col><col class="c-ref"><col class="c-val"><col class="c-sep"><col class="c-cod"><col><col class="c-ref"><col class="c-val"></colgroup>' +
+          '<div class="doc-rolagem"><table class="ex-eventos ex-rubricas"><colgroup><col class="c-cod"><col><col class="c-ref"><col class="c-val"><col class="c-sep"><col class="c-cod"><col><col class="c-ref"><col class="c-val"></colgroup>' +
           '<thead><tr><th>Cód.</th><th>Proventos</th><th>Qtde</th><th>Valor</th><th></th><th>Cód.</th><th>Descontos</th><th>Qtde</th><th>Valor</th></tr></thead>' +
-          '<tbody>' + linhasRub + '</tbody></table>' +
+          '<tbody>' + linhasRub + '</tbody></table></div>' +
           '<table class="ex-geral"><tr><td></td><td></td><td class="ex-liq"><b>Líquido geral:</b> ' + q2(t.liquido) + '</td></tr></table></section>' +
 
           '<section class="doc-bloco"><h3 class="ex-titulo">Situações e encargos</h3>' + situacoes + '</section>' +
 
           '<section class="doc-bloco"><h3 class="doc-secao">Encargos da empresa <small>(relatório complementar)</small></h3>' +
-          '<table class="tabela doc-tabela doc-encargos"><thead><tr><th>Encargo</th><th>Base</th><th>Alíquota</th><th>Valor</th></tr></thead><tbody>' +
+          '<div class="doc-rolagem"><table class="tabela doc-tabela doc-encargos"><thead><tr><th>Encargo</th><th>Base</th><th>Alíquota</th><th>Valor</th></tr></thead><tbody>' +
           encargos.map(function (e) { return '<tr><td>' + e[0] + '</td><td>' + brl(e[1]) + '</td><td>' + e[2] + '</td><td>' + brl(e[3]) + '</td></tr>'; }).join('') +
           '<tr class="total"><td colspan="3">Total de encargos sobre a folha</td><td>' + brl(t.encargos) + '</td></tr>' +
           provisoes.map(function (e) { return '<tr><td>' + e[0] + '</td><td colspan="2">' + e[1] + '</td><td>' + brl(e[2]) + '</td></tr>'; }).join('') +
           '<tr class="total"><td colspan="3">Total de provisões do mês</td><td>' + brl(t.provisoes) + '</td></tr>' +
-          '</tbody></table>' +
+          '</tbody></table></div>' +
           '<div class="doc-resumo">' +
           '<div><span>FGTS a recolher (FGTS Digital)</span><strong>' + brl(t.fgts) + '</strong></div>' +
           '<div><span>INSS a recolher (DCTFWeb)</span><strong>' + brl(t.inss + t.patronal) + '</strong><small>Funcionários ' + brl(t.inss) + ' + empresa ' + brl(t.patronal) + '</small></div>' +
