@@ -1377,7 +1377,7 @@
           '<div><span>Funcionários</span><strong>' + d.itens.length + '</strong></div>' +
           '<div><span>Total bruto (proventos)</span><strong>' + brl(t.bruto) + '</strong></div>' +
           '<div><span>Total de descontos</span><strong>' + brl(t.descontos) + '</strong></div>' +
-          '<div class="forte"><span>Total líquido</span><strong>' + brl(t.liquido) + '</strong></div>' +
+          '<div><span>Total líquido</span><strong>' + brl(t.liquido) + '</strong></div>' +
           '<div><span>Total de encargos patronais</span><strong>' + brl(t.encargos) + '</strong><small>FGTS + INSS empresa, RAT e terceiros</small></div>' +
           '</div>' +
 
