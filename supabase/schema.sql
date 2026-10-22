@@ -393,3 +393,34 @@ create policy negociacao_historico_editar on negociacao_historico for all to aut
   using (pode_editar()) with check (pode_editar());
 
 notify pgrst, 'reload schema';
+
+-- ---------------------------------------------------------------
+-- Financeiro da KeyGest (receitas e despesas): somente o administrador
+-- ---------------------------------------------------------------
+create table if not exists financeiro (
+  id uuid primary key default gen_random_uuid(),
+  tipo text not null check (tipo in ('receita', 'despesa')),
+  competencia text not null check (competencia ~ '^\d{4}-\d{2}$'),
+  data date,
+  descricao text not null,
+  categoria text,
+  empresa_id uuid references empresas(id) on delete set null,
+  valor numeric(12,2) not null default 0,
+  quitado boolean not null default false,
+  recorrente boolean not null default false,
+  observacoes text,
+  criado_em timestamptz not null default now(),
+  atualizado_em timestamptz not null default now()
+);
+create index if not exists financeiro_comp_idx on financeiro (competencia);
+
+drop trigger if exists financeiro_atualizado on financeiro;
+create trigger financeiro_atualizado before update on financeiro
+  for each row execute function tocar_atualizado_em();
+
+alter table financeiro enable row level security;
+drop policy if exists financeiro_admin on financeiro;
+create policy financeiro_admin on financeiro for all to authenticated
+  using (eh_admin()) with check (eh_admin());
+
+notify pgrst, 'reload schema';

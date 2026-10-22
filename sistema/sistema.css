@@ -3751,3 +3751,336 @@ body.sistema {
     display: block !important;
   }
 }
+
+/* Celular: o cabeçalho não estica quando a página tem pouco conteúdo */
+@media (max-width: 860px) {
+  .app {
+    grid-template-rows: auto 1fr;
+    align-content: start;
+  }
+}
+
+/* ------------------------------------------------------------
+   Financeiro
+   ------------------------------------------------------------ */
+.fin-barra {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.fin-barra input[type='month'] {
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  font: inherit;
+  background: var(--branco);
+  width: auto;
+}
+
+.fin-indicadores {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.fin-lucro strong {
+  color: var(--esmeralda-escuro);
+}
+
+.fin-lucro.negativo strong {
+  color: #b23a2b;
+}
+
+.fin-titulo {
+  font-size: 1.05rem;
+  color: var(--petroleo);
+  margin: 26px 0 10px;
+}
+
+.fin-colunas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.fin-colunas + .fin-colunas,
+.fin-ano + .fin-colunas {
+  margin-top: 16px;
+}
+
+.fin-colunas h3,
+.fin-bloco h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  margin: 0 0 10px;
+  color: var(--petroleo);
+}
+
+.fin-ponto {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.fin-tabela {
+  font-size: 0.86rem;
+}
+
+.fin-tabela td small {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--texto-suave);
+}
+
+.fin-tabela .num,
+.fin-tabela th:nth-child(2),
+.fin-tabela tfoot td:nth-child(2) {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.fin-tabela tfoot td {
+  font-weight: 700;
+  color: var(--petroleo);
+  border-top: 2px solid var(--borda);
+}
+
+.fin-tabela .col-acoes {
+  width: 70px;
+}
+
+.fin-status {
+  border: 1px solid #e6c9a8;
+  background: #fdf5ea;
+  color: #8a5a12;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.fin-status.ok {
+  border-color: #bfe3d2;
+  background: #eaf7f1;
+  color: #17734d;
+}
+
+.fin-ano {
+  padding-top: 14px;
+}
+
+.fin-legenda {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.82rem;
+  margin-bottom: 6px;
+}
+
+.fin-legenda i,
+.fin-dica i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+
+.fin-legenda small {
+  margin-left: auto;
+  color: var(--texto-suave);
+}
+
+.fin-grafico-caixa {
+  position: relative;
+}
+
+.fin-grafico {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.fin-grade {
+  stroke: #e9eeec;
+  stroke-width: 1;
+}
+
+.fin-base {
+  stroke: #b9c7c3;
+  stroke-width: 1;
+}
+
+.fin-eixo {
+  font-size: 12px;
+  fill: #6b7c78;
+}
+
+.fin-eixo.forte {
+  fill: var(--petroleo);
+  font-weight: 700;
+}
+
+.fin-alvo {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.fin-mes:hover .fin-alvo,
+.fin-mes.atual .fin-alvo {
+  fill: rgba(15, 61, 58, 0.05);
+}
+
+.fin-dica {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 61, 58, 0.14);
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  min-width: 170px;
+  pointer-events: none;
+}
+
+.fin-dica b {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--petroleo);
+}
+
+.fin-dica div {
+  display: flex;
+  align-items: center;
+}
+
+.fin-dica span {
+  margin-left: auto;
+  padding-left: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.fin-dica-lucro {
+  border-top: 1px solid var(--borda);
+  margin-top: 4px;
+  padding-top: 4px;
+  font-weight: 600;
+}
+
+.fin-tabela-ano {
+  margin-top: 12px;
+  font-size: 0.86rem;
+}
+
+.fin-tabela-ano th:not(:first-child),
+.fin-tabela-ano td:not(:first-child) {
+  text-align: right;
+}
+
+.fin-tabela-ano tr.atual td {
+  background: #f1f8f5;
+  font-weight: 600;
+}
+
+.fin-tabela-ano .neg {
+  color: #b23a2b;
+}
+
+.fin-tabela-ano tfoot td {
+  font-weight: 700;
+  color: var(--petroleo);
+  border-top: 2px solid var(--borda);
+}
+
+.fin-barras {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.fin-barras-rot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.84rem;
+  margin-bottom: 3px;
+}
+
+.fin-barras-rot b {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fin-barras-trilho {
+  height: 8px;
+  background: #eef2f1;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.fin-barras-trilho span {
+  display: block;
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+}
+
+.fin-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  grid-column: 1 / -1;
+}
+
+.fin-check input {
+  width: auto;
+}
+
+@media (max-width: 1100px) {
+  .fin-indicadores {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .fin-colunas {
+    grid-template-columns: 1fr;
+  }
+
+  .fin-indicadores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fin-legenda small {
+    display: none;
+  }
+}
+
+.fin-colunas > .painel {
+  margin: 0;
+}
+
+.fin-tabela th:nth-child(3),
+.fin-tabela td:nth-child(3) {
+  padding-left: 14px;
+}
+
+.fin-tabela-ano th,
+.fin-tabela-ano td {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}

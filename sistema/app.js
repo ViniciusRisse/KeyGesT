@@ -158,6 +158,7 @@
     'meus-dados': svgIcone('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
     holerites: svgIcone('<path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h7M9 17h7"/>'),
     negociacoes: svgIcone('<path d="M3 4h18l-7 8v6l-4 2v-8z"/>'),
+    financeiro: svgIcone('<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>'),
   };
 
   // No celular, as listas viram cartões: cada célula ganha o nome da sua coluna
@@ -1654,7 +1655,7 @@
     var formulario = c[1] === 'novo' || c[1] === 'nova' || c[2] === 'editar';
     if (PODE.colaborador) return tela === 'meus-dados' || tela === 'holerites' || tela === 'holerite';
     if (tela === 'meus-dados' || tela === 'holerites') return false;
-    if (tela === 'usuarios') return PODE.usuarios;
+    if (tela === 'usuarios' || tela === 'financeiro') return PODE.usuarios;
     if (tela === 'negociacoes') return PODE.equipe && (!formulario || PODE.editar);
     if (PODE.cliente && tela === 'empresas') return false;
     if (formulario && !PODE.editar) return false;
@@ -1668,8 +1669,8 @@
         .concat(PODE.equipe ? [['empresas', 'Empresas']] : [])
         .concat([['colaboradores', 'Colaboradores'], ['folha', 'Folha do mês']])
         .concat(PODE.equipe ? [['negociacoes', 'Negociações']] : [])
-        .concat(PODE.usuarios ? [['usuarios', 'Usuários']] : []);
-    var curtos = { 'negociacoes': 'Vendas', 'colaboradores': 'Pessoas', 'folha': 'Folha', 'meus-dados': 'Meus dados', 'holerites': 'Holerites', 'usuarios': 'Acessos' };
+        .concat(PODE.usuarios ? [['financeiro', 'Financeiro'], ['usuarios', 'Usuários']] : []);
+    var curtos = { 'negociacoes': 'Vendas', 'financeiro': 'Lucro', 'colaboradores': 'Pessoas', 'folha': 'Folha', 'meus-dados': 'Meus dados', 'holerites': 'Holerites', 'usuarios': 'Acessos' };
     document.getElementById('menu-sistema').innerHTML = itens.map(function (i) {
       return '<a href="#/' + i[0] + '" data-rota="' + i[0] + '">' + (ICONES_MENU[i[0]] || '') +
         '<span class="rot-longo">' + i[1] + '</span><span class="rot-curto">' + (curtos[i[0]] || i[1]) + '</span></a>';
@@ -1713,6 +1714,11 @@
         await telaRelatorio(query);
       } else if (caminho[0] === 'holerites-lote') {
         await telaHoleritesLote(query);
+      } else if (caminho[0] === 'financeiro') {
+        await window.TelaFinanceiro({
+          DB: DB, vista: vista, esc: esc, aviso: aviso, brl: brl, fmtData: fmtData, porNome: porNome, nomeEmpresa: nomeEmpresa,
+          ICONE_LAPIS: ICONE_LAPIS, ICONE_LIXEIRA: ICONE_LIXEIRA, rotear: rotear,
+        }, query);
       } else if (caminho[0] === 'negociacoes') {
         var neg = window.TelaNegociacoes({
           DB: DB, vista: vista, esc: esc, aviso: aviso, brl: brl, fmtData: fmtData, PODE: PODE, REGIMES: REGIMES,
@@ -1737,7 +1743,12 @@
         await telaPainel();
       }
     } catch (e) {
-      vista.innerHTML = '<div class="alerta erro"><strong>Não foi possível carregar os dados.</strong> ' + esc(e.message) + '</div>';
+      if (/Could not find the table|schema cache|does not exist/i.test(e.message)) {
+        vista.innerHTML = '<div class="alerta erro"><strong>Esta área ainda não está ativada no banco de dados.</strong> ' +
+          'O administrador precisa rodar no Supabase o SQL de atualização (final do arquivo supabase/schema.sql). Depois, atualize esta página.</div>';
+      } else {
+        vista.innerHTML = '<div class="alerta erro"><strong>Não foi possível carregar os dados.</strong> ' + esc(e.message) + '</div>';
+      }
     }
   }
 

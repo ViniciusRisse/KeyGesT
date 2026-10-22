@@ -151,6 +151,7 @@
       salvar();
     }
     if (!Array.isArray(memoria.negociacoes)) memoria.negociacoes = negociacoesExemplo();
+    if (!Array.isArray(memoria.financeiro)) memoria.financeiro = financeiroExemplo(memoria.empresas[0] && memoria.empresas[0].id, memoria.empresas[1] && memoria.empresas[1].id);
     ['empresas', 'colaboradores', 'ferias', 'folha', 'acessos', 'negociacao_historico'].forEach(function (t) {
       if (!Array.isArray(memoria[t])) memoria[t] = [];
     });
@@ -171,6 +172,31 @@
     var d = new Date();
     d.setFullYear(d.getFullYear() + anos, d.getMonth() + meses, d.getDate() + dias);
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  // Lançamentos financeiros fictícios dos últimos 6 meses
+  function financeiroExemplo(e1, e2) {
+    var lista = [];
+    var hoje = new Date();
+    for (var m = 5; m >= 0; m--) {
+      var d = new Date(hoje.getFullYear(), hoje.getMonth() - m, 1);
+      var comp = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      var pago = m > 0;
+      var l = function (tipo, desc, cat, valor, emp, rec) {
+        lista.push({ id: novoId(), tipo: tipo, competencia: comp, data: comp + '-10', descricao: desc, categoria: cat, empresa_id: emp || null,
+          valor: valor, quitado: pago, recorrente: !!rec, observacoes: '' });
+      };
+      l('receita', 'Honorários – Loja Exemplo', 'honorarios', 650, e1, true);
+      l('receita', 'Honorários – Restaurante Modelo', 'honorarios', 900, e2, true);
+      if (m === 3) l('receita', 'Rescisão avulsa', 'avulsos', 350, e2);
+      if (m <= 2) l('receita', 'Honorários – cliente novo (fictício)', 'honorarios', 980, null, true);
+      l('despesa', 'Simples Nacional (DAS)', 'impostos', Math.round((1550 + (m <= 2 ? 980 : 0)) * 0.06 * 100) / 100, null, true);
+      l('despesa', 'Sistemas e software', 'sistemas', 189.9, null, true);
+      l('despesa', 'Internet e telefone', 'internet', 149.9, null, true);
+      l('despesa', 'Pró-labore', 'prolabore', 800, null, true);
+      if (m === 1) l('despesa', 'Anúncios no Instagram', 'marketing', 250);
+    }
+    return lista;
   }
 
   function negociacoesExemplo() {
@@ -221,6 +247,7 @@
         { id: novoId(), colaborador_id: c[0].id, periodo_inicio: c[0].data_admissao, inicio: dataRelativa(-2, 0, 20), dias: 30, abono: false, observacoes: '' },
       ],
       negociacoes: negociacoesExemplo(),
+      financeiro: financeiroExemplo(e1, e2),
       negociacao_historico: [],
       folha: c.map(function (x, i) {
         var a = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
@@ -271,6 +298,7 @@
   }
   function podeVer(tabela, r, a, d) {
     var p = a.perfil;
+    if (tabela === 'financeiro') return p === 'admin';
     if (p === 'admin' || p === 'analista' || p === 'consulta') return tabela !== 'acessos' || p === 'admin' || r.email === a.email;
     if (tabela === 'acessos') return r.email === a.email;
     var emp = empresaDoAcesso(a, d);
@@ -290,7 +318,7 @@
     return false;
   }
   function podeGravar(tabela, obj, a, d) {
-    if (tabela === 'acessos') return a.perfil === 'admin';
+    if (tabela === 'acessos' || tabela === 'financeiro') return a.perfil === 'admin';
     if (a.perfil === 'admin' || a.perfil === 'analista') return true;
     if (tabela === 'folha' && a.perfil === 'cliente') {
       var c = d.colaboradores.find(function (x) { return x.id === obj.colaborador_id; });
@@ -345,7 +373,7 @@
     },
     excluir: function (tabela, id) {
       var d = carregar(), k = chave(tabela), a = acessoDemo();
-      if (a.perfil !== 'admin' && (tabela === 'acessos' || a.perfil !== 'analista')) return Promise.reject(new Error(SEM_PERMISSAO));
+      if (a.perfil !== 'admin' && (tabela === 'acessos' || tabela === 'financeiro' || a.perfil !== 'analista')) return Promise.reject(new Error(SEM_PERMISSAO));
       if (tabela === 'empresas' && d.colaboradores.some(function (c) { return c.empresa_id === id; })) {
         return Promise.reject(new Error(traduzirErro('foreign key')));
       }
@@ -363,7 +391,7 @@
     },
     limpar: function () {
       var adm = carregar().acessos.filter(function (x) { return x.perfil === 'admin'; });
-      memoria = { empresas: [], colaboradores: [], ferias: [], folha: [], negociacoes: [], negociacao_historico: [], acessos: adm };
+      memoria = { empresas: [], colaboradores: [], ferias: [], folha: [], negociacoes: [], negociacao_historico: [], financeiro: [], acessos: adm };
       local.verComo(adm[0] ? adm[0].email : '');
       salvar();
     },
