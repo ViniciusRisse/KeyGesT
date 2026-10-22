@@ -3735,3 +3735,19 @@ body.sistema {
     min-width: 640px;
   }
 }
+
+@media (max-width: 720px) {
+  .rubricas-tabela {
+    display: none;
+  }
+
+  .ex-mob-rubricas {
+    margin-top: 4px;
+  }
+}
+
+@media print {
+  .rubricas-tabela {
+    display: block !important;
+  }
+}

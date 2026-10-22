@@ -1425,9 +1425,14 @@
           '<td class="ex-liq"><b>Líquido geral:</b> ' + q2(t.liquido) + '</td></tr></table>' +
 
           '<section class="doc-bloco"><h3 class="ex-titulo">Resumo por rubrica</h3>' +
-          '<div class="doc-rolagem"><table class="ex-eventos ex-rubricas"><colgroup><col class="c-cod"><col><col class="c-ref"><col class="c-val"><col class="c-sep"><col class="c-cod"><col><col class="c-ref"><col class="c-val"></colgroup>' +
+          '<div class="doc-rolagem rubricas-tabela"><table class="ex-eventos ex-rubricas"><colgroup><col class="c-cod"><col><col class="c-ref"><col class="c-val"><col class="c-sep"><col class="c-cod"><col><col class="c-ref"><col class="c-val"></colgroup>' +
           '<thead><tr><th>Cód.</th><th>Proventos</th><th>Qtde</th><th>Valor</th><th></th><th>Cód.</th><th>Descontos</th><th>Qtde</th><th>Valor</th></tr></thead>' +
           '<tbody>' + linhasRub + '</tbody></table></div>' +
+          '<div class="ex-mob ex-mob-rubricas">' + [['Proventos', rubP], ['Descontos', rubD]].map(function (g) {
+            return '<div class="ex-mob-grupo"><b>' + g[0] + '</b>' + (g[1].length ? g[1].map(function (e) {
+              return '<div class="ex-mob-item"><span>' + e.codigo + ' ' + esc(e.nome) + (e.temQtd ? ' <small>(' + fmtQtd(e.qtd) + ')</small>' : '') + '</span><span>' + q2(e.valor) + ' ' + e.tipo + '</span></div>';
+            }).join('') : '<div class="ex-mob-item"><span>—</span></div>') + '</div>';
+          }).join('') + '</div>' +
           '<table class="ex-geral"><tr><td></td><td></td><td class="ex-liq"><b>Líquido geral:</b> ' + q2(t.liquido) + '</td></tr></table></section>' +
 
           '<section class="doc-bloco"><h3 class="ex-titulo">Situações e encargos</h3>' + situacoes + '</section>' +
