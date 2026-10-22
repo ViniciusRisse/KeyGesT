@@ -2283,3 +2283,268 @@ body.sistema {
     display: none !important;
   }
 }
+
+/* Relatório no formato de extrato mensal */
+.ex-empresa,
+.ex-cab,
+.ex-eventos,
+.ex-rodape,
+.ex-geral {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.ex-empresa {
+  margin: 4px 0 6px;
+  border-top: 2px solid var(--petroleo);
+  border-bottom: 2px solid var(--petroleo);
+}
+
+.ex-empresa td {
+  padding: 3px 6px;
+  vertical-align: top;
+}
+
+.ex-empresa td:nth-child(1),
+.ex-empresa td:nth-child(3) {
+  width: 1%;
+  white-space: nowrap;
+  color: var(--petroleo);
+}
+
+.ex-empresa td:nth-child(2) {
+  width: 62%;
+}
+
+.ex-empresa input[type='date'] {
+  font: inherit;
+  padding: 2px 6px;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+}
+
+.ex-empresa small {
+  display: block;
+  color: var(--texto-suave);
+}
+
+.ex-titulo {
+  text-align: center;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--petroleo);
+  border-bottom: 2px solid var(--petroleo);
+  padding-bottom: 3px;
+  margin: 22px 0 8px;
+}
+
+.ex-bloco {
+  border-bottom: 1px solid var(--petroleo);
+  padding: 6px 0 8px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.ex-cab td {
+  padding: 2px 6px;
+  background: rgba(15, 61, 58, 0.06);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 0;
+}
+
+.ex-cab td:first-child {
+  width: 38%;
+}
+
+.ex-cab b,
+.ex-rodape b,
+.ex-geral b {
+  font-weight: 600;
+  color: var(--petroleo);
+}
+
+.ex-cab .icone-editar {
+  vertical-align: middle;
+  padding: 0 4px;
+}
+
+.ex-eventos {
+  margin: 6px 0;
+  table-layout: fixed;
+}
+
+.ex-eventos .c-cod {
+  width: 6%;
+}
+
+.ex-eventos .c-ref {
+  width: 9%;
+}
+
+.ex-eventos .c-val {
+  width: 13%;
+}
+
+.ex-eventos .c-sep {
+  width: 2%;
+}
+
+.ex-eventos td,
+.ex-eventos th {
+  padding: 1px 4px;
+}
+
+.ex-eventos th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--petroleo);
+  border-bottom: 1px solid var(--borda);
+}
+
+.ex-eventos .num,
+.ex-eventos th:nth-child(3),
+.ex-eventos th:nth-child(4),
+.ex-eventos th:nth-child(8),
+.ex-eventos th:nth-child(9) {
+  text-align: right;
+}
+
+.ex-eventos .ex-cod {
+  color: var(--texto-suave);
+  text-align: right;
+  padding-right: 8px;
+}
+
+.ex-eventos .ex-desc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ex-eventos tbody tr:nth-child(even) td:not(.ex-sep) {
+  background: rgba(15, 61, 58, 0.04);
+}
+
+.ex-rodape td,
+.ex-geral td {
+  padding: 2px 6px;
+  border-top: 1px solid var(--borda);
+  white-space: nowrap;
+}
+
+.ex-rodape td:first-child {
+  width: 8%;
+}
+
+.ex-rodape .ex-liq,
+.ex-geral .ex-liq {
+  text-align: right;
+  font-weight: 700;
+}
+
+.ex-geral {
+  margin-top: 8px;
+  border-top: 2px solid var(--petroleo);
+  background: rgba(15, 61, 58, 0.06);
+}
+
+.ex-situacoes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  font-size: 0.78rem;
+}
+
+.ex-situacoes table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ex-situacoes caption {
+  text-align: left;
+  font-weight: 700;
+  color: var(--petroleo);
+  padding-bottom: 4px;
+}
+
+.ex-situacoes td {
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--borda);
+}
+
+.ex-situacoes .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ex-situacoes .ex-tot td {
+  font-weight: 700;
+  color: var(--petroleo);
+}
+
+@media (max-width: 720px) {
+  .ex-situacoes {
+    grid-template-columns: 1fr;
+  }
+
+  .relatorio .ex-cab,
+  .relatorio .ex-eventos,
+  .relatorio .ex-rodape {
+    min-width: 640px;
+  }
+
+  .ex-bloco {
+    overflow-x: auto;
+  }
+}
+
+@media print {
+  .ex-situacoes {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .ex-cab td,
+  .ex-eventos td,
+  .ex-geral {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+.ex-eventos .ex-desc {
+  white-space: normal;
+  overflow: visible;
+}
+
+.ex-empresa td:nth-child(2) {
+  width: 52%;
+}
+
+.doc-assinaturas {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.doc-encargos td,
+.doc-encargos th {
+  padding: 4px 6px;
+}
+
+@media print {
+  .doc-encargos {
+    font-size: 0.76rem;
+  }
+
+  .relatorio .doc-resumo div {
+    padding: 6px 8px;
+  }
+
+  .relatorio .doc-assinaturas {
+    margin-top: 30px;
+  }
+}

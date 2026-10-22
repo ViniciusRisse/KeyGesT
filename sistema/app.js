@@ -1195,21 +1195,6 @@
     return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   }
 
-  function dl(itens) {
-    return '<dl class="doc-dados">' + itens.map(function (x) {
-      return '<div' + (x[2] ? ' class="' + x[2] + '"' : '') + '><dt>' + x[0] + '</dt><dd>' + (x[1] == null || x[1] === '' ? '—' : x[1]) + '</dd></div>';
-    }).join('') + '</dl>';
-  }
-
-  function listaEventos(titulo, lista, total) {
-    return '<table class="doc-eventos"><thead><tr><th>' + titulo + '</th><th>Ref.</th><th>Valor</th></tr></thead><tbody>' +
-      (lista.length ? lista.map(function (e) {
-        var ref = e.ref === '' || e.ref == null ? '' : e.unidade === '%' ? fmtQtd(e.ref) + '%' : e.unidade === 'Dias' ? fmtQtd(e.ref) + ' d' : e.unidade === 'Horas' ? fmtQtd(e.ref) + ' h' : '';
-        return '<tr><td>' + esc(e.nome) + '</td><td>' + ref + '</td><td>' + brl(e.valor) + '</td></tr>';
-      }).join('') : '<tr><td colspan="3" class="ajuda">Nenhum</td></tr>') +
-      '</tbody><tfoot><tr><td colspan="2">Total</td><td>' + brl(total) + '</td></tr></tfoot></table>';
-  }
-
   async function telaRelatorio(query) {
     var d = await dadosDoMes(query.empresa, query.competencia);
     if (!d.emp) return naoEncontrado();
@@ -1261,44 +1246,130 @@
       ['Encargos sobre as provisões', 'FGTS, INSS, RAT e terceiros', t.provEncargos],
     ];
 
-    var detalhes = d.itens.map(function (i, n) {
-      var c = i.c;
-      var conta = [c.banco, c.agencia ? 'ag. ' + c.agencia : '', c.conta ? 'c/c ' + c.conta : ''].filter(Boolean).join(' · ');
-      return '<section class="doc-funcionario">' +
-        '<h4>' + esc(c.nome) + (acoes ? ' <button type="button" class="icone-editar nao-imprimir" data-editar-lanc="' + n + '" title="Editar ' + esc(c.nome) + '" aria-label="Editar ' + esc(c.nome) + '">' + ICONE_LAPIS + '</button>' : '') + '</h4>' +
-        dl([
-          ['CPF', esc(c.cpf)], ['Matrícula', esc(c.matricula)], ['Cargo', esc(c.cargo)], ['Departamento', esc(c.departamento)],
-          ['Admissão', fmtData(c.data_admissao)], ['Tipo de contrato', esc(CONTRATOS[c.tipo_contrato] || c.tipo_contrato)],
-          ['Salário-base', brl(i.f.salario)], ['Jornada', c.jornada_semanal ? esc(c.jornada_semanal) + ' h semanais' : ''],
-          ['Banco / agência / conta', esc(conta), 'largo'],
-        ]) +
-        '<div class="doc-colunas">' + listaEventos('Proventos', i.calc.proventos, i.calc.bruto) + listaEventos('Descontos', i.calc.descontosLista, i.calc.descontos) + '</div>' +
-        '<div class="doc-resumo-func">' +
-        '<div><span>Salário-base</span><strong>' + brl(i.f.salario) + '</strong></div>' +
-        '<div><span>Total de proventos</span><strong>' + brl(i.calc.bruto) + '</strong></div>' +
-        '<div><span>Total de descontos</span><strong>' + brl(i.calc.descontos) + '</strong></div>' +
-        '<div class="forte"><span>Líquido a receber</span><strong>' + brl(i.calc.liquido) + '</strong></div>' +
-        '<div><span>Data de pagamento</span><strong>' + esc(i.f.data_pagamento ? fmtData(i.f.data_pagamento) : textoPagamento) + '</strong></div>' +
-        '</div></section>';
+    // Extrato mensal: um bloco por empregado, proventos à esquerda e descontos à direita
+    function q2(v) { return (+v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function refEvento(e) {
+      if (e.ref === '' || e.ref == null) return '';
+      return e.unidade === 'Dias' || e.unidade === 'Horas' ? fmtQtd(e.ref) : q2(e.ref);
+    }
+    function celEvento(e, letra) {
+      if (!e) return '<td></td><td></td><td></td><td></td>';
+      return '<td class="ex-cod">' + e.codigo + '</td><td class="ex-desc">' + esc(e.nome) + '</td><td class="num">' + refEvento(e) + '</td>' +
+        '<td class="num">' + q2(e.valor) + ' ' + letra + '</td>';
+    }
+    var situacaoTexto = { ativo: 'Trabalhando', ferias: 'Férias', afastado: 'Afastado', desligado: 'Desligado' };
+    var vinculoTexto = { clt: 'Celetista', experiencia: 'Experiência', temporario: 'Temporário', estagio: 'Estágio', aprendiz: 'Aprendiz', intermitente: 'Intermitente' };
+    var extrato = d.itens.map(function (i, n) {
+      var c = i.c, k = i.calc;
+      var linhasEv = Math.max(k.proventos.length, k.descontosLista.length);
+      var ev = '';
+      for (var j = 0; j < linhasEv; j++) ev += '<tr>' + celEvento(k.proventos[j], 'P') + '<td class="ex-sep"></td>' + celEvento(k.descontosLista[j], 'D') + '</tr>';
+      var conta = [c.banco, c.agencia ? 'Ag. ' + c.agencia : '', c.conta ? 'C/C ' + c.conta : ''].filter(Boolean).join(' · ');
+      return '<section class="ex-bloco">' +
+        '<table class="ex-cab"><tr>' +
+        '<td><b>Empr.:</b> ' + esc(c.matricula || String(n + 1)) + ' ' + esc(c.nome) +
+          (acoes ? ' <button type="button" class="icone-editar nao-imprimir" data-editar-lanc="' + n + '" title="Editar ' + esc(c.nome) + '" aria-label="Editar ' + esc(c.nome) + '">' + ICONE_LAPIS + '</button>' : '') + '</td>' +
+        '<td><b>Situação:</b> ' + esc(situacaoTexto[c.status] || 'Trabalhando') + '</td>' +
+        '<td><b>CPF:</b> ' + esc(c.cpf) + '</td><td><b>PIS:</b> ' + esc(c.pis) + '</td></tr><tr>' +
+        '<td><b>Cargo:</b> ' + esc(c.cargo) + '</td>' +
+        '<td><b>Vínculo:</b> ' + esc(vinculoTexto[c.tipo_contrato] || 'Celetista') + '</td>' +
+        '<td><b>Adm.:</b> ' + fmtData(c.data_admissao) + '</td>' +
+        '<td><b>CTPS/Série:</b> ' + esc([c.ctps_numero, c.ctps_serie].filter(Boolean).join('/')) + '</td></tr><tr>' +
+        '<td><b>Depto:</b> ' + esc(c.departamento) + (c.jornada_semanal ? ' · ' + esc(c.jornada_semanal) + ' h/sem.' : '') + '</td>' +
+        '<td colspan="2"><b>Banco:</b> ' + esc(conta) + '</td>' +
+        '<td><b>Salário:</b> ' + q2(i.f.salario) + '</td></tr></table>' +
+        '<table class="ex-eventos"><colgroup><col class="c-cod"><col><col class="c-ref"><col class="c-val"><col class="c-sep"><col class="c-cod"><col><col class="c-ref"><col class="c-val"></colgroup>' +
+        '<tbody>' + ev + '</tbody></table>' +
+        '<table class="ex-rodape"><tr>' +
+        '<td><b>ND:</b> ' + (+c.dependentes || 0) + '</td>' +
+        '<td><b>Proventos:</b> ' + q2(k.bruto) + '</td>' +
+        '<td><b>Descontos:</b> ' + q2(k.descontos) + '</td>' +
+        '<td><b>Pagamento:</b> ' + esc(i.f.data_pagamento ? fmtData(i.f.data_pagamento) : dataPagamento ? fmtData(dataPagamento) : '5º dia útil') + '</td>' +
+        '<td class="ex-liq"><b>Líquido:</b> ' + q2(k.liquido) + '</td></tr><tr>' +
+        '<td></td>' +
+        '<td><b>Base INSS:</b> ' + q2(k.baseInss) + '</td>' +
+        '<td><b>Base FGTS:</b> ' + q2(k.baseFgts) + '</td>' +
+        '<td><b>Valor FGTS:</b> ' + q2(k.fgts) + '</td>' +
+        '<td><b>Base IRRF:</b> ' + q2(k.baseIrrf) + '</td></tr></table>' +
+        '</section>';
     }).join('');
+
+    // Resumo por rubrica: soma de cada evento no mês
+    var rubricas = {};
+    d.itens.forEach(function (i) {
+      [['P', i.calc.proventos], ['D', i.calc.descontosLista]].forEach(function (g) {
+        g[1].forEach(function (e) {
+          var r = rubricas[g[0] + e.codigo] || (rubricas[g[0] + e.codigo] = { tipo: g[0], codigo: e.codigo, nome: e.nome, qtd: 0, temQtd: false, valor: 0 });
+          if (e.unidade === 'Dias' || e.unidade === 'Horas') { r.qtd += +e.ref || 0; r.temQtd = true; }
+          r.valor += e.valor;
+        });
+      });
+    });
+    function listaRubricas(tipo) {
+      return Object.keys(rubricas).map(function (x) { return rubricas[x]; }).filter(function (r) { return r.tipo === tipo; })
+        .sort(function (x, y) { return x.codigo < y.codigo ? -1 : 1; });
+    }
+    var rubP = listaRubricas('P'), rubD = listaRubricas('D');
+    var linhasRub = '';
+    for (var r = 0; r < Math.max(rubP.length, rubD.length); r++) {
+      linhasRub += '<tr>' + [rubP[r], rubD[r]].map(function (e, lado) {
+        if (!e) return '<td></td><td></td><td></td><td></td>' + (lado ? '' : '<td class="ex-sep"></td>');
+        return '<td class="ex-cod">' + e.codigo + '</td><td class="ex-desc">' + esc(e.nome) + '</td><td class="num">' + (e.temQtd ? fmtQtd(e.qtd) : '') + '</td>' +
+          '<td class="num">' + q2(e.valor) + ' ' + e.tipo + '</td>' + (lado ? '' : '<td class="ex-sep"></td>');
+      }).join('') + '</tr>';
+    }
+
+    // Situações dos empregados no mês
+    var cont = { ativo: 0, ferias: 0, afastado: 0, desligado: 0 };
+    var admissoes = 0, demissoes = 0;
+    d.itens.forEach(function (i) {
+      cont[i.c.status in cont ? i.c.status : 'ativo']++;
+      if (String(i.c.data_admissao || '').slice(0, 7) === query.competencia) admissoes++;
+      if (String(i.c.data_desligamento || '').slice(0, 7) === query.competencia) demissoes++;
+    });
+    var base13 = 0, inss13 = 0, irrf13 = 0, baseIrMes = 0, irMes = 0, baseInssEmp = 0, inssMes = 0;
+    d.itens.forEach(function (i) {
+      base13 += i.calc.decimoTerceiro; inss13 += i.calc.inss13; irrf13 += i.calc.irrf13;
+      baseIrMes += i.calc.baseIrrf; irMes += i.calc.irrfMes; baseInssEmp += i.calc.baseInss; inssMes += i.calc.inssMes;
+    });
+    function linhaSit(rot, val) { return '<tr><td>' + rot + '</td><td class="num">' + val + '</td></tr>'; }
+    var situacoes = '<div class="ex-situacoes">' +
+      '<table><caption>Situações</caption><tbody>' +
+      linhaSit('Número de empregados', d.itens.length) + linhaSit('Trabalhando', cont.ativo) + linhaSit('Férias', cont.ferias) +
+      linhaSit('Afastados', cont.afastado) + linhaSit('Desligados', cont.desligado) + linhaSit('Admissões no mês', admissoes) + linhaSit('Demissões no mês', demissoes) +
+      '</tbody></table>' +
+      '<table><caption>INSS</caption><tbody>' +
+      linhaSit('Salário contribuição empregados', q2(baseInssEmp)) + linhaSit('Salário contribuição 13º', q2(base13)) +
+      linhaSit('Segurados (empregados)', q2(t.inss)) + linhaSit('Empresa (cota patronal)', q2(t.inssPatronal)) +
+      linhaSit('RAT × FAP', q2(t.rat)) + linhaSit('Terceiros', q2(t.terceiros)) +
+      '<tr class="ex-tot"><td>Total INSS</td><td class="num">' + q2(t.inss + t.patronal) + '</td></tr>' +
+      '</tbody></table>' +
+      '<table><caption>IRRF e FGTS</caption><tbody>' +
+      linhaSit('Base IRRF mensal', q2(baseIrMes)) + linhaSit('Valor IRRF mensal', q2(irMes)) +
+      linhaSit('Base IRRF 13º salário', q2(base13 ? base13 - inss13 : 0)) + linhaSit('Valor IRRF 13º salário', q2(irrf13)) +
+      '<tr class="ex-tot"><td>Valor total do IRRF</td><td class="num">' + q2(t.irrf) + '</td></tr>' +
+      linhaSit('Base do FGTS', q2(t.baseFgts)) +
+      '<tr class="ex-tot"><td>Valor do FGTS</td><td class="num">' + q2(t.fgts) + '</td></tr>' +
+      '</tbody></table></div>';
+
+    var cabecalho = '<table class="ex-empresa"><tr>' +
+      '<td><b>Empresa:</b></td><td>' + esc(emp.razao_social) + (emp.nome_fantasia ? ' (' + esc(emp.nome_fantasia) + ')' : '') + '</td>' +
+      '<td><b>Emissão:</b></td><td>' + esc(emissao) + '</td></tr><tr>' +
+      '<td><b>CNPJ:</b></td><td>' + esc(emp.cnpj) + '</td>' +
+      '<td><b>Pagamento:</b></td><td><span class="so-impressao-inline">' + esc(textoPagamento) + '</span>' +
+        (editarData ? '<input type="date" id="data-pagamento" class="nao-imprimir" value="' + esc(dataPagamento) + '" aria-label="Data de pagamento">' +
+          (dataPagamento ? '' : '<small class="nao-imprimir">' + esc(textoPagamento) + '</small>') : '<span class="nao-imprimir">' + esc(textoPagamento) + '</span>') + '</td></tr><tr>' +
+      '<td><b>Endereço:</b></td><td>' + esc(emp.endereco || '—') + '</td>' +
+      '<td><b>Regime:</b></td><td>' + esc(REGIMES[emp.regime] || '') + '</td></tr><tr>' +
+      '<td><b>Setor:</b></td><td>' + esc(emp.setor_responsavel || '—') + '</td>' +
+      '<td><b>Cálculo:</b></td><td>Folha mensal ' + esc(String(query.competencia).split('-').reverse().join('/')) + '</td></tr></table>';
 
     vista.innerHTML = topoDocumentos('Relatório da folha – ' + nomeEmpresa(emp), query, d.itens.length > 0) +
       avisoFaltando(d, query) +
       '<article class="painel documento relatorio">' + MARCA +
       '<header class="doc-topo"><div class="doc-marca"><img src="../assets/logo.png" alt="" width="40" height="40"><div><strong>KeyGest</strong><small>Gestão inteligente de pessoas</small></div></div>' +
-      '<div class="doc-titulo"><strong>Relatório de Folha de Pagamento</strong><span>' + esc(nomeCompetencia(query.competencia)) + '</span></div></header>' +
-
-      '<h3 class="doc-secao">Dados da empresa</h3>' +
-      dl([
-        ['Razão social', esc(emp.razao_social), 'largo'], ['Nome fantasia', esc(emp.nome_fantasia)], ['CNPJ', esc(emp.cnpj)],
-        ['Endereço', esc(emp.endereco), 'largo'], ['Setor responsável', esc(emp.setor_responsavel)], ['Regime tributário', esc(REGIMES[emp.regime] || '')],
-        ['Mês/ano de referência', esc(String(query.competencia).split('-').reverse().join('/'))],
-        ['Data de pagamento', '<span class="so-impressao-inline">' + esc(textoPagamento) + '</span>' +
-          (editarData ? '<input type="date" id="data-pagamento" class="nao-imprimir" value="' + esc(dataPagamento) + '" aria-label="Data de pagamento">' +
-            (dataPagamento ? '' : '<small class="nao-imprimir">' + esc(textoPagamento) + '</small>') : '<span class="nao-imprimir">' + esc(textoPagamento) + '</span>')],
-        ['Data de emissão', esc(emissao)],
-      ]) +
-
+      '<div class="doc-titulo"><strong>Folha de Pagamento</strong><span>Competência ' + esc(nomeCompetencia(query.competencia)) + '</span></div></header>' +
+      cabecalho +
       (d.itens.length
         ? '<h3 class="doc-secao">Controle do fechamento</h3>' +
           '<div class="doc-resumo doc-controle">' +
@@ -1319,6 +1390,19 @@
           '</tbody></table>' +
           '<p class="doc-formula">Líquido = total de proventos − total de descontos</p>' +
 
+          '<h3 class="ex-titulo doc-quebra">Extrato mensal</h3>' + extrato +
+          '<table class="ex-geral"><tr><td><b>Total geral proventos:</b> ' + q2(t.bruto) + '</td>' +
+          '<td><b>Total geral descontos:</b> ' + q2(t.descontos) + '</td>' +
+          '<td class="ex-liq"><b>Líquido geral:</b> ' + q2(t.liquido) + '</td></tr></table>' +
+
+          '<section class="doc-bloco"><h3 class="ex-titulo">Resumo por rubrica</h3>' +
+          '<table class="ex-eventos ex-rubricas"><colgroup><col class="c-cod"><col><col class="c-ref"><col class="c-val"><col class="c-sep"><col class="c-cod"><col><col class="c-ref"><col class="c-val"></colgroup>' +
+          '<thead><tr><th>Cód.</th><th>Proventos</th><th>Qtde</th><th>Valor</th><th></th><th>Cód.</th><th>Descontos</th><th>Qtde</th><th>Valor</th></tr></thead>' +
+          '<tbody>' + linhasRub + '</tbody></table>' +
+          '<table class="ex-geral"><tr><td></td><td></td><td class="ex-liq"><b>Líquido geral:</b> ' + q2(t.liquido) + '</td></tr></table></section>' +
+
+          '<section class="doc-bloco"><h3 class="ex-titulo">Situações e encargos</h3>' + situacoes + '</section>' +
+
           '<section class="doc-bloco"><h3 class="doc-secao">Encargos da empresa <small>(relatório complementar)</small></h3>' +
           '<table class="tabela doc-tabela doc-encargos"><thead><tr><th>Encargo</th><th>Base</th><th>Alíquota</th><th>Valor</th></tr></thead><tbody>' +
           encargos.map(function (e) { return '<tr><td>' + e[0] + '</td><td>' + brl(e[1]) + '</td><td>' + e[2] + '</td><td>' + brl(e[3]) + '</td></tr>'; }).join('') +
@@ -1335,8 +1419,6 @@
           '</div>' +
           '<p class="doc-nota">Os encargos da empresa não são descontados do salário: são pagos pela empresa além da remuneração. ' +
           'Valores calculados com as tabelas de INSS e IRRF de ' + P.ano + '; os valores oficiais são os das guias emitidas no FGTS Digital e na DCTFWeb.</p></section>' +
-
-          '<h3 class="doc-secao doc-quebra">Detalhamento por funcionário</h3>' + detalhes +
 
           '<div class="doc-assinaturas doc-assinaturas-3">' +
           '<div><span></span>Responsável pela elaboração<small>' + esc(elaborador) + '</small></div>' +

@@ -275,7 +275,7 @@
     { k: 'he50', t: 'HE 50% (h)', tipo: 'provento', un: 'h', dica: 'Horas extras em dias úteis' },
     { k: 'he100', t: 'HE 100% (h)', tipo: 'provento', un: 'h', dica: 'Horas extras em domingos e feriados' },
     { k: 'adicional_noturno', t: 'Adicional noturno', tipo: 'provento', un: 'R$', extra: true, dica: 'Valor do adicional noturno do mês' },
-    { k: 'insalubridade', t: 'Insalubridade', tipo: 'provento', un: 'R$', extra: true, dica: 'Adicional de insalubridade' },
+    { k: 'insalubridade', t: 'Insalubridade', tipo: 'provento', un: 'R$', extra: true, dica: 'Adicional insalubridade' },
     { k: 'periculosidade', t: 'Periculosidade', tipo: 'provento', un: 'R$', extra: true, dica: 'Adicional de periculosidade (30% do salário)' },
     { k: 'comissoes', t: 'Comissões', tipo: 'provento', un: 'R$', extra: true, dica: 'Comissões sobre vendas' },
     { k: 'gratificacoes', t: 'Gratificações', tipo: 'provento', un: 'R$', extra: true, dica: 'Gratificações e prêmios' },
@@ -324,13 +324,13 @@
     proventos.unshift(proventos.pop()); // salário em primeiro
     var fixos = [
       ['0250', 'Adicional noturno', 'adicional_noturno'],
-      ['0260', 'Adicional de insalubridade', 'insalubridade'],
-      ['0270', 'Adicional de periculosidade', 'periculosidade'],
+      ['0260', 'Adicional insalubridade', 'insalubridade'],
+      ['0270', 'Adicional periculosidade', 'periculosidade'],
       ['0280', 'Comissões', 'comissoes'],
       ['0290', 'Gratificações', 'gratificacoes'],
-      ['0295', 'DSR (descanso semanal remunerado)', 'dsr'],
+      ['0295', 'DSR (repouso remunerado)', 'dsr'],
       ['0400', 'Férias', 'ferias'],
-      ['0410', '1/3 constitucional de férias', 'terco_ferias'],
+      ['0410', '1/3 de férias', 'terco_ferias'],
       ['0300', 'Outros proventos', 'adicionais'],
     ];
     var outrosMes = 0;
@@ -363,9 +363,9 @@
     item(descontos, '0316', 'INSS sobre 13º salário', pct(inss13, d13), '%', inss13);
     item(descontos, '0315', 'IRRF sobre salário', pct(irrfMes, baseIrrf), '%', irrfMes);
     item(descontos, '0317', 'IRRF sobre 13º salário', pct(irrf13, baseIrrf13), '%', irrf13);
-    item(descontos, '0507', 'Vale-transporte (até 6%)', vt, 'Valor', descVt);
-    item(descontos, '2807', 'Vale-refeição / alimentação', '', 'Valor', v('desc_vr', 'descVr'));
-    item(descontos, '2810', 'Plano de saúde / odontológico', '', 'Valor', v('plano_saude'));
+    item(descontos, '0507', 'Vale-transporte', vt, 'Valor', descVt);
+    item(descontos, '2807', 'Vale-refeição/alimentação', '', 'Valor', v('desc_vr', 'descVr'));
+    item(descontos, '2810', 'Plano de saúde/odonto', '', 'Valor', v('plano_saude'));
     item(descontos, '2820', 'Adiantamento salarial', '', 'Valor', v('adiantamento'));
     item(descontos, '2830', 'Pensão alimentícia', '', 'Valor', pensao);
     item(descontos, '2900', 'Outros descontos', '', 'Valor', v('outros_descontos', 'outrosDescontos'));
