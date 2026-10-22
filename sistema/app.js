@@ -157,6 +157,7 @@
     usuarios: svgIcone('<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><circle cx="12" cy="11" r="2.5"/><path d="M8.5 17a4 4 0 0 1 7 0"/>'),
     'meus-dados': svgIcone('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
     holerites: svgIcone('<path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h7M9 17h7"/>'),
+    negociacoes: svgIcone('<path d="M3 4h18l-7 8v6l-4 2v-8z"/>'),
   };
 
   // No celular, as listas viram cartões: cada célula ganha o nome da sua coluna
@@ -1644,6 +1645,7 @@
     if (PODE.colaborador) return tela === 'meus-dados' || tela === 'holerites' || tela === 'holerite';
     if (tela === 'meus-dados' || tela === 'holerites') return false;
     if (tela === 'usuarios') return PODE.usuarios;
+    if (tela === 'negociacoes') return PODE.equipe && (!formulario || PODE.editar);
     if (PODE.cliente && tela === 'empresas') return false;
     if (formulario && !PODE.editar) return false;
     return true;
@@ -1655,8 +1657,9 @@
       : [['painel', 'Painel']]
         .concat(PODE.equipe ? [['empresas', 'Empresas']] : [])
         .concat([['colaboradores', 'Colaboradores'], ['folha', 'Folha do mês']])
+        .concat(PODE.equipe ? [['negociacoes', 'Negociações']] : [])
         .concat(PODE.usuarios ? [['usuarios', 'Usuários']] : []);
-    var curtos = { 'colaboradores': 'Pessoas', 'folha': 'Folha', 'meus-dados': 'Meus dados', 'holerites': 'Holerites', 'usuarios': 'Acessos' };
+    var curtos = { 'negociacoes': 'Vendas', 'colaboradores': 'Pessoas', 'folha': 'Folha', 'meus-dados': 'Meus dados', 'holerites': 'Holerites', 'usuarios': 'Acessos' };
     document.getElementById('menu-sistema').innerHTML = itens.map(function (i) {
       return '<a href="#/' + i[0] + '" data-rota="' + i[0] + '">' + (ICONES_MENU[i[0]] || '') +
         '<span class="rot-longo">' + i[1] + '</span><span class="rot-curto">' + (curtos[i[0]] || i[1]) + '</span></a>';
@@ -1700,6 +1703,17 @@
         await telaRelatorio(query);
       } else if (caminho[0] === 'holerites-lote') {
         await telaHoleritesLote(query);
+      } else if (caminho[0] === 'negociacoes') {
+        var neg = window.TelaNegociacoes({
+          DB: DB, vista: vista, esc: esc, aviso: aviso, brl: brl, fmtData: fmtData, PODE: PODE, REGIMES: REGIMES,
+          htmlFormulario: htmlFormulario, lerFormulario: lerFormulario, ligarMascaras: ligarMascaras,
+          ICONE_LAPIS: ICONE_LAPIS, rotear: rotear, naoEncontrado: naoEncontrado,
+          autor: function () { return ACESSO ? (ACESSO.nome || ACESSO.email) : ''; },
+        });
+        if (caminho[1] === 'nova') await neg.form(null);
+        else if (caminho[1] && caminho[2] === 'editar') await neg.form(caminho[1]);
+        else if (caminho[1]) await neg.ficha(caminho[1]);
+        else await neg.lista(query);
       } else if (caminho[0] === 'usuarios') {
         if (caminho[1] === 'novo') await telaFormUsuario(null, query);
         else if (caminho[1] === 'editar') await telaFormUsuario(query.email, query);

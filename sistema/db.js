@@ -150,7 +150,8 @@
       memoria = dadosExemplo();
       salvar();
     }
-    ['empresas', 'colaboradores', 'ferias', 'folha', 'acessos'].forEach(function (t) {
+    if (!Array.isArray(memoria.negociacoes)) memoria.negociacoes = negociacoesExemplo();
+    ['empresas', 'colaboradores', 'ferias', 'folha', 'acessos', 'negociacao_historico'].forEach(function (t) {
       if (!Array.isArray(memoria[t])) memoria[t] = [];
     });
     if (!memoria.acessos.length) memoria.acessos = acessosExemplo(memoria);
@@ -170,6 +171,24 @@
     var d = new Date();
     d.setFullYear(d.getFullYear() + anos, d.getMonth() + meses, d.getDate() + dias);
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function negociacoesExemplo() {
+    function n(empresa, contato, etapa, valor, func, origem, contatoDias, passo, passoDias) {
+      return {
+        id: novoId(), empresa: empresa, cnpj: '', contato: contato, cargo_contato: 'Sócio(a)', telefone: '(11) 90000-0000', email: '',
+        origem: origem, funcionarios: func, regime: 'simples', servicos: 'Folha de pagamento e admissões', valor_mensal: valor, valor_implantacao: 0,
+        etapa: etapa, responsavel: 'KeyGest', data_contato: dataRelativa(0, 0, -contatoDias), proximo_passo: passo,
+        proximo_data: passo ? dataRelativa(0, 0, passoDias) : null, motivo_perda: null, fechado_em: null, empresa_id: null,
+        observacoes: 'Negociação fictícia de demonstração.',
+      };
+    }
+    return [
+      n('Padaria Exemplo (fictícia)', 'Marcos', 'contato', 450, 6, 'Site', 2, 'Ligar para entender a necessidade', 1),
+      n('Clínica Modelo (fictícia)', 'Patrícia', 'reuniao', 900, 14, 'Indicação', 6, 'Reunião de diagnóstico', 3),
+      n('Oficina Teste (fictícia)', 'Roberto', 'proposta', 650, 9, 'WhatsApp', 12, 'Cobrar retorno da proposta', -2),
+      n('Mercado Amostra (fictícia)', 'Juliana', 'negociacao', 1200, 22, 'Prospecção ativa', 20, 'Enviar contrato revisado', 2),
+    ];
   }
 
   function dadosExemplo() {
@@ -201,6 +220,8 @@
       ferias: [
         { id: novoId(), colaborador_id: c[0].id, periodo_inicio: c[0].data_admissao, inicio: dataRelativa(-2, 0, 20), dias: 30, abono: false, observacoes: '' },
       ],
+      negociacoes: negociacoesExemplo(),
+      negociacao_historico: [],
       folha: c.map(function (x, i) {
         var a = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
         return {
@@ -306,13 +327,13 @@
       var erro = conferirUnicos(d, tabela, obj, null);
       if (erro) return Promise.reject(new Error(erro));
       var novo = Object.assign(tabela === 'acessos' ? {} : { id: novoId() }, { criado_em: new Date().toISOString() }, obj);
-      d[tabela].push(novo);
+      (d[tabela] = d[tabela] || []).push(novo);
       salvar();
       return Promise.resolve(copia(novo));
     },
     atualizar: function (tabela, id, obj) {
       var d = carregar(), k = chave(tabela), a = acessoDemo();
-      var r = d[tabela].find(function (x) { return x[k] === id; });
+      var r = (d[tabela] || []).find(function (x) { return x[k] === id; });
       if (!r || !podeVer(tabela, r, a, d) || !podeGravar(tabela, Object.assign({}, r, obj), a, d)) {
         return Promise.reject(new Error(SEM_PERMISSAO));
       }
@@ -333,13 +354,16 @@
         d.folha = d.folha.filter(function (f) { return f.colaborador_id !== id; });
         d.acessos = d.acessos.filter(function (x) { return x.colaborador_id !== id; });
       }
-      d[tabela] = d[tabela].filter(function (x) { return x[k] !== id; });
+      if (tabela === 'negociacoes') {
+        d.negociacao_historico = (d.negociacao_historico || []).filter(function (h) { return h.negociacao_id !== id; });
+      }
+      d[tabela] = (d[tabela] || []).filter(function (x) { return x[k] !== id; });
       salvar();
       return Promise.resolve();
     },
     limpar: function () {
       var adm = carregar().acessos.filter(function (x) { return x.perfil === 'admin'; });
-      memoria = { empresas: [], colaboradores: [], ferias: [], folha: [], acessos: adm };
+      memoria = { empresas: [], colaboradores: [], ferias: [], folha: [], negociacoes: [], negociacao_historico: [], acessos: adm };
       local.verComo(adm[0] ? adm[0].email : '');
       salvar();
     },

@@ -331,3 +331,65 @@ alter table folha add column if not exists data_pagamento date;
 -- Desconto de faltas digitado à mão (opcional)
 alter table folha add column if not exists valor_faltas numeric(12,2) not null default 0;
 notify pgrst, 'reload schema';
+
+-- ---------------------------------------------------------------
+-- Negociações: clientes em prospecção, do primeiro contato ao fechamento
+-- ---------------------------------------------------------------
+create table if not exists negociacoes (
+  id uuid primary key default gen_random_uuid(),
+  empresa text not null,
+  cnpj text,
+  contato text,
+  cargo_contato text,
+  telefone text,
+  email text,
+  origem text,
+  funcionarios integer,
+  regime text,
+  servicos text,
+  valor_mensal numeric(12,2),
+  valor_implantacao numeric(12,2),
+  etapa text not null default 'contato'
+    check (etapa in ('contato', 'reuniao', 'proposta', 'negociacao', 'ganho', 'perdido')),
+  responsavel text,
+  data_contato date default current_date,
+  proximo_passo text,
+  proximo_data date,
+  motivo_perda text,
+  fechado_em date,
+  empresa_id uuid references empresas(id) on delete set null,
+  observacoes text,
+  criado_em timestamptz not null default now(),
+  atualizado_em timestamptz not null default now()
+);
+
+create table if not exists negociacao_historico (
+  id uuid primary key default gen_random_uuid(),
+  negociacao_id uuid not null references negociacoes(id) on delete cascade,
+  data date not null default current_date,
+  tipo text not null default 'anotacao',
+  descricao text not null,
+  autor text,
+  criado_em timestamptz not null default now()
+);
+create index if not exists negociacao_historico_idx on negociacao_historico (negociacao_id);
+
+drop trigger if exists negociacoes_atualizado on negociacoes;
+create trigger negociacoes_atualizado before update on negociacoes
+  for each row execute function tocar_atualizado_em();
+
+-- Só a equipe KeyGest vê; administrador e analista editam
+alter table negociacoes enable row level security;
+alter table negociacao_historico enable row level security;
+drop policy if exists negociacoes_ler on negociacoes;
+create policy negociacoes_ler on negociacoes for select to authenticated using (eh_equipe());
+drop policy if exists negociacoes_editar on negociacoes;
+create policy negociacoes_editar on negociacoes for all to authenticated
+  using (pode_editar()) with check (pode_editar());
+drop policy if exists negociacao_historico_ler on negociacao_historico;
+create policy negociacao_historico_ler on negociacao_historico for select to authenticated using (eh_equipe());
+drop policy if exists negociacao_historico_editar on negociacao_historico;
+create policy negociacao_historico_editar on negociacao_historico for all to authenticated
+  using (pode_editar()) with check (pode_editar());
+
+notify pgrst, 'reload schema';
