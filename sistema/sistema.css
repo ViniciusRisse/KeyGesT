@@ -2846,3 +2846,176 @@ body.sistema {
     width: auto !important;
   }
 }
+
+/* Planilha mais limpa */
+.planilha-opcoes {
+  justify-content: space-between;
+}
+
+.planilha-opcoes .link {
+  font-size: 0.82rem;
+}
+
+.planilha {
+  font-size: 0.86rem;
+}
+
+.planilha th,
+.planilha td {
+  border-right: 0;
+  border-bottom: 1px solid #edf1f0;
+}
+
+.planilha thead th {
+  background: #f4f7f6;
+  color: var(--petroleo);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--borda);
+}
+
+.planilha thead th.calc,
+.planilha thead th.forte {
+  background: #eef5f2;
+  color: var(--petroleo);
+}
+
+.planilha thead .fixa {
+  background: #f4f7f6;
+}
+
+.planilha thead tr.grupos th {
+  position: sticky;
+  top: 0;
+  background: var(--branco);
+  color: var(--texto-suave);
+  font-size: 0.66rem;
+  padding: 6px 10px 4px;
+  border-bottom: 2px solid var(--esmeralda);
+}
+
+.planilha thead tr.grupos .g-desc {
+  background: var(--branco);
+  border-bottom-color: #c98a7f;
+}
+
+.planilha thead tr.grupos .g-calc {
+  background: var(--branco);
+  border-bottom-color: var(--petroleo);
+}
+
+.planilha thead tr:nth-child(2) th {
+  top: 27px;
+}
+
+.planilha .inicio-grupo {
+  border-left: 1px solid var(--borda);
+}
+
+.planilha td.desc,
+.planilha td.desc input {
+  background: transparent;
+}
+
+.planilha .celula {
+  width: 100%;
+  min-width: 92px;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  padding: 10px;
+}
+
+.planilha .celula:hover {
+  background: #f7faf9;
+}
+
+.planilha td.calc {
+  background: #fafcfb;
+  border-left: 1px solid #edf1f0;
+  min-width: 120px;
+  padding: 10px;
+}
+
+.planilha td.calc:first-of-type,
+.planilha tfoot td.calc:first-of-type {
+  border-left: 1px solid var(--borda);
+}
+
+.planilha td.forte {
+  background: #eef8f3;
+  color: var(--esmeralda-escuro);
+}
+
+.planilha .fixa {
+  min-width: 210px;
+  padding: 8px 12px;
+  box-shadow: 1px 0 0 var(--borda);
+}
+
+.planilha tfoot td,
+.planilha tfoot th {
+  background: #f4f7f6;
+  border-top: 1px solid var(--borda);
+  color: var(--petroleo);
+}
+
+.planilha tfoot .fixa {
+  background: #f4f7f6;
+}
+
+.planilha tbody tr:hover th.fixa,
+.planilha tbody tr:hover td:not(.calc) {
+  background: #fbfdfc;
+}
+
+.planilha thead tr:not(.grupos) th:not(.fixa) {
+  white-space: normal;
+  line-height: 1.25;
+  vertical-align: bottom;
+  min-width: 78px;
+}
+
+.planilha .celula {
+  min-width: 78px;
+}
+
+.planilha td.calc {
+  min-width: 108px;
+}
+
+.planilha .fixa {
+  min-width: 190px;
+}
+
+.planilha thead tr:nth-child(2) th {
+  top: 25px;
+}
+
+.planilha .fixa {
+  min-width: 170px;
+}
+
+.planilha .celula,
+.planilha thead tr:not(.grupos) th:not(.fixa) {
+  min-width: 72px;
+}
+
+.planilha td.calc {
+  min-width: 100px;
+}
+
+.planilha .celula,
+.planilha td.calc,
+.planilha thead tr:not(.grupos) th:not(.fixa) {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.planilha td.calc {
+  min-width: 96px;
+}
+
+.planilha .fixa {
+  min-width: 150px;
+}

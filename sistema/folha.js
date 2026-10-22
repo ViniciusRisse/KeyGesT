@@ -19,13 +19,8 @@
   // Colunas calculadas
   var SAIDAS = [
     { k: 'bruto', t: 'Proventos' },
-    { k: 'inss', t: 'INSS' },
-    { k: 'irrf', t: 'IRRF' },
-    { k: 'descVt', t: 'Desc. VT (6%)' },
-    { k: 'descontos', t: 'Total descontos' },
+    { k: 'descontos', t: 'Descontos' },
     { k: 'liquido', t: 'Líquido', destaque: true },
-    { k: 'fgts', t: 'FGTS (8%)' },
-    { k: 'custo', t: 'Custo empresa' },
   ];
 
   function numBR(v) {
@@ -198,29 +193,30 @@
       ENTRADAS = TODAS.filter(function (e) { return extras || !e.extra; });
       var nProv = ENTRADAS.filter(function (e) { return e.tipo === 'provento'; }).length;
       caixa.innerHTML =
-        '<div class="planilha-opcoes"><button type="button" class="botao botao-secundario botao-pequeno" id="fl-extras" aria-pressed="' + extras + '">' +
-        (extras ? 'Menos colunas' : 'Mais colunas') + '</button>' +
-        (leitura ? '' : '<span class="ajuda">Use Enter e as setas para andar entre as células. Dá para colar valores copiados do Excel.</span>') + '</div>' +
+        '<div class="planilha-opcoes">' +
+        (leitura ? '' : '<span class="ajuda">Enter e setas andam entre as células · dá para colar do Excel · valores em branco contam como zero</span>') +
+        '<button type="button" class="link" id="fl-extras" aria-pressed="' + extras + '">' +
+        (extras ? 'Mostrar só as colunas principais' : 'Mostrar todas as colunas (adicionais, férias, 13º, plano de saúde…)') + '</button></div>' +
         '<div class="planilha-caixa"><table class="planilha" id="planilha"><thead>' +
         '<tr class="grupos"><th class="fixa"></th><th colspan="' + nProv + '" class="g-prov">Proventos</th>' +
-        '<th colspan="' + (ENTRADAS.length - nProv) + '" class="g-desc">Descontos</th><th colspan="' + SAIDAS.length + '" class="calc">Cálculo automático</th></tr>' +
+        '<th colspan="' + (ENTRADAS.length - nProv) + '" class="g-desc">Descontos</th><th colspan="' + SAIDAS.length + '" class="g-calc">Resultado</th></tr>' +
         '<tr><th class="fixa">Colaborador</th>' +
-        ENTRADAS.map(function (e) { return '<th title="' + esc(e.dica) + '">' + esc(e.t) + '</th>'; }).join('') +
+        ENTRADAS.map(function (e, j) { return '<th title="' + esc(e.dica) + '"' + (e.tipo === 'desconto' && ENTRADAS[j - 1] && ENTRADAS[j - 1].tipo === 'provento' ? ' class="inicio-grupo"' : '') + '>' + esc(e.t) + '</th>'; }).join('') +
         SAIDAS.map(function (s) { return '<th class="calc' + (s.destaque ? ' forte' : '') + '">' + esc(s.t) + '</th>'; }).join('') +
         '</tr></thead><tbody>' +
         linhas.map(function (l, i) {
           return '<tr data-i="' + i + '"><th class="fixa" scope="row"><a href="#/colaboradores/' + esc(l.col.id) + '">' + esc(l.col.nome) + '</a>' +
-            '<small>' + esc(l.col.cargo || '') +
-            ' · <a class="link-holerite" data-holerite="' + i + '" href="' + (l.id ? '#/holerite/' + esc(l.id) : '#') + '"' + (l.id ? '' : ' hidden') + '>holerite</a></small></th>' +
+            (l.col.cargo ? '<small>' + esc(l.col.cargo) + '</small>' : '') + '</th>' +
             ENTRADAS.map(function (e, j) {
-              return '<td' + (e.tipo === 'desconto' ? ' class="desc"' : '') + '><input class="celula" inputmode="decimal" autocomplete="off"' + (leitura ? ' readonly tabindex="-1"' : '') + ' data-l="' + i + '" data-c="' + j + '" ' +
+              var cls = (e.tipo === 'desconto' ? 'desc' : '') + (e.tipo === 'desconto' && ENTRADAS[j - 1] && ENTRADAS[j - 1].tipo === 'provento' ? ' inicio-grupo' : '');
+              return '<td' + (cls ? ' class="' + cls.trim() + '"' : '') + '><input class="celula" inputmode="decimal" autocomplete="off"' + (leitura ? ' readonly tabindex="-1"' : '') + ' data-l="' + i + '" data-c="' + j + '" ' +
                 'aria-label="' + esc(e.t + ' de ' + l.col.nome) + '" value="' + esc(fmtNum(l.v[e.k], INTEIROS[e.k])) + '"></td>';
             }).join('') +
             SAIDAS.map(function (s) { return '<td class="calc' + (s.destaque ? ' forte' : '') + '" data-s="' + s.k + '"></td>'; }).join('') +
             '</tr>';
         }).join('') +
-        '</tbody><tfoot><tr><th class="fixa">Totais (' + linhas.length + ')</th>' +
-        ENTRADAS.map(function (e) { return '<td data-t="' + e.k + '"></td>'; }).join('') +
+        '</tbody><tfoot><tr><th class="fixa">Total (' + linhas.length + ')</th>' +
+        ENTRADAS.map(function (e, j) { return '<td' + (e.tipo === 'desconto' && ENTRADAS[j - 1] && ENTRADAS[j - 1].tipo === 'provento' ? ' class="inicio-grupo"' : '') + (e.k === 'salario' ? ' data-t="salario"' : '') + '></td>'; }).join('') +
         SAIDAS.map(function (s) { return '<td class="calc' + (s.destaque ? ' forte' : '') + '" data-t="' + s.k + '"></td>'; }).join('') +
         '</tr></tfoot></table></div>';
       tabela = document.getElementById('planilha');
@@ -299,10 +295,8 @@
 
     function totais() {
       if (tabela) {
-        ENTRADAS.forEach(function (e) {
-          var soma = linhas.reduce(function (s, l) { return s + l.v[e.k]; }, 0);
-          tabela.querySelector('tfoot [data-t="' + e.k + '"]').textContent = INTEIROS[e.k] ? fmtNum(soma, true) : brl(soma);
-        });
+        var somaSal = linhas.reduce(function (s, l) { return s + l.v.salario; }, 0);
+        tabela.querySelector('tfoot [data-t="salario"]').textContent = brl(somaSal);
         SAIDAS.forEach(function (s) {
           var soma = linhas.reduce(function (t, l) { return t + l.calc[s.k]; }, 0);
           tabela.querySelector('tfoot [data-t="' + s.k + '"]').textContent = brl(soma);
