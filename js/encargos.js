@@ -284,7 +284,8 @@
     { k: 'terco_ferias', t: '1/3 de férias', tipo: 'provento', un: 'R$', extra: true, dica: 'Adicional de 1/3 sobre as férias' },
     { k: 'decimo_terceiro', t: '13º salário', tipo: 'provento', un: 'R$', extra: true, dica: '13º pago no mês (INSS e IRRF calculados em separado)' },
     { k: 'adicionais', t: 'Outros proventos', tipo: 'provento', un: 'R$', dica: 'Bônus e outros valores a receber' },
-    { k: 'faltas', t: 'Faltas (dias)', tipo: 'desconto', un: 'd', dica: 'Dias de falta sem justificativa' },
+    { k: 'faltas', t: 'Faltas (dias)', tipo: 'desconto', un: 'd', dica: 'Dias de falta sem justificativa', nota: 'Aceita meio dia: 0,5' },
+    { k: 'valor_faltas', t: 'Faltas – valor manual', tipo: 'desconto', un: 'R$', extra: true, dica: 'Valor do desconto de faltas digitado à mão (substitui o cálculo pelos dias)', nota: 'Opcional: preencha só se quiser um valor diferente do calculado pelos dias' },
     { k: 'atrasos', t: 'Atrasos (h)', tipo: 'desconto', un: 'h', extra: true, dica: 'Horas de atraso descontadas' },
     { k: 'vt', t: 'Vale-transporte (mês)', tipo: 'desconto', un: 'R$', dica: 'Valor total das passagens do mês (desconto de até 6% do salário)' },
     { k: 'desc_vr', t: 'Desc. VR/VA', tipo: 'desconto', un: 'R$', dica: 'Parte do vale-refeição/alimentação paga pelo colaborador' },
@@ -339,7 +340,7 @@
     var ferias = arred(v('ferias') + v('terco_ferias'));
 
     // Base do mês (sem o 13º, que tem tributação exclusiva)
-    var descFaltas = arred((salario / 30) * v('faltas'));
+    var descFaltas = v('valor_faltas') > 0 ? arred(v('valor_faltas')) : arred((salario / 30) * v('faltas'));
     var descAtrasos = arred(valorHora * v('atrasos'));
     var proventosMes = arred(salario + he50 + he100 + outrosMes);
     var baseMes = arred(Math.max(0, proventosMes - descFaltas - descAtrasos));
@@ -357,7 +358,7 @@
     var vt = v('vt');
     var descVt = arred(Math.min(vt, salario * p.descontoMaxVt));
     function pct(a, b) { return b ? arred(a / b * 100) : 0; }
-    item(descontos, '2030', 'Faltas', v('faltas'), 'Dias', descFaltas);
+    item(descontos, '2030', 'Faltas', v('faltas') || '', v('faltas') ? 'Dias' : 'Valor', descFaltas);
     item(descontos, '2040', 'Atrasos', v('atrasos'), 'Horas', descAtrasos);
     item(descontos, '0314', 'INSS sobre salário', pct(inssMes, baseMes), '%', inssMes);
     item(descontos, '0316', 'INSS sobre 13º salário', pct(inss13, d13), '%', inss13);

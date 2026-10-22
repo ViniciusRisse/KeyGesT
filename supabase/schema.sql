@@ -327,3 +327,7 @@ alter table folha add column if not exists adiantamento numeric(12,2) not null d
 alter table folha add column if not exists pensao numeric(12,2) not null default 0;
 alter table folha add column if not exists descontos numeric(12,2);
 alter table folha add column if not exists data_pagamento date;
+
+-- Desconto de faltas digitado à mão (opcional)
+alter table folha add column if not exists valor_faltas numeric(12,2) not null default 0;
+notify pgrst, 'reload schema';

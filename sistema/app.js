@@ -1052,7 +1052,7 @@
     return '<a class="voltar" href="' + linkFolha(query) + '">← Folha do mês</a>' +
       '<div class="topo-vista"><div><h1>' + esc(titulo) + '</h1><p>Confira e use "Imprimir / salvar PDF" para gerar o documento.</p></div>' +
       '<div class="acoes">' +
-      (temItens && PODE.folha ? '<a class="botao botao-secundario" href="' + linkFolha(query) + '">' + ICONE_LAPIS + ' Editar na planilha</a>' : '') +
+      (temItens && PODE.folha ? '<a class="botao botao-secundario" href="' + linkFolha(query) + '">' + ICONE_LAPIS + ' Editar na folha do mês</a>' : '') +
       (temItens && PODE.editar ? '<button type="button" class="botao botao-perigo" id="excluir-doc">Excluir relatório</button>' : '') +
       '<button type="button" class="botao" id="imprimir-doc">Imprimir / salvar PDF</button></div></div>';
   }
@@ -1061,7 +1061,7 @@
   var CAMPOS_LANC = C.CAMPOS_FOLHA.map(function (k) {
     var rot = k.t.replace(/ \((h|dias|mês)\)$/, '');
     var un = k.un === 'h' ? ' (horas)' : k.un === 'd' ? ' (dias)' : ' (R$)';
-    return [k.k, rot + un, k.tipo, k.un !== 'R$', k.dica];
+    return [k.k, rot + un, k.tipo, k.un !== 'R$', k.dica, k.nota, !!k.extra];
   });
 
   function numBR(v) {
@@ -1075,28 +1075,52 @@
 
   function ligarEdicao(d, query) {
     vista.querySelectorAll('[data-editar-lanc]').forEach(function (b) {
-      b.addEventListener('click', function () { abrirEdicao(d.itens[+b.getAttribute('data-editar-lanc')], d, query); });
+      b.addEventListener('click', function () {
+        var item = d.itens[+b.getAttribute('data-editar-lanc')];
+        janelaLancamento({
+          c: item.c, valores: item.f, emp: d.emp, competencia: query.competencia,
+          salvar: async function (v, calc) {
+            await DB.atualizar('folha', item.f.id, Object.assign({}, v, totaisLancamento(calc)));
+            aviso('Lançamento de ' + item.c.nome + ' atualizado.');
+            rotear();
+          },
+        });
+      });
     });
   }
 
-  function abrirEdicao(item, d, query) {
-    var f = item.f, c = item.c;
+  /*
+   * Janela de lançamento (usada na Folha do mês e no relatório).
+   * opts: { c: colaborador, valores, emp, competencia, salvar(v, calc) }
+   */
+  function janelaLancamento(opts) {
+    var c = opts.c, f = opts.valores || {};
+    function campoLanc(k) {
+      var val = +f[k[0]] || 0;
+      return '<div class="campo"><label for="ed-' + k[0] + '">' + esc(k[1]) + '</label><input type="text" id="ed-' + k[0] + '" name="' + k[0] + '" inputmode="decimal" autocomplete="off" placeholder="0" value="' +
+        (val ? val.toLocaleString('pt-BR', { minimumFractionDigits: k[3] ? 0 : 2, maximumFractionDigits: 2 }) : '') + '">' +
+        (k[5] ? '<small>' + esc(k[5]) + '</small>' : '') + '</div>';
+    }
     var dlg = document.createElement('dialog');
     dlg.className = 'janela';
     dlg.innerHTML =
       '<form method="dialog" class="form-sistema" novalidate>' +
-      '<div class="janela-topo"><div><h2>Editar lançamento</h2><p>' + esc(c.nome) + ' · ' + esc(nomeCompetencia(query.competencia)) + '</p></div>' +
+      '<div class="janela-topo"><div><h2>' + esc(c.nome) + '</h2><p>' + esc(c.cargo || '') + (c.cargo ? ' · ' : '') + esc(nomeCompetencia(opts.competencia)) + '</p></div>' +
       '<button type="button" class="janela-fechar" aria-label="Fechar">×</button></div>' +
-      [['provento', 'Proventos'], ['desconto', 'Descontos']].map(function (g) {
+      [['provento', 'Proventos (a receber)'], ['desconto', 'Descontos']].map(function (g) {
+        var doGrupo = CAMPOS_LANC.filter(function (k) { return k[2] === g[0]; });
+        var principais = doGrupo.filter(function (k) { return !k[6]; });
+        var extras = doGrupo.filter(function (k) { return k[6]; });
+        var abrir = extras.some(function (k) { return +f[k[0]]; });
         return '<fieldset class="janela-grupo"><legend>' + g[1] + '</legend><div class="campos janela-campos">' +
-          CAMPOS_LANC.filter(function (k) { return k[2] === g[0]; }).map(function (k) {
-            var val = +f[k[0]] || 0;
-            return '<div class="campo"><label for="ed-' + k[0] + '" title="' + esc(k[4]) + '">' + esc(k[1]) + '</label><input type="text" id="ed-' + k[0] + '" name="' + k[0] + '" inputmode="decimal" autocomplete="off" value="' +
-              (val ? val.toLocaleString('pt-BR', { minimumFractionDigits: k[3] ? 0 : 2, maximumFractionDigits: 2 }) : '') + '"></div>';
-          }).join('') + '</div></fieldset>';
+          principais.map(campoLanc).join('') + '</div>' +
+          (extras.length ? '<details class="janela-mais"' + (abrir ? ' open' : '') + '><summary>Mais itens: ' +
+            esc(extras.map(function (k) { return k[1].replace(/ \((R\$|horas|dias)\)$/, '').replace(/ – valor manual/, ' (valor manual)'); }).join(', ').toLowerCase()) +
+            '</summary><div class="campos janela-campos">' + extras.map(campoLanc).join('') + '</div></details>' : '') +
+          '</fieldset>';
       }).join('') +
       '<div class="janela-previa" id="ed-previa"></div>' +
-      '<div class="acoes"><button type="submit" class="botao" value="salvar">Salvar alterações</button><button type="button" class="botao botao-secundario janela-cancelar">Cancelar</button></div>' +
+      '<div class="acoes"><button type="submit" class="botao" value="salvar">Salvar</button><button type="button" class="botao botao-secundario janela-cancelar">Cancelar</button></div>' +
       '</form>';
     document.body.appendChild(dlg);
     var form = dlg.querySelector('form');
@@ -1108,9 +1132,10 @@
     }
     function previa() {
       var v = valores();
-      var calc = calcularLancamento(v, c, d.emp);
+      var calc = calcularLancamento(v, c, opts.emp);
       document.getElementById('ed-previa').innerHTML =
         '<div><span>Proventos</span><strong>' + brl(calc.bruto) + '</strong></div>' +
+        (calc.descFaltas + calc.descAtrasos > 0 ? '<div><span>Faltas e atrasos</span><strong>' + brl(calc.descFaltas + calc.descAtrasos) + '</strong></div>' : '') +
         '<div><span>INSS</span><strong>' + brl(calc.inss) + '</strong></div>' +
         '<div><span>IRRF</span><strong>' + brl(calc.irrf) + '</strong></div>' +
         '<div><span>Total descontos</span><strong>' + brl(calc.descontos) + '</strong></div>' +
@@ -1128,25 +1153,24 @@
     form.addEventListener('submit', async function (ev) {
       ev.preventDefault();
       var r = previa();
-      var dados = Object.assign({}, r.v, totaisLancamento(r.calc));
       var bt = form.querySelector('[type=submit]');
       bt.disabled = true;
       bt.textContent = 'Salvando...';
       try {
-        await DB.atualizar('folha', f.id, dados);
+        await opts.salvar(r.v, r.calc);
         fechar();
-        aviso('Lançamento de ' + c.nome + ' atualizado.');
-        rotear();
       } catch (e) {
         aviso(e.message, true);
         bt.disabled = false;
-        bt.textContent = 'Salvar alterações';
+        bt.textContent = 'Salvar';
       }
     });
 
     dlg.showModal();
-    form.elements.salario.focus();
-    form.elements.salario.select();
+    if (window.matchMedia('(min-width: 861px)').matches) {
+      form.elements.salario.focus();
+      form.elements.salario.select();
+    }
   }
 
   // Exclusão do relatório inteiro ou de um colaborador do mês
@@ -1223,14 +1247,13 @@
     var acoes = PODE.folha;
 
     var linhas = d.itens.map(function (i, n) {
-      return '<tr><td>' + esc(i.c.nome) + '<small>' + esc(i.c.cargo || '') + '</small></td>' +
-        '<td>' + brl(i.f.salario) + '</td><td>' + brl(i.calc.bruto) + '</td><td>' + brl(i.calc.descontos) + '</td>' +
-        '<td class="col-liquido">' + brl(i.calc.liquido) + '</td>' +
-        (acoes ? '<td class="nao-imprimir col-acoes"><div class="acoes-linha">' +
-          '<button type="button" class="icone-editar" data-editar-lanc="' + n + '" title="Editar ' + esc(i.c.nome) + '" aria-label="Editar ' + esc(i.c.nome) + '">' + ICONE_LAPIS + '</button>' +
+      return '<tr><td><div class="func-nome"><div>' + esc(i.c.nome) + '<small>' + esc(i.c.cargo || '') + '</small></div>' +
+        (acoes ? '<div class="acoes-linha nao-imprimir">' +
+          '<button type="button" class="botao-editar-lanc" data-editar-lanc="' + n + '" aria-label="Editar ' + esc(i.c.nome) + '">' + ICONE_LAPIS + '<span>Editar</span></button>' +
           (PODE.editar ? '<button type="button" class="icone-excluir" data-excluir-lanc="' + n + '" title="Tirar ' + esc(i.c.nome) + ' do relatório" aria-label="Tirar ' + esc(i.c.nome) + ' do relatório">' + ICONE_LIXEIRA + '</button>' : '') +
-          '</div></td>' : '') +
-        '</tr>';
+          '</div>' : '') + '</div></td>' +
+        '<td>' + brl(i.f.salario) + '</td><td>' + brl(i.calc.bruto) + '</td><td>' + brl(i.calc.descontos) + '</td>' +
+        '<td class="col-liquido">' + brl(i.calc.liquido) + '</td></tr>';
     }).join('');
 
     function aliq(x) { return x ? pct(x) : emp.regime === 'mei' || /^simples/.test(emp.regime) ? 'No DAS' : pct(0); }
@@ -1267,8 +1290,8 @@
       var conta = [c.banco, c.agencia ? 'Ag. ' + c.agencia : '', c.conta ? 'C/C ' + c.conta : ''].filter(Boolean).join(' · ');
       return '<section class="ex-bloco">' +
         '<table class="ex-cab"><tr>' +
-        '<td><b>Empr.:</b> ' + esc(c.matricula || String(n + 1)) + ' ' + esc(c.nome) +
-          (acoes ? ' <button type="button" class="icone-editar nao-imprimir" data-editar-lanc="' + n + '" title="Editar ' + esc(c.nome) + '" aria-label="Editar ' + esc(c.nome) + '">' + ICONE_LAPIS + '</button>' : '') + '</td>' +
+        '<td>' + (acoes ? '<button type="button" class="icone-editar nao-imprimir" data-editar-lanc="' + n + '" title="Editar ' + esc(c.nome) + '" aria-label="Editar ' + esc(c.nome) + '">' + ICONE_LAPIS + '</button> ' : '') +
+          '<b>Empr.:</b> ' + esc(c.matricula || String(n + 1)) + ' ' + esc(c.nome) + '</td>' +
         '<td><b>Situação:</b> ' + esc(situacaoTexto[c.status] || 'Trabalhando') + '</td>' +
         '<td><b>CPF:</b> ' + esc(c.cpf) + '</td><td><b>PIS:</b> ' + esc(c.pis) + '</td></tr><tr>' +
         '<td><b>Cargo:</b> ' + esc(c.cargo) + '</td>' +
@@ -1383,10 +1406,10 @@
 
           '<h3 class="doc-secao">Funcionários</h3>' +
           '<table class="tabela doc-tabela"><thead><tr><th>Funcionário</th><th>Salário-base</th><th>Proventos</th><th>Descontos</th><th class="col-liquido">Líquido</th>' +
-          (acoes ? '<th class="nao-imprimir col-acoes"><span class="sr-only">Ações</span></th>' : '') + '</tr></thead><tbody>' +
+          '</tr></thead><tbody>' +
           linhas +
           '<tr class="total"><td>Totais (' + d.itens.length + ')</td><td>' + brl(t.salario) + '</td><td>' + brl(t.bruto) + '</td><td>' + brl(t.descontos) + '</td>' +
-          '<td class="col-liquido">' + brl(t.liquido) + '</td>' + (acoes ? '<td class="nao-imprimir"></td>' : '') + '</tr>' +
+          '<td class="col-liquido">' + brl(t.liquido) + '</td></tr>' +
           '</tbody></table>' +
           '<p class="doc-formula">Líquido = total de proventos − total de descontos</p>' +
 
@@ -1666,7 +1689,7 @@
         else if (caminho[1] && caminho[2] === 'editar') await telaFormEmpresa(caminho[1]);
         else await telaEmpresas();
       } else if (caminho[0] === 'folha') {
-        await window.TelaFolha({ DB: DB, vista: vista, esc: esc, aviso: aviso, porNome: porNome, nomeEmpresa: nomeEmpresa, somenteLeitura: !PODE.folha }, query);
+        await window.TelaFolha({ DB: DB, vista: vista, esc: esc, aviso: aviso, porNome: porNome, nomeEmpresa: nomeEmpresa, somenteLeitura: !PODE.folha, janelaLancamento: janelaLancamento, editarSalvo: PODE.editar }, query);
       } else if (caminho[0] === 'meus-dados') {
         await telaFicha(ACESSO.colaborador_id);
       } else if (caminho[0] === 'holerites') {
