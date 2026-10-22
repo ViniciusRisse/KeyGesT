@@ -22,7 +22,7 @@ body.sistema {
 }
 
 .marca-escura {
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .lateral .marca img {
@@ -120,9 +120,9 @@ body.sistema {
 }
 
 .faixa-demo {
-  background: #fff7e0;
-  border: 1px solid #f0d98a;
-  color: #6b5200;
+  background: var(--amarelo-suave);
+  border: 1px solid var(--amarelo-borda);
+  color: var(--texto-amarelo);
   border-radius: 12px;
   padding: 12px 16px;
   font-size: 0.88rem;
@@ -134,13 +134,13 @@ body.sistema {
   border: 0;
   padding: 0;
   font: inherit;
-  color: var(--esmeralda-escuro);
+  color: var(--link);
   text-decoration: underline;
   cursor: pointer;
 }
 
 .faixa-demo .link {
-  color: #6b5200;
+  color: var(--texto-amarelo);
   margin-left: 6px;
 }
 
@@ -190,7 +190,7 @@ body.sistema {
 }
 
 .indicador {
-  background: var(--branco);
+  background: var(--superficie);
   border: 1px solid var(--borda);
   border-radius: 14px;
   padding: 18px;
@@ -204,7 +204,7 @@ body.sistema {
 
 .indicador strong {
   font-size: 1.45rem;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .filtros {
@@ -223,7 +223,7 @@ body.sistema {
 .lista {
   width: 100%;
   border-collapse: collapse;
-  background: var(--branco);
+  background: var(--superficie);
   font-size: 0.92rem;
 }
 
@@ -244,13 +244,13 @@ body.sistema {
 }
 
 .lista tr:hover td {
-  background: #f9fcfb;
+  background: var(--superficie-2);
 }
 
 .lista td a {
   font-weight: 600;
   text-decoration: none;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .lista .num {
@@ -262,7 +262,7 @@ body.sistema {
   border: 1px solid var(--borda);
   border-radius: 14px;
   overflow-x: auto;
-  background: var(--branco);
+  background: var(--superficie);
 }
 
 .rodape-lista {
@@ -289,14 +289,14 @@ body.sistema {
   border-radius: 999px;
   white-space: nowrap;
   background: var(--esmeralda-claro);
-  color: var(--esmeralda-escuro);
+  color: var(--link);
 }
 
-.etiqueta.ferias { background: #e6f0ff; color: #1d4ed8; }
-.etiqueta.afastado { background: #fff4db; color: #92600a; }
-.etiqueta.desligado { background: #eef0f0; color: #5f6b6a; }
-.etiqueta.alerta-vermelho { background: #fdecea; color: #a8281b; }
-.etiqueta.alerta-amarelo { background: #fff4db; color: #92600a; }
+.etiqueta.ferias { background: var(--azul-suave); color: var(--texto-azul); }
+.etiqueta.afastado { background: var(--amarelo-suave); color: var(--texto-amarelo); }
+.etiqueta.desligado { background: var(--superficie-2); color: var(--texto-suave); }
+.etiqueta.alerta-vermelho { background: var(--vermelho-suave); color: var(--texto-vermelho); }
+.etiqueta.alerta-amarelo { background: var(--amarelo-suave); color: var(--texto-amarelo); }
 
 .grade-ficha {
   display: grid;
@@ -360,7 +360,7 @@ body.sistema {
 
 .alertas a {
   font-weight: 600;
-  color: var(--petroleo);
+  color: var(--titulo);
   text-decoration: none;
 }
 
@@ -401,19 +401,19 @@ body.sistema {
 
 .form-sistema legend {
   font-weight: 700;
-  color: var(--petroleo);
+  color: var(--titulo);
   margin-bottom: 12px;
   font-size: 1.02rem;
 }
 
 .botao-perigo {
-  background: var(--branco);
+  background: var(--superficie);
   color: var(--erro);
-  border-color: #f0c4be;
+  border-color: var(--vermelho-borda);
 }
 
 .botao-perigo:hover {
-  background: #fdecea;
+  background: var(--vermelho-suave);
   border-color: var(--erro);
 }
 
@@ -511,7 +511,7 @@ body.sistema {
   max-height: 70vh;
   border: 1px solid var(--borda);
   border-radius: 14px;
-  background: var(--branco);
+  background: var(--superficie);
 }
 
 .planilha {
@@ -554,7 +554,7 @@ body.sistema {
   position: sticky;
   left: 0;
   z-index: 1;
-  background: var(--branco);
+  background: var(--superficie);
   text-align: left;
   padding: 8px 12px;
   min-width: 190px;
@@ -569,7 +569,7 @@ body.sistema {
 }
 
 .planilha tbody .fixa a {
-  color: var(--petroleo);
+  color: var(--titulo);
   font-weight: 600;
   text-decoration: none;
 }
@@ -593,11 +593,11 @@ body.sistema {
 
 .planilha .celula:focus {
   box-shadow: inset 0 0 0 2px var(--esmeralda);
-  background: #f3faf7;
+  background: var(--verde-suave);
 }
 
 .planilha td.calc {
-  background: #f6f9f8;
+  background: var(--superficie-2);
   padding: 9px 10px;
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -608,11 +608,11 @@ body.sistema {
 .planilha td.forte {
   background: var(--esmeralda-claro);
   font-weight: 700;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .planilha tr.negativo td.forte {
-  background: #fdecea;
+  background: var(--vermelho-suave);
   color: var(--erro);
 }
 
@@ -620,7 +620,7 @@ body.sistema {
 .planilha tfoot th {
   position: sticky;
   bottom: 0;
-  background: #e9f1ef;
+  background: var(--superficie-2);
   font-weight: 700;
   padding: 10px;
   text-align: right;
@@ -629,7 +629,7 @@ body.sistema {
 
 .planilha tfoot .fixa {
   z-index: 2;
-  background: #e9f1ef;
+  background: var(--superficie-2);
   text-align: left;
 }
 
@@ -780,8 +780,8 @@ body.sistema {
 }
 
 .abas-login button.ativa {
-  background: var(--branco);
-  color: var(--petroleo);
+  background: var(--superficie);
+  color: var(--titulo);
   box-shadow: 0 1px 4px rgba(15, 61, 58, 0.12);
 }
 
@@ -816,8 +816,8 @@ body.sistema {
   width: auto;
   padding: 4px 8px;
   font-size: 0.85rem;
-  border-color: #e0c66f;
-  background: #fffdf3;
+  border-color: var(--amarelo-borda);
+  background: var(--amarelo-suave);
 }
 
 .usuario small {
@@ -927,7 +927,7 @@ body.sistema {
 }
 
 .regras-senha li.ok {
-  color: var(--esmeralda-escuro);
+  color: var(--link);
 }
 
 .mostrar-senha {
@@ -995,7 +995,7 @@ body.sistema {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .doc-marca img {
@@ -1010,7 +1010,7 @@ body.sistema {
 
 .doc-titulo {
   text-align: right;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .doc-titulo span {
@@ -1027,7 +1027,7 @@ body.sistema {
 }
 
 .doc-empresa strong {
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .doc-empresa span {
@@ -1058,7 +1058,7 @@ body.sistema {
 .doc-resumo strong {
   display: block;
   font-size: 1.05rem;
-  color: var(--petroleo);
+  color: var(--titulo);
   margin-top: 4px;
 }
 
@@ -1107,7 +1107,7 @@ body.sistema {
 
 .doc-tabela td.forte {
   font-weight: 700;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .documento .tabela-rolagem,
@@ -1156,7 +1156,7 @@ body.sistema {
   }
 
   body.sistema {
-    background: #fff;
+    background: var(--superficie);
   }
 
   .documento,
@@ -1218,8 +1218,8 @@ body.sistema {
   height: 36px;
   border-radius: 9px;
   border: 1.5px solid var(--borda);
-  color: var(--esmeralda-escuro) !important;
-  background: var(--branco);
+  color: var(--link) !important;
+  background: var(--superficie);
   transition: background 0.15s, border-color 0.15s;
 }
 
@@ -1248,15 +1248,15 @@ body.sistema {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  border: 1.5px solid #f0c4be;
-  background: var(--branco);
+  border: 1.5px solid var(--vermelho-borda);
+  background: var(--superficie);
   color: var(--erro);
   cursor: pointer;
 }
 
 .icone-excluir:hover,
 .icone-excluir:focus-visible {
-  background: #fdecea;
+  background: var(--vermelho-suave);
   border-color: var(--erro);
 }
 
@@ -1296,7 +1296,7 @@ body.sistema {
   display: block;
   font-weight: 700;
   font-size: 0.72rem;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .dp-val {
@@ -1322,7 +1322,7 @@ body.sistema {
 
 .dp-logo strong {
   display: block;
-  color: var(--petroleo);
+  color: var(--titulo);
   font-size: 0.95rem;
 }
 
@@ -1336,14 +1336,14 @@ body.sistema {
   text-align: center;
   font-weight: 800;
   letter-spacing: 0.04em;
-  color: var(--petroleo);
+  color: var(--titulo);
   font-size: 0.95rem;
 }
 
 .dp-eventos thead th {
   font-size: 0.74rem;
   font-weight: 700;
-  color: var(--petroleo);
+  color: var(--titulo);
   text-align: center;
   background: rgba(229, 244, 238, 0.55);
 }
@@ -1375,7 +1375,7 @@ body.sistema {
 .dp-liquido .dp-val {
   font-size: 1.05rem;
   font-weight: 800;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 @media (max-width: 640px) {
@@ -1396,7 +1396,7 @@ body.sistema {
 @media print {
   .dp-eventos thead th,
   .dp-liquido {
-    background: #eef6f3 !important;
+    background: var(--verde-suave) !important;
   }
 }
 
@@ -1636,7 +1636,7 @@ body.sistema {
     grid-template-columns: 1fr 1fr;
     gap: 8px 14px;
     position: relative;
-    background: var(--branco);
+    background: var(--superficie);
     border: 1px solid var(--borda);
     border-radius: 14px;
     padding: 14px 16px;
@@ -1716,7 +1716,7 @@ body.sistema {
   }
 
   .vazio {
-    background: var(--branco);
+    background: var(--superficie);
     border: 1px solid var(--borda);
     border-radius: 14px;
   }
@@ -1736,13 +1736,13 @@ body.sistema {
 }
 
 .doc-tabela .doc-base {
-  color: var(--petroleo);
+  color: var(--titulo);
   margin-top: 2px;
 }
 
 .doc-tabela .col-liquido {
   font-weight: 800;
-  color: var(--petroleo);
+  color: var(--titulo);
   background: rgba(229, 244, 238, 0.65);
 }
 
@@ -1770,7 +1770,7 @@ body.sistema {
 
 @media print {
   .doc-tabela .col-liquido {
-    background: #eef6f3 !important;
+    background: var(--verde-suave) !important;
   }
 }
 
@@ -1874,7 +1874,7 @@ body.sistema {
 
 .janela-previa strong {
   font-size: 0.92rem;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .janela-previa .forte {
@@ -1931,7 +1931,7 @@ body.sistema {
 }
 
 .planilha td.desc input {
-  background: #fdf7f6;
+  background: var(--vermelho-suave);
 }
 
 .planilha-opcoes {
@@ -1957,7 +1957,7 @@ body.sistema {
 
 .janela-grupo legend {
   font-weight: 700;
-  color: var(--petroleo);
+  color: var(--titulo);
   padding: 0 6px;
   font-size: 0.9rem;
 }
@@ -1969,7 +1969,7 @@ body.sistema {
 /* Relatório de folha de pagamento */
 .doc-secao {
   font-size: 0.95rem;
-  color: var(--petroleo);
+  color: var(--titulo);
   border-bottom: 2px solid var(--esmeralda);
   padding-bottom: 4px;
   margin: 22px 0 12px;
@@ -2068,7 +2068,7 @@ body.sistema {
 
 .doc-funcionario h4 {
   margin: 0 0 8px;
-  color: var(--petroleo);
+  color: var(--titulo);
   font-size: 0.95rem;
   display: flex;
   align-items: center;
@@ -2141,7 +2141,7 @@ body.sistema {
 
 .doc-resumo-func strong {
   font-size: 0.88rem;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .doc-resumo-func .forte {
@@ -2274,7 +2274,7 @@ body.sistema {
 
 .aviso-banco {
   border-left-color: #c0392b;
-  background: #fdf1ef;
+  background: var(--vermelho-suave);
   margin-bottom: 16px;
 }
 
@@ -2311,7 +2311,7 @@ body.sistema {
 .ex-empresa td:nth-child(3) {
   width: 1%;
   white-space: nowrap;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .ex-empresa td:nth-child(2) {
@@ -2335,7 +2335,7 @@ body.sistema {
   font-size: 0.85rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--petroleo);
+  color: var(--titulo);
   border-bottom: 2px solid var(--petroleo);
   padding-bottom: 3px;
   margin: 22px 0 8px;
@@ -2365,7 +2365,7 @@ body.sistema {
 .ex-rodape b,
 .ex-geral b {
   font-weight: 600;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .ex-cab .icone-editar {
@@ -2402,7 +2402,7 @@ body.sistema {
 .ex-eventos th {
   text-align: left;
   font-weight: 600;
-  color: var(--petroleo);
+  color: var(--titulo);
   border-bottom: 1px solid var(--borda);
 }
 
@@ -2468,7 +2468,7 @@ body.sistema {
 .ex-situacoes caption {
   text-align: left;
   font-weight: 700;
-  color: var(--petroleo);
+  color: var(--titulo);
   padding-bottom: 4px;
 }
 
@@ -2484,7 +2484,7 @@ body.sistema {
 
 .ex-situacoes .ex-tot td {
   font-weight: 700;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 @media (max-width: 720px) {
@@ -2562,8 +2562,8 @@ body.sistema {
   align-items: center;
   gap: 4px;
   border: 1px solid var(--borda);
-  background: var(--branco);
-  color: var(--petroleo);
+  background: var(--superficie);
+  color: var(--titulo);
   border-radius: 8px;
   padding: 4px 9px;
   font: inherit;
@@ -2574,7 +2574,7 @@ body.sistema {
 
 .botao-editar-lanc:hover {
   border-color: var(--esmeralda);
-  background: #eef8f4;
+  background: var(--verde-suave);
 }
 
 .botao-editar-lanc svg {
@@ -2605,7 +2605,7 @@ body.sistema {
   padding: 8px 12px;
   border: 1px solid var(--borda);
   border-radius: 10px;
-  background: var(--branco);
+  background: var(--superficie);
   font: inherit;
 }
 
@@ -2614,7 +2614,7 @@ body.sistema {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   border: 1px solid var(--borda);
   border-radius: 14px;
-  background: var(--branco);
+  background: var(--superficie);
   overflow: hidden;
   margin-bottom: 14px;
 }
@@ -2636,11 +2636,11 @@ body.sistema {
 
 .folha-resumo strong {
   font-size: 1.05rem;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .folha-resumo .forte strong {
-  color: var(--esmeralda-escuro);
+  color: var(--link);
 }
 
 .folha-acoes {
@@ -2658,7 +2658,7 @@ body.sistema {
 }
 
 .status-salvo.pendente {
-  color: #a5521b;
+  color: var(--texto-amarelo);
   font-weight: 600;
 }
 
@@ -2668,7 +2668,7 @@ body.sistema {
   border-radius: 10px;
   overflow: hidden;
   margin-bottom: 12px;
-  background: var(--branco);
+  background: var(--superficie);
 }
 
 .folha-modo button {
@@ -2696,7 +2696,7 @@ body.sistema {
 }
 
 .folha-lista li {
-  background: var(--branco);
+  background: var(--superficie);
   border: 1px solid var(--borda);
   border-radius: 14px;
   padding: 12px 14px;
@@ -2714,7 +2714,7 @@ body.sistema {
 }
 
 .fl-nome a {
-  color: var(--petroleo);
+  color: var(--titulo);
   font-weight: 700;
   text-decoration: none;
 }
@@ -2745,13 +2745,13 @@ body.sistema {
   font-size: 0.75rem;
   padding: 2px 8px;
   border-radius: 999px;
-  background: #e8f5ef;
-  color: var(--petroleo);
+  background: var(--verde-suave);
+  color: var(--titulo);
 }
 
 .chip-desc {
-  background: #fbeceb;
-  color: #8a2f25;
+  background: var(--vermelho-suave);
+  color: var(--texto-vermelho);
 }
 
 .fl-valores {
@@ -2770,11 +2770,11 @@ body.sistema {
 
 .fl-valores strong {
   font-size: 0.95rem;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .fl-valores .forte strong {
-  color: var(--esmeralda-escuro);
+  color: var(--link);
 }
 
 .fl-rodape {
@@ -2785,11 +2785,11 @@ body.sistema {
 }
 
 .fl-estado {
-  color: var(--esmeralda-escuro);
+  color: var(--link);
 }
 
 .fl-estado.pendente {
-  color: #a5521b;
+  color: var(--texto-amarelo);
   font-weight: 600;
 }
 
@@ -2827,7 +2827,7 @@ body.sistema {
   cursor: pointer;
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--esmeralda-escuro);
+  color: var(--link);
   padding: 6px 0;
 }
 
@@ -2863,12 +2863,12 @@ body.sistema {
 .planilha th,
 .planilha td {
   border-right: 0;
-  border-bottom: 1px solid #edf1f0;
+  border-bottom: 1px solid var(--linha);
 }
 
 .planilha thead th {
-  background: #f4f7f6;
-  color: var(--petroleo);
+  background: var(--superficie-2);
+  color: var(--titulo);
   font-size: 0.74rem;
   font-weight: 600;
   padding: 8px 10px;
@@ -2877,18 +2877,18 @@ body.sistema {
 
 .planilha thead th.calc,
 .planilha thead th.forte {
-  background: #eef5f2;
-  color: var(--petroleo);
+  background: var(--verde-suave);
+  color: var(--titulo);
 }
 
 .planilha thead .fixa {
-  background: #f4f7f6;
+  background: var(--superficie-2);
 }
 
 .planilha thead tr.grupos th {
   position: sticky;
   top: 0;
-  background: var(--branco);
+  background: var(--superficie);
   color: var(--texto-suave);
   font-size: 0.66rem;
   padding: 6px 10px 4px;
@@ -2896,12 +2896,12 @@ body.sistema {
 }
 
 .planilha thead tr.grupos .g-desc {
-  background: var(--branco);
+  background: var(--superficie);
   border-bottom-color: #c98a7f;
 }
 
 .planilha thead tr.grupos .g-calc {
-  background: var(--branco);
+  background: var(--superficie);
   border-bottom-color: var(--petroleo);
 }
 
@@ -2927,12 +2927,12 @@ body.sistema {
 }
 
 .planilha .celula:hover {
-  background: #f7faf9;
+  background: var(--superficie-2);
 }
 
 .planilha td.calc {
-  background: #fafcfb;
-  border-left: 1px solid #edf1f0;
+  background: var(--superficie-2);
+  border-left: 1px solid var(--linha);
   min-width: 120px;
   padding: 10px;
 }
@@ -2943,8 +2943,8 @@ body.sistema {
 }
 
 .planilha td.forte {
-  background: #eef8f3;
-  color: var(--esmeralda-escuro);
+  background: var(--verde-suave);
+  color: var(--link);
 }
 
 .planilha .fixa {
@@ -2955,18 +2955,18 @@ body.sistema {
 
 .planilha tfoot td,
 .planilha tfoot th {
-  background: #f4f7f6;
+  background: var(--superficie-2);
   border-top: 1px solid var(--borda);
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .planilha tfoot .fixa {
-  background: #f4f7f6;
+  background: var(--superficie-2);
 }
 
 .planilha tbody tr:hover th.fixa,
 .planilha tbody tr:hover td:not(.calc) {
-  background: #fbfdfc;
+  background: var(--superficie-2);
 }
 
 .planilha thead tr:not(.grupos) th:not(.fixa) {
@@ -3031,7 +3031,7 @@ body.sistema {
 }
 
 .indicador-alerta strong {
-  color: #b23a2b;
+  color: var(--texto-vermelho);
 }
 
 .neg-filtros {
@@ -3050,7 +3050,7 @@ body.sistema {
   border: 1px solid var(--borda);
   border-radius: 10px;
   font: inherit;
-  background: var(--branco);
+  background: var(--superficie);
 }
 
 .neg-filtros select {
@@ -3059,7 +3059,7 @@ body.sistema {
   border: 1px solid var(--borda);
   border-radius: 10px;
   font: inherit;
-  background: var(--branco);
+  background: var(--superficie);
 }
 
 .neg-filtros .folha-modo {
@@ -3076,7 +3076,7 @@ body.sistema {
 }
 
 .neg-coluna {
-  background: #f1f5f4;
+  background: var(--superficie-2);
   border: 1px solid var(--borda);
   border-radius: 14px;
   min-height: 220px;
@@ -3086,12 +3086,12 @@ body.sistema {
 }
 
 .neg-coluna.alvo {
-  background: #e3f3ec;
+  background: var(--verde-suave);
   border-color: var(--esmeralda);
 }
 
 .neg-coluna-fim {
-  background: #f7f8f8;
+  background: var(--superficie-2);
 }
 
 .neg-coluna header {
@@ -3109,13 +3109,13 @@ body.sistema {
 
 .neg-coluna header strong {
   font-size: 0.85rem;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .neg-coluna header span {
   font-size: 0.72rem;
   font-weight: 700;
-  background: var(--branco);
+  background: var(--superficie);
   border: 1px solid var(--borda);
   border-radius: 999px;
   padding: 0 7px;
@@ -3145,7 +3145,7 @@ body.sistema {
 }
 
 .neg-card {
-  background: var(--branco);
+  background: var(--superficie);
   border: 1px solid var(--borda);
   border-radius: 10px;
   padding: 10px 11px;
@@ -3168,7 +3168,7 @@ body.sistema {
 .neg-card-titulo {
   display: block;
   font-weight: 700;
-  color: var(--petroleo);
+  color: var(--titulo);
   text-decoration: none;
   line-height: 1.3;
 }
@@ -3192,7 +3192,7 @@ body.sistema {
 }
 
 .neg-card-valores b {
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .neg-card .neg-passo {
@@ -3228,7 +3228,7 @@ body.sistema {
 }
 
 .neg-passo.hoje b {
-  color: #a5651b;
+  color: var(--texto-amarelo);
 }
 
 .neg-passo.atrasado {
@@ -3236,7 +3236,7 @@ body.sistema {
 }
 
 .neg-passo.atrasado b {
-  color: #b23a2b;
+  color: var(--texto-vermelho);
 }
 
 .neg-dica {
@@ -3250,24 +3250,24 @@ body.sistema {
   font-weight: 600;
   padding: 2px 9px;
   border-radius: 999px;
-  background: #e8f0ee;
-  color: var(--petroleo);
+  background: var(--verde-suave);
+  color: var(--titulo);
 }
 
 .neg-etapa.neg-proposta,
 .neg-etapa.neg-negociacao {
-  background: #fdf3e1;
-  color: #8a5a12;
+  background: var(--amarelo-suave);
+  color: var(--texto-amarelo);
 }
 
 .neg-etapa.neg-ganho {
-  background: #dff3e9;
-  color: #17734d;
+  background: var(--verde-suave);
+  color: var(--texto-verde);
 }
 
 .neg-etapa.neg-perdido {
-  background: #fbeceb;
-  color: #8a2f25;
+  background: var(--vermelho-suave);
+  color: var(--texto-vermelho);
 }
 
 /* Ficha */
@@ -3279,7 +3279,7 @@ body.sistema {
   border: 1px solid var(--borda);
   border-radius: 12px;
   overflow: hidden;
-  background: var(--branco);
+  background: var(--superficie);
 }
 
 .neg-trilha li {
@@ -3309,13 +3309,13 @@ body.sistema {
 }
 
 .neg-trilha button:hover {
-  background: #f1f7f5;
-  color: var(--petroleo);
+  background: var(--verde-suave);
+  color: var(--titulo);
 }
 
 .neg-trilha .feito > * {
-  background: #eaf6f0;
-  color: var(--esmeralda-escuro);
+  background: var(--verde-suave);
+  color: var(--link);
 }
 
 .neg-trilha .atual > * {
@@ -3361,7 +3361,7 @@ body.sistema {
 .neg-obs {
   white-space: pre-line;
   font-size: 0.88rem;
-  background: #f7faf9;
+  background: var(--superficie-2);
   border-radius: 10px;
   padding: 10px 12px;
   margin: 12px 0 0;
@@ -3388,7 +3388,7 @@ body.sistema {
   border-radius: 9px;
   font: inherit;
   font-size: 0.88rem;
-  background: var(--branco);
+  background: var(--superficie);
 }
 
 .neg-hist-form {
@@ -3420,7 +3420,7 @@ body.sistema {
   list-style: none;
   margin: 0;
   padding: 0 0 0 14px;
-  border-left: 2px solid #e1ebe8;
+  border-left: 2px solid var(--linha);
 }
 
 .neg-linha-tempo li {
@@ -3437,8 +3437,8 @@ body.sistema {
   height: 10px;
   border-radius: 50%;
   background: var(--esmeralda);
-  border: 2px solid var(--branco);
-  box-shadow: 0 0 0 1px #cfe3dc;
+  border: 2px solid var(--superficie);
+  box-shadow: 0 0 0 1px var(--linha);
 }
 
 .neg-linha-tempo .neg-h-etapa::before,
@@ -3454,7 +3454,7 @@ body.sistema {
 }
 
 .neg-h-topo b {
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .neg-h-topo span {
@@ -3493,7 +3493,7 @@ body.sistema {
 }
 
 .link-perigo {
-  color: #b23a2b !important;
+  color: var(--texto-vermelho) !important;
   font-size: 0.84rem;
 }
 
@@ -3623,7 +3623,7 @@ body.sistema {
 
   .ex-mob-grupo > b {
     display: block;
-    color: var(--petroleo);
+    color: var(--titulo);
     border-bottom: 1px solid var(--borda);
     padding-bottom: 2px;
     margin-bottom: 2px;
@@ -3776,7 +3776,7 @@ body.sistema {
   border: 1px solid var(--borda);
   border-radius: 10px;
   font: inherit;
-  background: var(--branco);
+  background: var(--superficie);
   width: auto;
 }
 
@@ -3785,16 +3785,16 @@ body.sistema {
 }
 
 .fin-lucro strong {
-  color: var(--esmeralda-escuro);
+  color: var(--link);
 }
 
 .fin-lucro.negativo strong {
-  color: #b23a2b;
+  color: var(--texto-vermelho);
 }
 
 .fin-titulo {
   font-size: 1.05rem;
-  color: var(--petroleo);
+  color: var(--titulo);
   margin: 26px 0 10px;
 }
 
@@ -3817,7 +3817,7 @@ body.sistema {
   gap: 8px;
   font-size: 0.95rem;
   margin: 0 0 10px;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .fin-ponto {
@@ -3845,7 +3845,7 @@ body.sistema {
 
 .fin-tabela tfoot td {
   font-weight: 700;
-  color: var(--petroleo);
+  color: var(--titulo);
   border-top: 2px solid var(--borda);
 }
 
@@ -3854,9 +3854,9 @@ body.sistema {
 }
 
 .fin-status {
-  border: 1px solid #e6c9a8;
-  background: #fdf5ea;
-  color: #8a5a12;
+  border: 1px solid var(--amarelo-borda);
+  background: var(--amarelo-suave);
+  color: var(--texto-amarelo);
   border-radius: 999px;
   padding: 2px 9px;
   font: inherit;
@@ -3867,9 +3867,9 @@ body.sistema {
 }
 
 .fin-status.ok {
-  border-color: #bfe3d2;
-  background: #eaf7f1;
-  color: #17734d;
+  border-color: var(--verde-borda);
+  background: var(--verde-suave);
+  color: var(--texto-verde);
 }
 
 .fin-ano {
@@ -3911,22 +3911,22 @@ body.sistema {
 }
 
 .fin-grade {
-  stroke: #e9eeec;
+  stroke: var(--linha);
   stroke-width: 1;
 }
 
 .fin-base {
-  stroke: #b9c7c3;
+  stroke: var(--borda);
   stroke-width: 1;
 }
 
 .fin-eixo {
   font-size: 12px;
-  fill: #6b7c78;
+  fill: var(--texto-suave);
 }
 
 .fin-eixo.forte {
-  fill: var(--petroleo);
+  fill: var(--titulo);
   font-weight: 700;
 }
 
@@ -3944,7 +3944,7 @@ body.sistema {
   position: absolute;
   top: 0;
   transform: translateX(-50%);
-  background: var(--branco);
+  background: var(--superficie);
   border: 1px solid var(--borda);
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(15, 61, 58, 0.14);
@@ -3957,7 +3957,7 @@ body.sistema {
 .fin-dica b {
   display: block;
   margin-bottom: 4px;
-  color: var(--petroleo);
+  color: var(--titulo);
 }
 
 .fin-dica div {
@@ -3990,17 +3990,17 @@ body.sistema {
 }
 
 .fin-tabela-ano tr.atual td {
-  background: #f1f8f5;
+  background: var(--verde-suave);
   font-weight: 600;
 }
 
 .fin-tabela-ano .neg {
-  color: #b23a2b;
+  color: var(--texto-vermelho);
 }
 
 .fin-tabela-ano tfoot td {
   font-weight: 700;
-  color: var(--petroleo);
+  color: var(--titulo);
   border-top: 2px solid var(--borda);
 }
 
@@ -4027,7 +4027,7 @@ body.sistema {
 
 .fin-barras-trilho {
   height: 8px;
-  background: #eef2f1;
+  background: var(--superficie-2);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -4083,4 +4083,32 @@ body.sistema {
 .fin-tabela-ano td {
   padding-top: 6px;
   padding-bottom: 6px;
+}
+
+
+/* Documentos (relatório e holerite) continuam como papel branco no modo escuro */
+.documento {
+  --fundo: #ffffff;
+  --superficie: #ffffff;
+  --superficie-2: #f4f7f6;
+  --borda: #d7e3e0;
+  --linha: #edf1f0;
+  --texto: #18302d;
+  --texto-suave: #546a67;
+  --titulo: #0f3d3a;
+  --esmeralda-claro: #e5f4ee;
+  --verde-suave: #eaf6f0;
+  --amarelo-suave: #fdf5ea;
+  --vermelho-suave: #fdecea;
+  --verde-borda: #bfe3d2;
+  --amarelo-borda: #e6c9a8;
+  --vermelho-borda: #f0c4be;
+  --texto-verde: #17734d;
+  --texto-vermelho: #a83226;
+  --texto-amarelo: #8a5a12;
+  --erro: #c0392b;
+  --link: #1d8a6e;
+  color-scheme: light;
+  background: #ffffff;
+  color: var(--texto);
 }
