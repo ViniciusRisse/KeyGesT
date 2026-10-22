@@ -1,0 +1,42 @@
+# Atualiza o banco do Supabase sozinho sempre que o supabase/schema.sql muda.
+# O arquivo pode ser rodado várias vezes sem apagar dados (usa "if not exists").
+# Configuração única: cadastre o segredo SUPABASE_DB_URL no GitHub
+# (Settings → Secrets and variables → Actions → New repository secret).
+name: Atualizar banco de dados
+
+on:
+  push:
+    branches: [claude/awesome-faraday-3unjf6, main]
+    paths: ['supabase/schema.sql']
+  workflow_dispatch:
+
+concurrency:
+  group: atualizar-banco
+  cancel-in-progress: false
+
+jobs:
+  aplicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conferir configuração
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::Falta cadastrar o segredo SUPABASE_DB_URL (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+
+      - name: Instalar cliente do Postgres
+        run: command -v psql >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client)
+
+      - name: Aplicar supabase/schema.sql
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+
+      - name: Resultado
+        run: echo "Banco de dados atualizado com o schema.sql deste commit."
