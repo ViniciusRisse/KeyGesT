@@ -12,7 +12,7 @@
   var ENDERECO = location.origin + location.pathname;
 
   // Chave primária de cada tabela
-  function chave(tabela) { return tabela === 'acessos' ? 'email' : 'id'; }
+  function chave(tabela) { return tabela === 'acessos' ? 'email' : tabela === 'perfil_paginas' ? 'perfil' : 'id'; }
 
   function traduzirErro(e) {
     var m = (e && (e.message || e.error_description)) || String(e);
@@ -137,6 +137,10 @@
     excluir: function (tabela, id) {
       return sb.from(tabela).delete().eq(chave(tabela), id).then(resultado);
     },
+    // Cria ou atualiza pela chave primária
+    salvarLinha: function (tabela, obj) {
+      return gravar(tabela, obj, function (o) { return sb.from(tabela).upsert(o, { onConflict: chave(tabela) }).select().single(); });
+    },
   };
 
   // ---------------- Demonstração (localStorage) ----------------
@@ -152,7 +156,7 @@
     }
     if (!Array.isArray(memoria.negociacoes)) memoria.negociacoes = negociacoesExemplo();
     if (!Array.isArray(memoria.financeiro)) memoria.financeiro = financeiroExemplo(memoria.empresas[0] && memoria.empresas[0].id, memoria.empresas[1] && memoria.empresas[1].id);
-    ['empresas', 'colaboradores', 'ferias', 'folha', 'acessos', 'negociacao_historico'].forEach(function (t) {
+    ['empresas', 'colaboradores', 'ferias', 'folha', 'acessos', 'negociacao_historico', 'perfil_paginas'].forEach(function (t) {
       if (!Array.isArray(memoria[t])) memoria[t] = [];
     });
     if (!memoria.acessos.length) memoria.acessos = acessosExemplo(memoria);
@@ -296,9 +300,17 @@
     var c = d.colaboradores.find(function (x) { return x.id === a.colaborador_id; });
     return c ? c.empresa_id : null;
   }
+  // Página liberada para o perfil (sem configuração salva, vale o padrão informado)
+  function paginaDemo(perfil, pagina, padrao) {
+    var r = (carregar().perfil_paginas || []).find(function (x) { return x.perfil === perfil; });
+    return r ? r.paginas.indexOf(pagina) !== -1 : padrao;
+  }
   function podeVer(tabela, r, a, d) {
     var p = a.perfil;
-    if (tabela === 'financeiro') return p === 'admin';
+    var equipe = p === 'admin' || p === 'analista' || p === 'consulta';
+    if (tabela === 'perfil_paginas') return true;
+    if (tabela === 'financeiro') return p === 'admin' || (equipe && paginaDemo(p, 'financeiro', false));
+    if (tabela === 'negociacoes' || tabela === 'negociacao_historico') return p === 'admin' || (equipe && paginaDemo(p, 'negociacoes', true));
     if (p === 'admin' || p === 'analista' || p === 'consulta') return tabela !== 'acessos' || p === 'admin' || r.email === a.email;
     if (tabela === 'acessos') return r.email === a.email;
     var emp = empresaDoAcesso(a, d);
@@ -318,8 +330,11 @@
     return false;
   }
   function podeGravar(tabela, obj, a, d) {
-    if (tabela === 'acessos' || tabela === 'financeiro') return a.perfil === 'admin';
-    if (a.perfil === 'admin' || a.perfil === 'analista') return true;
+    if (tabela === 'acessos' || tabela === 'perfil_paginas') return a.perfil === 'admin';
+    if (a.perfil === 'admin') return true;
+    if (tabela === 'financeiro') return a.perfil === 'analista' && paginaDemo('analista', 'financeiro', false);
+    if ((tabela === 'negociacoes' || tabela === 'negociacao_historico') && a.perfil === 'analista') return paginaDemo('analista', 'negociacoes', true);
+    if (a.perfil === 'analista') return true;
     if (tabela === 'folha' && a.perfil === 'cliente') {
       var c = d.colaboradores.find(function (x) { return x.id === obj.colaborador_id; });
       return obj.empresa_id === a.empresa_id && !!c && c.empresa_id === a.empresa_id;
@@ -373,7 +388,9 @@
     },
     excluir: function (tabela, id) {
       var d = carregar(), k = chave(tabela), a = acessoDemo();
-      if (a.perfil !== 'admin' && (tabela === 'acessos' || tabela === 'financeiro' || a.perfil !== 'analista')) return Promise.reject(new Error(SEM_PERMISSAO));
+      var r0 = (d[tabela] || []).find(function (x) { return x[k] === id; });
+      if (a.perfil !== 'admin' && (a.perfil !== 'analista' || tabela === 'acessos' || tabela === 'perfil_paginas' ||
+        (r0 && !podeGravar(tabela, r0, a, d)))) return Promise.reject(new Error(SEM_PERMISSAO));
       if (tabela === 'empresas' && d.colaboradores.some(function (c) { return c.empresa_id === id; })) {
         return Promise.reject(new Error(traduzirErro('foreign key')));
       }
@@ -389,9 +406,14 @@
       salvar();
       return Promise.resolve();
     },
+    salvarLinha: function (tabela, obj) {
+      var d = carregar(), k = chave(tabela);
+      var existe = (d[tabela] || []).some(function (x) { return x[k] === obj[k]; });
+      return existe ? local.atualizar(tabela, obj[k], obj) : local.inserir(tabela, obj);
+    },
     limpar: function () {
       var adm = carregar().acessos.filter(function (x) { return x.perfil === 'admin'; });
-      memoria = { empresas: [], colaboradores: [], ferias: [], folha: [], negociacoes: [], negociacao_historico: [], financeiro: [], acessos: adm };
+      memoria = { empresas: [], colaboradores: [], ferias: [], folha: [], negociacoes: [], negociacao_historico: [], financeiro: [], perfil_paginas: carregar().perfil_paginas || [], acessos: adm };
       local.verComo(adm[0] ? adm[0].email : '');
       salvar();
     },

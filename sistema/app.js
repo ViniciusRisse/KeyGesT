@@ -19,6 +19,61 @@
     colaborador: 'Colaborador',
   };
 
+  // Páginas do sistema e quais cada perfil pode ter (o administrador escolhe em Usuários)
+  var PAGINAS = {
+    painel: 'Painel',
+    empresas: 'Empresas',
+    colaboradores: 'Colaboradores',
+    folha: 'Folha do mês',
+    negociacoes: 'Negociações',
+    financeiro: 'Financeiro',
+    usuarios: 'Usuários',
+    'meus-dados': 'Meus dados',
+    holerites: 'Meus holerites',
+  };
+  var ORDEM_PAGINAS = Object.keys(PAGINAS);
+  var EQUIPE_PAGINAS = ['painel', 'empresas', 'colaboradores', 'folha', 'negociacoes', 'financeiro'];
+  // "Usuários" fica só com o administrador: quem gerencia acessos poderia se dar qualquer perfil
+  var PAGINAS_POSSIVEIS = {
+    admin: EQUIPE_PAGINAS.concat(['usuarios']),
+    analista: EQUIPE_PAGINAS,
+    consulta: EQUIPE_PAGINAS,
+    cliente: ['painel', 'empresas', 'colaboradores', 'folha'],
+    colaborador: ['meus-dados', 'holerites'],
+  };
+  var PAGINAS_PADRAO = {
+    admin: EQUIPE_PAGINAS.concat(['usuarios']),
+    analista: ['painel', 'empresas', 'colaboradores', 'folha', 'negociacoes'],
+    consulta: ['painel', 'empresas', 'colaboradores', 'folha', 'negociacoes'],
+    cliente: ['painel', 'colaboradores', 'folha'],
+    colaborador: ['meus-dados', 'holerites'],
+  };
+  // Páginas que não podem ser tiradas (o administrador não pode perder o acesso aos usuários)
+  var PAGINAS_FIXAS = { admin: ['usuarios'] };
+  var CONFIG_PAGINAS = {};   // perfil -> páginas salvas no banco
+  var MINHAS_PAGINAS = [];   // páginas do usuário logado
+
+  function paginasDoPerfil(perfil) {
+    var salvas = CONFIG_PAGINAS[perfil];
+    var lista = Array.isArray(salvas) ? salvas : PAGINAS_PADRAO[perfil] || [];
+    var possiveis = PAGINAS_POSSIVEIS[perfil] || [];
+    var fixas = PAGINAS_FIXAS[perfil] || [];
+    return ORDEM_PAGINAS.filter(function (pg) {
+      return possiveis.indexOf(pg) !== -1 && (lista.indexOf(pg) !== -1 || fixas.indexOf(pg) !== -1);
+    });
+  }
+
+  async function carregarPaginas() {
+    CONFIG_PAGINAS = {};
+    try {
+      (await DB.listar('perfil_paginas')).forEach(function (r) {
+        if (r && r.perfil && Array.isArray(r.paginas)) CONFIG_PAGINAS[r.perfil] = r.paginas;
+      });
+    } catch (e) { /* banco ainda sem a tabela: usa o padrão */ }
+  }
+
+  function temPagina(pg) { return MINHAS_PAGINAS.indexOf(pg) !== -1; }
+
   function definirPermissoes(a) {
     var p = a.perfil;
     PODE = {
@@ -1508,13 +1563,85 @@
           '<td>' + esc(vinculo) + '</td><td>' + (a.ativo ? '<span class="etiqueta">Ativo</span>' : '<span class="etiqueta desligado">Bloqueado</span>') + '</td>' +
           '<td><a class="botao botao-secundario botao-pequeno" href="#/usuarios/editar?email=' + encodeURIComponent(a.email) + '">Editar</a></td></tr>';
       }).join('') + '</tbody></table></div>' +
-      '<section class="painel" style="margin-top:20px"><h2>O que cada perfil pode fazer</h2><table class="tabela permissoes"><thead><tr><th>Perfil</th><th>Vê</th><th>Pode alterar</th></tr></thead><tbody>' +
+      htmlPaginasPerfis() +
+      '<section class="painel" style="margin-top:20px"><h2>Dados que cada perfil vê e altera</h2><table class="tabela permissoes"><thead><tr><th>Perfil</th><th>Vê</th><th>Pode alterar</th></tr></thead><tbody>' +
       '<tr><td>Administrador</td><td>Tudo</td><td>Tudo, inclusive usuários e permissões</td></tr>' +
       '<tr><td>Analista</td><td>Todas as empresas e colaboradores</td><td>Cadastros, férias e folha</td></tr>' +
       '<tr><td>Somente consulta</td><td>Todas as empresas e colaboradores</td><td>Nada</td></tr>' +
       '<tr><td>Empresa cliente</td><td>Só a própria empresa e seus colaboradores</td><td>Lançamentos da folha do mês</td></tr>' +
       '<tr><td>Colaborador</td><td>Só os próprios dados, férias e holerites</td><td>Nada</td></tr>' +
       '</tbody></table></section>';
+    ligarPaginasPerfis();
+  }
+
+  // Quadro para o administrador escolher as páginas de cada perfil
+  var ORDEM_PERFIS = ['admin', 'analista', 'consulta', 'cliente', 'colaborador'];
+  var CURTO_PERFIL = { admin: 'Administrador', analista: 'Analista', consulta: 'Consulta', cliente: 'Empresa cliente', colaborador: 'Colaborador' };
+
+  function htmlPaginasPerfis() {
+    return '<section class="painel paginas-perfis" style="margin-top:20px" id="paginas-perfis"><h2>Páginas de cada perfil</h2>' +
+      '<p class="ajuda">Marque as páginas que aparecem no menu de cada perfil. Desmarcar tira a página do menu e bloqueia o acesso a ela. ' +
+      'O que cada perfil pode alterar dentro das páginas continua valendo (veja o quadro abaixo).</p>' +
+      '<div class="matriz-rolagem"><table class="tabela matriz-paginas"><thead><tr><th>Página</th>' +
+      ORDEM_PERFIS.map(function (pf) { return '<th>' + esc(CURTO_PERFIL[pf]) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      ORDEM_PAGINAS.map(function (pg) {
+        return '<tr><td>' + esc(PAGINAS[pg]) + '</td>' + ORDEM_PERFIS.map(function (pf) {
+          if ((PAGINAS_POSSIVEIS[pf] || []).indexOf(pg) === -1) {
+            return '<td><span class="nao-aplica" title="Esta página não existe para este perfil">—</span></td>';
+          }
+          var fixa = (PAGINAS_FIXAS[pf] || []).indexOf(pg) !== -1;
+          var marcada = paginasDoPerfil(pf).indexOf(pg) !== -1;
+          return '<td><input type="checkbox" data-perfil="' + pf + '" data-pagina="' + pg + '"' + (marcada ? ' checked' : '') + (fixa ? ' disabled' : '') +
+            ' aria-label="' + esc(CURTO_PERFIL[pf] + ': ' + PAGINAS[pg]) + '"' +
+            (fixa ? ' title="O administrador precisa desta página para gerenciar os acessos"' : '') + '></td>';
+        }).join('') + '</tr>';
+      }).join('') +
+      '</tbody></table></div>' +
+      '<p class="ajuda">“—” = a página não se aplica ao perfil. A página Usuários fica só com o administrador, por segurança.</p>' +
+      '<div class="acoes"><button type="button" class="botao" id="salvar-paginas">Salvar páginas</button>' +
+      '<button type="button" class="botao botao-secundario" id="padrao-paginas">Voltar ao padrão</button></div></section>';
+  }
+
+  function ligarPaginasPerfis() {
+    var caixa = document.getElementById('paginas-perfis');
+    if (!caixa) return;
+    var btSalvar = document.getElementById('salvar-paginas');
+
+    document.getElementById('padrao-paginas').addEventListener('click', function () {
+      caixa.querySelectorAll('input[data-perfil]').forEach(function (cb) {
+        var pf = cb.dataset.perfil, pg = cb.dataset.pagina;
+        cb.checked = PAGINAS_PADRAO[pf].indexOf(pg) !== -1 || (PAGINAS_FIXAS[pf] || []).indexOf(pg) !== -1;
+      });
+      aviso('Padrão marcado. Clique em "Salvar páginas" para confirmar.');
+    });
+
+    btSalvar.addEventListener('click', async function () {
+      var novo = {};
+      ORDEM_PERFIS.forEach(function (pf) { novo[pf] = []; });
+      caixa.querySelectorAll('input[data-perfil]').forEach(function (cb) {
+        if (cb.checked) novo[cb.dataset.perfil].push(cb.dataset.pagina);
+      });
+      var vazio = ORDEM_PERFIS.filter(function (pf) { return !novo[pf].length; });
+      if (vazio.length) {
+        aviso('Deixe pelo menos uma página para: ' + vazio.map(function (pf) { return CURTO_PERFIL[pf]; }).join(', ') + '.', true);
+        return;
+      }
+      btSalvar.disabled = true;
+      try {
+        for (var i = 0; i < ORDEM_PERFIS.length; i++) {
+          await DB.salvarLinha('perfil_paginas', { perfil: ORDEM_PERFIS[i], paginas: novo[ORDEM_PERFIS[i]] });
+        }
+        await carregarPaginas();
+        MINHAS_PAGINAS = paginasDoPerfil(ACESSO.perfil);
+        montarMenu();
+        rotear();
+        aviso('Páginas salvas. Quem já está logado vê a mudança ao atualizar a página.');
+      } catch (e) {
+        aviso(/Could not find the table|schema cache|does not exist/i.test(e.message)
+          ? 'O banco ainda não tem a tabela de páginas. Rode o SQL de atualização (supabase/schema.sql).' : e.message, true);
+        btSalvar.disabled = false;
+      }
+    });
   }
 
   async function telaFormUsuario(email, query) {
@@ -1534,7 +1661,7 @@
       '<a class="voltar" href="#/usuarios">← Usuários</a>' +
       '<div class="topo-vista"><h1>' + (email ? 'Editar acesso' : 'Novo acesso') + '</h1></div>' +
       '<form class="painel form-sistema" id="form" novalidate style="max-width:760px"><fieldset><legend>Dados de acesso</legend><div class="campos" style="grid-template-columns:1fr 1fr">' +
-      '<div class="campo"><label for="u-nome">Nome</label><input id="u-nome" name="nome" value="' + esc(a.nome || '') + '"><div class="erro-campo"></div></div>' +
+      '<div class="campo"><label for="u-nome">Nome</label><input id="u-nome" name="nome" type="text" autocomplete="name" value="' + esc(a.nome || '') + '"><div class="erro-campo"></div></div>' +
       '<div class="campo"><label for="u-email">E-mail (login) *</label><input id="u-email" name="email" type="email" autocapitalize="none" spellcheck="false" value="' + esc(a.email) + '"' + (email ? ' disabled' : '') + '>' +
       '<small>É o login da pessoa e o endereço que recebe o link de recuperação de senha.</small><div class="erro-campo"></div></div>' +
       '<div class="campo"><label for="u-perfil">Perfil *</label><select id="u-perfil" name="perfil"' + (proprio ? ' disabled' : '') + '>' +
@@ -1568,7 +1695,8 @@
       var p = form.perfil.value;
       document.getElementById('campo-empresa').hidden = p !== 'cliente';
       document.getElementById('campo-colaborador').hidden = p !== 'colaborador';
-      document.getElementById('u-descricao').textContent = DESCR[p];
+      document.getElementById('u-descricao').textContent = DESCR[p] + ' Páginas: ' +
+        (paginasDoPerfil(p).map(function (pg) { return PAGINAS[pg]; }).join(', ') || 'nenhuma') + '.';
     }
     form.perfil.addEventListener('change', ajustar);
     ajustar();
@@ -1653,23 +1781,27 @@
   function rotaPermitida(c) {
     var tela = c[0];
     var formulario = c[1] === 'novo' || c[1] === 'nova' || c[2] === 'editar';
-    if (PODE.colaborador) return tela === 'meus-dados' || tela === 'holerites' || tela === 'holerite';
+    if (PODE.colaborador) {
+      if (tela === 'holerite') return temPagina('holerites');
+      return (tela === 'meus-dados' || tela === 'holerites') && temPagina(tela);
+    }
     if (tela === 'meus-dados' || tela === 'holerites') return false;
-    if (tela === 'usuarios' || tela === 'financeiro') return PODE.usuarios;
+    // Holerite avulso, relatório e holerites em lote fazem parte da folha
+    if (tela === 'holerite') return temPagina('folha') || temPagina('colaboradores');
+    if (tela === 'relatorio' || tela === 'holerites-lote') return temPagina('folha');
+    if (!PAGINAS[tela] || !temPagina(tela)) return false;
+    if (tela === 'usuarios') return PODE.usuarios;
     if (tela === 'negociacoes') return PODE.equipe && (!formulario || PODE.editar);
-    if (PODE.cliente && tela === 'empresas') return false;
     if (formulario && !PODE.editar) return false;
     return true;
   }
 
+  function paginaInicial() {
+    return MINHAS_PAGINAS[0] || null;
+  }
+
   function montarMenu() {
-    var itens = PODE.colaborador
-      ? [['meus-dados', 'Meus dados'], ['holerites', 'Meus holerites']]
-      : [['painel', 'Painel']]
-        .concat(PODE.equipe ? [['empresas', 'Empresas']] : [])
-        .concat([['colaboradores', 'Colaboradores'], ['folha', 'Folha do mês']])
-        .concat(PODE.equipe ? [['negociacoes', 'Negociações']] : [])
-        .concat(PODE.usuarios ? [['financeiro', 'Financeiro'], ['usuarios', 'Usuários']] : []);
+    var itens = MINHAS_PAGINAS.map(function (pg) { return [pg, PAGINAS[pg]]; });
     var curtos = { 'negociacoes': 'Vendas', 'financeiro': 'Lucro', 'colaboradores': 'Pessoas', 'folha': 'Folha', 'meus-dados': 'Meus dados', 'holerites': 'Holerites', 'usuarios': 'Acessos' };
     document.getElementById('menu-sistema').innerHTML = itens.map(function (i) {
       return '<a href="#/' + i[0] + '" data-rota="' + i[0] + '">' + (ICONES_MENU[i[0]] || '') +
@@ -1678,7 +1810,11 @@
     document.querySelectorAll('.so-equipe').forEach(function (el) { el.hidden = PODE.colaborador; });
   }
   async function rotear() {
-    var inicial = PODE.colaborador ? 'meus-dados' : 'painel';
+    var inicial = paginaInicial();
+    if (!inicial) {
+      vista.innerHTML = '<div class="painel vazio">O seu perfil ainda não tem nenhuma página liberada.<br>Fale com o administrador da KeyGest.</div>';
+      return;
+    }
     var hash = location.hash.replace(/^#\/?/, '') || inicial;
     var partes = hash.split('?');
     var caminho = partes[0].split('/').filter(Boolean);
@@ -1717,7 +1853,7 @@
       } else if (caminho[0] === 'financeiro') {
         await window.TelaFinanceiro({
           DB: DB, vista: vista, esc: esc, aviso: aviso, brl: brl, fmtData: fmtData, porNome: porNome, nomeEmpresa: nomeEmpresa,
-          ICONE_LAPIS: ICONE_LAPIS, ICONE_LIXEIRA: ICONE_LIXEIRA, rotear: rotear,
+          ICONE_LAPIS: ICONE_LAPIS, ICONE_LIXEIRA: ICONE_LIXEIRA, rotear: rotear, somenteLeitura: !PODE.editar,
         }, query);
       } else if (caminho[0] === 'negociacoes') {
         var neg = window.TelaNegociacoes({
@@ -1739,8 +1875,10 @@
         else if (caminho[1] && caminho[2] === 'editar') await telaFormColaborador(caminho[1], query);
         else if (caminho[1]) await telaFicha(caminho[1]);
         else await telaColaboradores(query);
-      } else {
+      } else if (caminho[0] === 'painel' || !caminho[0]) {
         await telaPainel();
+      } else {
+        location.replace('#/' + inicial);
       }
     } catch (e) {
       if (/Could not find the table|schema cache|does not exist/i.test(e.message)) {
@@ -1839,6 +1977,8 @@
       return;
     }
     definirPermissoes(ACESSO);
+    await carregarPaginas();
+    MINHAS_PAGINAS = paginasDoPerfil(ACESSO.perfil);
     montarMenu();
     telaLogin.hidden = true;
     document.getElementById('app').hidden = false;

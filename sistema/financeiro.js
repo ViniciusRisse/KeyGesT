@@ -1,6 +1,7 @@
 /*
  * Financeiro da KeyGest: receitas, despesas e lucro.
- * Somente o administrador vê e edita (regra também garantida no banco).
+ * Aparece para os perfis com a página "Financeiro" liberada; só administrador e analista
+ * alteram (regra também garantida no banco).
  */
 (function () {
   'use strict';
@@ -38,6 +39,7 @@
 
   window.TelaFinanceiro = async function (ctx, query) {
     var DB = ctx.DB, vista = ctx.vista, esc = ctx.esc, aviso = ctx.aviso, brl = ctx.brl, fmtData = ctx.fmtData;
+    var leitura = !!ctx.somenteLeitura;
     if (query.competencia && /^\d{4}-\d{2}$/.test(query.competencia)) estado.competencia = query.competencia;
     var comp = estado.competencia;
     var ano = comp.slice(0, 4);
@@ -99,10 +101,12 @@
           var detalhe = [cats[x.categoria], x.empresa_id && mapaEmp[x.empresa_id] ? ctx.nomeEmpresa(mapaEmp[x.empresa_id]) : '', x.recorrente ? 'Fixo mensal' : ''].filter(Boolean).join(' · ');
           return '<tr><td>' + esc(x.descricao) + '<small>' + esc(detalhe) + '</small></td>' +
             '<td class="num">' + brl(+x.valor || 0) + '</td>' +
-            '<td><button type="button" class="fin-status' + (x.quitado ? ' ok' : '') + '" data-quitar="' + esc(x.id) + '" title="Clique para alterar">' +
-            (x.quitado ? '✓ ' + rotQuit[0] : rotQuit[1]) + '</button></td>' +
-            '<td class="col-acoes"><div class="acoes-linha"><button type="button" class="icone-editar" data-editar="' + esc(x.id) + '" aria-label="Editar">' + ctx.ICONE_LAPIS + '</button>' +
-            '<button type="button" class="icone-excluir" data-excluir="' + esc(x.id) + '" aria-label="Excluir">' + ctx.ICONE_LIXEIRA + '</button></div></td></tr>';
+            (leitura
+              ? '<td><span class="fin-status' + (x.quitado ? ' ok' : '') + '">' + (x.quitado ? '✓ ' + rotQuit[0] : rotQuit[1]) + '</span></td><td></td></tr>'
+              : '<td><button type="button" class="fin-status' + (x.quitado ? ' ok' : '') + '" data-quitar="' + esc(x.id) + '" title="Clique para alterar">' +
+                (x.quitado ? '✓ ' + rotQuit[0] : rotQuit[1]) + '</button></td>' +
+                '<td class="col-acoes"><div class="acoes-linha"><button type="button" class="icone-editar" data-editar="' + esc(x.id) + '" aria-label="Editar">' + ctx.ICONE_LAPIS + '</button>' +
+                '<button type="button" class="icone-excluir" data-excluir="' + esc(x.id) + '" aria-label="Excluir">' + ctx.ICONE_LIXEIRA + '</button></div></td></tr>');
         }).join('') : '<tr><td colspan="4" class="ajuda">Nenhum lançamento neste mês.</td></tr>') +
         '</tbody><tfoot><tr><td>Total</td><td class="num">' + brl(soma(lista)) + '</td><td colspan="2"></td></tr></tfoot></table>';
     }
@@ -145,10 +149,10 @@
     }
 
     vista.innerHTML =
-      '<div class="topo-vista"><div><h1>Financeiro</h1><p>Receitas, despesas e lucro da KeyGest. Visível somente para o administrador.</p></div>' +
-      '<div class="acoes"><button type="button" class="botao" data-novo="receita">+ Receita</button><button type="button" class="botao botao-secundario" data-novo="despesa">+ Despesa</button></div></div>' +
+      '<div class="topo-vista"><div><h1>Financeiro</h1><p>Receitas, despesas e lucro da KeyGest.' + (leitura ? ' Somente consulta.' : '') + '</p></div>' +
+      (leitura ? '' : '<div class="acoes"><button type="button" class="botao" data-novo="receita">+ Receita</button><button type="button" class="botao botao-secundario" data-novo="despesa">+ Despesa</button></div>') + '</div>' +
       '<div class="fin-barra"><input type="month" id="fin-comp" value="' + esc(comp) + '" aria-label="Mês">' +
-      '<button type="button" class="botao botao-secundario botao-pequeno" id="fin-copiar">Copiar fixos de ' + esc(nomeMes(compAnterior(comp)).split(' de ')[0].toLowerCase()) + '</button></div>' +
+      (leitura ? '' : '<button type="button" class="botao botao-secundario botao-pequeno" id="fin-copiar">Copiar fixos de ' + esc(nomeMes(compAnterior(comp)).split(' de ')[0].toLowerCase()) + '</button>') + '</div>' +
       '<div class="indicadores fin-indicadores">' +
       '<div class="indicador"><span>Receitas do mês</span><strong>' + brl(totRec) + '</strong><small>' + (aReceber ? brl(aReceber) + ' a receber' : 'Tudo recebido') + '</small></div>' +
       '<div class="indicador"><span>Despesas do mês</span><strong>' + brl(totDesp) + '</strong><small>' + (aPagar ? brl(aPagar) + ' a pagar' : 'Tudo pago') + '</small></div>' +
@@ -202,7 +206,8 @@
       g.addEventListener('click', function () { ir(m.c); });
     });
 
-    document.getElementById('fin-copiar').addEventListener('click', async function () {
+    var btCopiar = document.getElementById('fin-copiar');
+    if (btCopiar) btCopiar.addEventListener('click', async function () {
       var ant = todos.filter(function (x) { return x.competencia === compAnterior(comp) && x.recorrente; });
       var jaTem = {};
       doMes.forEach(function (x) { jaTem[x.tipo + '|' + x.descricao] = true; });

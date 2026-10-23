@@ -3547,6 +3547,28 @@ body.sistema {
   width: 170px;
 }
 
+.neg-hist-linha input[type='time'] {
+  flex: 0 0 116px;
+  width: 116px;
+}
+
+@media (max-width: 560px) {
+  .neg-hist-linha {
+    flex-wrap: wrap;
+  }
+
+  .neg-hist-linha select {
+    flex: 1 1 100%;
+  }
+
+  .neg-hist-linha input[type='date'],
+  .neg-hist-linha input[type='time'] {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+  }
+}
+
 @media (max-width: 1100px) {
   .neg-indicadores {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -4118,4 +4140,46 @@ body.sistema {
 .neg-ficha > .painel,
 .fin-colunas > .painel {
   margin-top: 0;
+}
+
+/* ---------- Páginas de cada perfil (Usuários) ---------- */
+.matriz-rolagem {
+  overflow-x: auto;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  margin: 14px 0;
+}
+
+.matriz-paginas {
+  min-width: 620px;
+  margin: 0;
+}
+
+.matriz-paginas th:not(:first-child),
+.matriz-paginas td:not(:first-child) {
+  text-align: center;
+  width: 15%;
+}
+
+.matriz-paginas td:first-child {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.matriz-paginas input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--esmeralda);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.matriz-paginas input[type='checkbox']:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.matriz-paginas .nao-aplica {
+  color: var(--texto-suave);
 }
