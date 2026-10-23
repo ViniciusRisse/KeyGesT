@@ -426,6 +426,77 @@ create policy financeiro_admin on financeiro for all to authenticated
 notify pgrst, 'reload schema';
 
 -- ---------------------------------------------------------------
+-- Histórico das negociações: hora do contato
+-- (mudança de etapa não é mais gravada no histórico)
+-- ---------------------------------------------------------------
+alter table negociacao_historico add column if not exists hora time;
+
+-- ---------------------------------------------------------------
+-- Páginas de cada perfil: o administrador escolhe em Usuários
+-- ---------------------------------------------------------------
+create table if not exists perfil_paginas (
+  perfil text primary key check (perfil in ('admin', 'analista', 'consulta', 'cliente', 'colaborador')),
+  paginas text[] not null default '{}',
+  atualizado_em timestamptz not null default now()
+);
+
+insert into perfil_paginas (perfil, paginas) values
+  ('admin', array['painel', 'empresas', 'colaboradores', 'folha', 'negociacoes', 'financeiro', 'usuarios']),
+  ('analista', array['painel', 'empresas', 'colaboradores', 'folha', 'negociacoes']),
+  ('consulta', array['painel', 'empresas', 'colaboradores', 'folha', 'negociacoes']),
+  ('cliente', array['painel', 'colaboradores', 'folha']),
+  ('colaborador', array['meus-dados', 'holerites'])
+on conflict (perfil) do nothing;
+
+-- O administrador nunca perde a página de usuários
+update perfil_paginas set paginas = array_append(paginas, 'usuarios')
+  where perfil = 'admin' and not ('usuarios' = any (paginas));
+
+drop trigger if exists perfil_paginas_atualizado on perfil_paginas;
+create trigger perfil_paginas_atualizado before update on perfil_paginas
+  for each row execute function tocar_atualizado_em();
+
+create or replace function public.pagina_liberada(p text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select p = any (paginas) from perfil_paginas where perfil = meu_perfil()), false);
+$$;
+
+alter table perfil_paginas enable row level security;
+drop policy if exists perfil_paginas_ler on perfil_paginas;
+create policy perfil_paginas_ler on perfil_paginas for select to authenticated using (true);
+drop policy if exists perfil_paginas_admin on perfil_paginas;
+create policy perfil_paginas_admin on perfil_paginas for all to authenticated
+  using (eh_admin()) with check (eh_admin());
+
+-- Negociações: só a equipe com a página liberada (o administrador sempre).
+-- Substitui as regras criadas mais acima, que não conheciam as páginas.
+drop policy if exists negociacoes_ler on negociacoes;
+create policy negociacoes_ler on negociacoes for select to authenticated
+  using (eh_equipe() and (eh_admin() or pagina_liberada('negociacoes')));
+drop policy if exists negociacoes_editar on negociacoes;
+create policy negociacoes_editar on negociacoes for all to authenticated
+  using (pode_editar() and (eh_admin() or pagina_liberada('negociacoes')))
+  with check (pode_editar() and (eh_admin() or pagina_liberada('negociacoes')));
+drop policy if exists negociacao_historico_ler on negociacao_historico;
+create policy negociacao_historico_ler on negociacao_historico for select to authenticated
+  using (eh_equipe() and (eh_admin() or pagina_liberada('negociacoes')));
+drop policy if exists negociacao_historico_editar on negociacao_historico;
+create policy negociacao_historico_editar on negociacao_historico for all to authenticated
+  using (pode_editar() and (eh_admin() or pagina_liberada('negociacoes')))
+  with check (pode_editar() and (eh_admin() or pagina_liberada('negociacoes')));
+
+-- Financeiro: o administrador sempre; a equipe com a página liberada vê e o analista também altera
+drop policy if exists financeiro_ler on financeiro;
+create policy financeiro_ler on financeiro for select to authenticated
+  using (eh_equipe() and pagina_liberada('financeiro'));
+drop policy if exists financeiro_editar on financeiro;
+create policy financeiro_editar on financeiro for all to authenticated
+  using (pode_editar() and pagina_liberada('financeiro'))
+  with check (pode_editar() and pagina_liberada('financeiro'));
+
+notify pgrst, 'reload schema';
+
+-- ---------------------------------------------------------------
 -- Segurança das funções (recomendações do Supabase)
 -- Fica no fim porque "create or replace function" desfaz estes ajustes.
 -- ---------------------------------------------------------------
@@ -437,8 +508,8 @@ alter function public.pode_editar() set search_path = public;
 alter function public.tocar_atualizado_em() set search_path = public;
 
 -- Usadas nas regras de acesso: só usuários logados
-revoke execute on function public.meu_colaborador(), public.meu_perfil(), public.minha_empresa() from public, anon;
-grant execute on function public.meu_colaborador(), public.meu_perfil(), public.minha_empresa() to authenticated;
+revoke execute on function public.meu_colaborador(), public.meu_perfil(), public.minha_empresa(), public.pagina_liberada(text) from public, anon;
+grant execute on function public.meu_colaborador(), public.meu_perfil(), public.minha_empresa(), public.pagina_liberada(text) to authenticated;
 
 -- Gatilho do cadastro: ninguém chama pela API, só o serviço de login
 revoke execute on function public.validar_cadastro() from public, anon, authenticated;
@@ -448,7 +519,7 @@ begin
     grant execute on function public.validar_cadastro() to supabase_auth_admin;
   end if;
   if exists (select 1 from pg_roles where rolname = 'service_role') then
-    grant execute on function public.meu_colaborador(), public.meu_perfil(), public.minha_empresa(), public.validar_cadastro() to service_role;
+    grant execute on function public.meu_colaborador(), public.meu_perfil(), public.minha_empresa(), public.pagina_liberada(text), public.validar_cadastro() to service_role;
   end if;
 end $$;
 

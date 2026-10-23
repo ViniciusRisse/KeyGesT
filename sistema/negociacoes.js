@@ -59,9 +59,24 @@
       return '<div class="neg-passo' + cls + '">' + (quando ? '<b>' + esc(quando) + '</b>' : '') + (n.proximo_passo ? '<span>' + esc(n.proximo_passo) + '</span>' : '') + '</div>';
     }
 
-    async function registrar(negId, tipo, descricao, data) {
+    function agoraHora() {
+      var d = new Date();
+      return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    }
+
+    // Hora do registro: a digitada no formulário ou, nos registros antigos, a hora em que foi salvo
+    function horaDe(h) {
+      if (h.hora) return String(h.hora).slice(0, 5);
+      if (!h.criado_em) return '';
+      var c = new Date(h.criado_em);
+      if (isNaN(c)) return '';
+      if (h.data && iso(c) !== String(h.data).slice(0, 10)) return '';
+      return String(c.getHours()).padStart(2, '0') + ':' + String(c.getMinutes()).padStart(2, '0');
+    }
+
+    async function registrar(negId, tipo, descricao, data, hora) {
       return DB.inserir('negociacao_historico', {
-        negociacao_id: negId, tipo: tipo, descricao: descricao, data: data || hojeIso(), autor: autor(),
+        negociacao_id: negId, tipo: tipo, descricao: descricao, data: data || hojeIso(), hora: hora || agoraHora(), autor: autor(),
       });
     }
 
@@ -70,10 +85,8 @@
       var dados = Object.assign({ etapa: nova }, extra || {});
       if (nova === 'ganho' || nova === 'perdido') dados.fechado_em = dados.fechado_em || hojeIso();
       else dados.fechado_em = null;
-      var salvo = await DB.atualizar('negociacoes', n.id, dados);
-      await registrar(n.id, 'etapa', NOME_ETAPA[n.etapa] + ' → ' + NOME_ETAPA[nova] +
-        (nova === 'perdido' && dados.motivo_perda ? ' (motivo: ' + dados.motivo_perda + ')' : ''));
-      return salvo;
+      // Mudar de etapa não grava no histórico: ele só recebe o que a pessoa registra em "Registrar contato"
+      return DB.atualizar('negociacoes', n.id, dados);
     }
 
     // ------------------------------------------------------------
@@ -317,7 +330,6 @@
           var salvo;
           if (id) {
             salvo = await DB.atualizar('negociacoes', id, d);
-            if (antes.etapa !== d.etapa) await registrar(id, 'etapa', NOME_ETAPA[antes.etapa] + ' → ' + NOME_ETAPA[d.etapa]);
           } else {
             salvo = await DB.inserir('negociacoes', d);
             await registrar(salvo.id, 'criacao', 'Negociação cadastrada' + (d.origem ? ' (origem: ' + ORIGENS[d.origem] + ')' : '') + '.', d.data_contato || hojeIso());
@@ -338,8 +350,10 @@
       var r = await Promise.all([DB.obter('negociacoes', id), DB.listar('negociacao_historico', { negociacao_id: id })]);
       var n = r[0];
       if (!n) return ctx.naoEncontrado();
-      var hist = r[1].sort(function (a, b) {
+      var hist = r[1].filter(function (h) { return h.tipo !== 'etapa'; }).sort(function (a, b) {
         if (a.data !== b.data) return a.data < b.data ? 1 : -1;
+        var ha = horaDe(a), hb = horaDe(b);
+        if (ha !== hb) return ha < hb ? 1 : -1;
         return String(a.criado_em || '') < String(b.criado_em || '') ? 1 : -1;
       });
       var fim = n.etapa === 'ganho' || n.etapa === 'perdido';
@@ -410,11 +424,12 @@
         (ed ? '<form id="neg-hist" class="neg-hist-form">' +
           '<div class="neg-hist-linha"><select name="tipo" aria-label="Tipo de contato">' +
           ['ligacao', 'whatsapp', 'email', 'reuniao', 'proposta', 'anotacao'].map(function (k) { return '<option value="' + k + '">' + TIPOS[k] + '</option>'; }).join('') +
-          '</select><input type="date" name="data" value="' + hojeIso() + '" aria-label="Data"></div>' +
+          '</select><input type="date" name="data" value="' + hojeIso() + '" aria-label="Data">' +
+          '<input type="time" name="hora" value="' + agoraHora() + '" aria-label="Hora"></div>' +
           '<textarea name="descricao" rows="3" placeholder="O que foi conversado? Ex.: cliente pediu proposta para 12 funcionários, retorno na sexta." aria-label="Descrição"></textarea>' +
           '<button type="submit" class="botao botao-pequeno">Registrar contato</button></form>' : '') +
         (hist.length ? '<ol class="neg-linha-tempo">' + hist.map(function (h) {
-          return '<li class="neg-h-' + esc(h.tipo) + '"><div class="neg-h-topo"><b>' + esc(TIPOS[h.tipo] || h.tipo) + '</b><span>' + fmtData(h.data) + (h.autor ? ' · ' + esc(h.autor) : '') + '</span>' +
+          return '<li class="neg-h-' + esc(h.tipo) + '"><div class="neg-h-topo"><b>' + esc(TIPOS[h.tipo] || h.tipo) + '</b><span>' + fmtData(h.data) + (horaDe(h) ? ' às ' + esc(horaDe(h)) : '') + (h.autor ? ' · ' + esc(h.autor) : '') + '</span>' +
             (ed && h.tipo !== 'criacao' ? '<button type="button" class="neg-h-excluir" data-excluir-h="' + esc(h.id) + '" aria-label="Apagar registro" title="Apagar registro">×</button>' : '') + '</div>' +
             '<p>' + esc(h.descricao) + '</p></li>';
         }).join('') + '</ol>' : '<p class="ajuda">Nenhum contato registrado ainda.</p>') +
@@ -440,9 +455,8 @@
       var btFeito = document.getElementById('neg-passo-feito');
       if (btFeito) btFeito.addEventListener('click', async function () {
         try {
-          await registrar(n.id, 'anotacao', 'Concluído: ' + n.proximo_passo);
           await DB.atualizar('negociacoes', n.id, { proximo_passo: null, proximo_data: null });
-          aviso('Passo concluído e registrado no histórico. Defina o próximo.');
+          aviso('Passo concluído. Defina o próximo.');
           recarregar();
         } catch (e) { aviso(e.message, true); }
       });
@@ -453,7 +467,7 @@
         var txt = fHist.descricao.value.trim();
         if (!txt) { fHist.descricao.focus(); return; }
         try {
-          await registrar(n.id, fHist.tipo.value, txt, fHist.data.value || hojeIso());
+          await registrar(n.id, fHist.tipo.value, txt, fHist.data.value || hojeIso(), fHist.hora.value || agoraHora());
           if (fHist.tipo.value === 'proposta' && (n.etapa === 'contato' || n.etapa === 'reuniao')) await mudarEtapa(n, 'proposta');
           aviso('Contato registrado.');
           recarregar();
@@ -497,7 +511,6 @@
               (n.valor_mensal ? ' Honorário mensal combinado: ' + brl(+n.valor_mensal) + '.' : ''),
           });
           await DB.atualizar('negociacoes', n.id, { empresa_id: emp.id });
-          await registrar(n.id, 'anotacao', 'Cadastrada como empresa cliente.');
           aviso('Empresa cadastrada. Confira e complete os dados.');
           location.hash = '#/empresas/' + emp.id + '/editar';
         } catch (e) {
