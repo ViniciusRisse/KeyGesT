@@ -1246,13 +1246,13 @@ textarea:focus {
    Modo escuro: segue o tema do Windows/celular ou a escolha no botão
    ------------------------------------------------------------ */
 :root[data-tema='escuro'] {
-  --fundo: #1c2020;
-  --superficie: #252b2a;
-  --superficie-2: #2c3332;
-  --borda: #3b4544;
-  --linha: #323a39;
-  --texto: #e4ebea;
-  --texto-suave: #a5b4b1;
+  --fundo: #191919;
+  --superficie: #222222;
+  --superficie-2: #2a2a2a;
+  --borda: #3a3a3a;
+  --linha: #2e2e2e;
+  --texto: #e8e8e8;
+  --texto-suave: #a9a9a9;
   --titulo: #86d8c1;
   --esmeralda-claro: #1f3a33;
   --verde-suave: #1f3631;
@@ -1274,13 +1274,13 @@ textarea:focus {
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema='claro']) {
-    --fundo: #1c2020;
-    --superficie: #252b2a;
-    --superficie-2: #2c3332;
-    --borda: #3b4544;
-    --linha: #323a39;
-    --texto: #e4ebea;
-    --texto-suave: #a5b4b1;
+    --fundo: #191919;
+    --superficie: #222222;
+    --superficie-2: #2a2a2a;
+    --borda: #3a3a3a;
+    --linha: #2e2e2e;
+    --texto: #e8e8e8;
+    --texto-suave: #a9a9a9;
     --titulo: #86d8c1;
     --esmeralda-claro: #1f3a33;
     --verde-suave: #1f3631;
