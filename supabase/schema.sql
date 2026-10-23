@@ -424,3 +424,32 @@ create policy financeiro_admin on financeiro for all to authenticated
   using (eh_admin()) with check (eh_admin());
 
 notify pgrst, 'reload schema';
+
+-- ---------------------------------------------------------------
+-- Segurança das funções (recomendações do Supabase)
+-- Fica no fim porque "create or replace function" desfaz estes ajustes.
+-- ---------------------------------------------------------------
+alter function public.eh_admin() set search_path = public;
+alter function public.eh_cliente() set search_path = public;
+alter function public.eh_equipe() set search_path = public;
+alter function public.meu_email() set search_path = public;
+alter function public.pode_editar() set search_path = public;
+alter function public.tocar_atualizado_em() set search_path = public;
+
+-- Usadas nas regras de acesso: só usuários logados
+revoke execute on function public.meu_colaborador(), public.meu_perfil(), public.minha_empresa() from public, anon;
+grant execute on function public.meu_colaborador(), public.meu_perfil(), public.minha_empresa() to authenticated;
+
+-- Gatilho do cadastro: ninguém chama pela API, só o serviço de login
+revoke execute on function public.validar_cadastro() from public, anon, authenticated;
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    grant execute on function public.validar_cadastro() to supabase_auth_admin;
+  end if;
+  if exists (select 1 from pg_roles where rolname = 'service_role') then
+    grant execute on function public.meu_colaborador(), public.meu_perfil(), public.minha_empresa(), public.validar_cadastro() to service_role;
+  end if;
+end $$;
+
+notify pgrst, 'reload schema';
