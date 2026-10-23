@@ -4112,3 +4112,10 @@ body.sistema {
   background: #ffffff;
   color: var(--texto);
 }
+
+/* Em grades, o espaço entre os painéis vem do gap */
+.grade-ficha > .painel,
+.neg-ficha > .painel,
+.fin-colunas > .painel {
+  margin-top: 0;
+}
