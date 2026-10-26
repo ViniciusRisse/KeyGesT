@@ -211,6 +211,7 @@
       'Mensagem': d.mensagem || '-',
       'Estimativa do site': d.estimativa || '-',
       'Origem': d.origem,
+      'Consentimento LGPD': 'Autorizado no formulário em ' + new Date().toLocaleString('pt-BR') + ' (Política de privacidade de 26/10/2026)',
       _subject: d._subject,
       _replyto: d.email,
       _template: 'table',

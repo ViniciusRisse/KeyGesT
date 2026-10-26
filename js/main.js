@@ -41,6 +41,13 @@
     }
   });
 
+  // Identificação da empresa no rodapé (razão social, CNPJ e endereço)
+  document.querySelectorAll('[data-identificacao]').forEach(function (el) {
+    var partes = [empresa.razaoSocial, empresa.cnpj ? 'CNPJ ' + empresa.cnpj : '', empresa.endereco].filter(Boolean);
+    el.textContent = partes.join(' · ');
+    el.hidden = !partes.length;
+  });
+
   // Botão flutuante de WhatsApp
   if (empresa.whatsapp) {
     var a = document.createElement('a');

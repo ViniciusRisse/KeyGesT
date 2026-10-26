@@ -538,3 +538,46 @@ begin
       check (regime in ('simples', 'simples-iv', 'normal', 'mei', 'domestico'));
   end if;
 end $$;
+-- ---------------------------------------------------------------
+-- Registro de acessos ao sistema (Marco Civil da Internet, art. 15):
+-- guarda data/hora, IP e navegador de cada login por 6 meses.
+-- Só o administrador consulta; ninguém grava pela API (só o gatilho).
+-- ---------------------------------------------------------------
+create table if not exists public.registros_acesso (
+  id bigint generated always as identity primary key,
+  user_id uuid,
+  email text,
+  ip inet,
+  user_agent text,
+  criado_em timestamptz not null default now()
+);
+create index if not exists registros_acesso_data_idx on public.registros_acesso (criado_em);
+alter table public.registros_acesso enable row level security;
+
+do $$
+begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'registros_acesso' and policyname = 'registros_acesso_admin') then
+    create policy registros_acesso_admin on public.registros_acesso for select to authenticated using (public.eh_admin());
+  end if;
+end $$;
+
+create or replace function public.registrar_acesso() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  begin
+    insert into public.registros_acesso (user_id, email, ip, user_agent, criado_em)
+    values (new.user_id, (select u.email from auth.users u where u.id = new.user_id), new.ip, new.user_agent, coalesce(new.created_at, now()));
+    -- guarda 6 meses (exigência legal) e apaga o que passou de 7 meses (LGPD)
+    delete from public.registros_acesso where criado_em < now() - interval '7 months';
+  exception when others then
+    null; -- nunca impede o login
+  end;
+  return new;
+end $$;
+
+revoke execute on function public.registrar_acesso() from public, anon, authenticated;
+
+create or replace trigger registrar_acesso after insert on auth.sessions
+  for each row execute function public.registrar_acesso();
+
+notify pgrst, 'reload schema';

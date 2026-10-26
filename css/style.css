@@ -3,7 +3,7 @@
   --petroleo-2: #164e4a;
   --petroleo-3: #1f6660;
   --esmeralda: #2aa384;
-  --esmeralda-escuro: #1d8a6e;
+  --esmeralda-escuro: #187a60;
   --esmeralda-claro: #e5f4ee;
   --texto: #18302d;
   --texto-suave: #546a67;
@@ -27,7 +27,9 @@
   --texto-verde: #17734d;
   --texto-vermelho: #a83226;
   --texto-amarelo: #8a5a12;
-  --link: #1d8a6e;
+  --link: #187a60;
+  --botao: #187a60;
+  --botao-hover: #136650;
   --azul-suave: #e6f0ff;
   --texto-azul: #1d4ed8;
   color-scheme: light;
@@ -231,9 +233,9 @@ p {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--esmeralda);
+  background: var(--botao);
   color: var(--branco);
-  border: 2px solid var(--esmeralda);
+  border: 2px solid var(--botao);
   padding: 12px 22px;
   border-radius: 10px;
   font: inherit;
@@ -244,8 +246,8 @@ p {
 }
 
 .botao:hover {
-  background: var(--esmeralda-escuro);
-  border-color: var(--esmeralda-escuro);
+  background: var(--botao-hover);
+  border-color: var(--botao-hover);
 }
 
 .botao:active {
@@ -1350,7 +1352,7 @@ textarea:focus {
     --texto-vermelho: #a83226;
     --texto-amarelo: #8a5a12;
     --erro: #c0392b;
-    --link: #1d8a6e;
+    --link: #187a60;
     --azul-suave: #e6f0ff;
     --texto-azul: #1d4ed8;
     color-scheme: light;

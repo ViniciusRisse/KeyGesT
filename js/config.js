@@ -11,6 +11,11 @@ window.KEYGEST_CONFIG = {
     // Somente números, com DDI e DDD. Ex.: '5511999999999'. Vazio esconde o botão.
     whatsapp: '5511943080263',
     cidade: 'Brasil',
+    // Identificação exigida pelo Código de Defesa do Consumidor (aparece no rodapé).
+    // Preencha quando tiver os dados; vazio não aparece.
+    razaoSocial: '',
+    cnpj: '',
+    endereco: '',
   },
 
   // Banco de dados do sistema de colaboradores (Supabase).

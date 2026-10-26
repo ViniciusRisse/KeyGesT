@@ -139,7 +139,8 @@
       html += '<p class="aviso">' + esc(h.sobConsulta.join(', ')) + ': valor sob consulta, incluído na proposta.</p>';
     }
 
-    html += '<p class="aviso">Estimativa com base em regras gerais de ' + p.ano + '. Convenções coletivas, adicionais e a situação de cada empresa podem alterar os valores.</p>';
+    html += '<p class="aviso">Estimativa com base em regras gerais de ' + p.ano + '. Convenções coletivas, adicionais e a situação de cada empresa podem alterar os valores. ' +
+      'Os honorários mostrados são uma simulação e não constituem proposta comercial: os valores finais são os da proposta enviada pela KeyGest após a análise do seu caso.</p>';
     html += '<button type="button" class="botao" id="pedir-proposta" style="width:100%">Receber proposta com esta estimativa</button>' +
       '<button type="button" class="botao botao-secundario" id="imprimir" style="width:100%;margin-top:10px">Imprimir / salvar PDF</button>';
     saida.innerHTML = html;
