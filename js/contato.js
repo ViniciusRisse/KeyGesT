@@ -33,8 +33,53 @@
     est = null;
   }
 
+  // Empresa (CNPJ) ou empregador doméstico (pessoa física, CPF)
+  function domestico() { return form.tipo.value === 'domestico'; }
+
+  function validarCPF(v) {
+    var c = String(v).replace(/\D/g, '');
+    if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false;
+    for (var t = 9; t < 11; t++) {
+      var soma = 0;
+      for (var i = 0; i < t; i++) soma += +c[i] * (t + 1 - i);
+      if (((soma * 10) % 11) % 10 !== +c[t]) return false;
+    }
+    return true;
+  }
+
+  function aplicarTipo() {
+    var dom = domestico();
+    var campoEmpresa = document.getElementById('campo-empresa');
+    campoEmpresa.hidden = dom;
+    form.empresa.required = !dom;
+    campoEmpresa.classList.remove('invalido');
+    document.getElementById('rotulo-documento').textContent = dom ? 'CPF do empregador *' : 'CNPJ *';
+    document.getElementById('erro-documento').textContent = dom ? 'CPF inválido. Confira os números.' : 'CNPJ inválido. Confira os números.';
+    document.getElementById('rotulo-funcionarios').textContent = dom ? 'Número de empregados domésticos' : 'Número de funcionários';
+    form.cnpj.placeholder = dom ? '000.000.000-00' : '00.000.000/0000-00';
+    form.cnpj.maxLength = dom ? 14 : 18;
+    form.cnpj.inputMode = dom ? 'numeric' : 'text';
+    form.cnpj.value = '';
+    form.cnpj.closest('.campo').classList.remove('invalido');
+    form.mensagem.placeholder = dom
+      ? 'Conte um pouco sobre os empregados (função, jornada, se dorme no emprego) e o que precisa.'
+      : 'Conte um pouco sobre a sua empresa e o que precisa.';
+  }
+  Array.prototype.forEach.call(form.querySelectorAll('input[name=tipo]'), function (r) {
+    r.addEventListener('change', aplicarTipo);
+  });
+
   // Máscaras
   form.cnpj.addEventListener('input', function () {
+    if (domestico()) {
+      var d = this.value.replace(/\D/g, '').slice(0, 11);
+      var o = d.slice(0, 3);
+      if (d.length > 3) o += '.' + d.slice(3, 6);
+      if (d.length > 6) o += '.' + d.slice(6, 9);
+      if (d.length > 9) o += '-' + d.slice(9, 11);
+      this.value = o;
+      return;
+    }
     var v = this.value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 14);
     var out = v.slice(0, 2);
     if (v.length > 2) out += '.' + v.slice(2, 5);
@@ -57,8 +102,8 @@
 
   var regras = {
     nome: function (v) { return v.trim().length >= 3; },
-    empresa: function (v) { return v.trim().length >= 2; },
-    cnpj: function (v) { return C.validarCNPJ(v); },
+    empresa: function (v) { return domestico() || v.trim().length >= 2; },
+    cnpj: function (v) { return domestico() ? validarCPF(v) : C.validarCNPJ(v); },
     telefone: function (v) { return v.replace(/\D/g, '').length >= 10; },
     email: function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()); },
     lgpd: function (v, el) { return el.checked; },
@@ -84,10 +129,13 @@
       form.querySelectorAll('input[name=servicos]:checked'),
       function (i) { return i.value; }
     );
+    var dom = domestico();
     return {
+      tipo: dom ? 'Empregador doméstico (pessoa física)' : 'Empresa',
       nome: form.nome.value.trim(),
-      empresa: form.empresa.value.trim(),
-      cnpj: form.cnpj.value.trim(),
+      empresa: dom ? '' : form.empresa.value.trim(),
+      cnpj: dom ? '' : form.cnpj.value.trim(),
+      cpf: dom ? form.cnpj.value.trim() : '',
       telefone: form.telefone.value.trim(),
       email: form.email.value.trim(),
       funcionarios: form.funcionarios.value,
@@ -95,15 +143,16 @@
       mensagem: form.mensagem.value.trim(),
       estimativa: est ? est.resumo : '',
       origem: params.get('origem') || 'site',
-      _subject: 'Nova solicitação de proposta – ' + form.empresa.value.trim(),
+      _subject: 'Nova solicitação de proposta – ' + (dom ? 'Empregador doméstico – ' + form.nome.value.trim() : form.empresa.value.trim()),
     };
   }
 
   function textoEmail(d) {
     return [
+      'Tipo: ' + d.tipo,
       'Nome: ' + d.nome,
-      'Empresa: ' + d.empresa,
-      'CNPJ: ' + d.cnpj,
+      d.cpf ? 'CPF do empregador: ' + d.cpf : 'Empresa: ' + d.empresa,
+      d.cpf ? '' : 'CNPJ: ' + d.cnpj,
       'Telefone: ' + d.telefone,
       'E-mail: ' + d.email,
       'Funcionários: ' + (d.funcionarios || '-'),
@@ -146,9 +195,11 @@
 
     // Campos com nomes legíveis para o e-mail que chega no Gmail
     var envio = {
+      'Tipo de contratante': d.tipo,
       'Nome': d.nome,
-      'Empresa': d.empresa,
-      'CNPJ': d.cnpj,
+      'Empresa': d.empresa || '-',
+      'CNPJ': d.cnpj || '-',
+      'CPF do empregador': d.cpf || '-',
       'Telefone / WhatsApp': d.telefone,
       'E-mail': d.email,
       'Número de funcionários': d.funcionarios || '-',
@@ -178,6 +229,7 @@
           throw new Error(resposta.message || 'Envio recusado');
         }
         form.reset();
+        aplicarTipo();
         form.hidden = true;
         try { sessionStorage.removeItem('keygest-estimativa'); } catch (err) { /* ignora */ }
         mostrar('sucesso', '<strong>Solicitação enviada!</strong> Obrigado, ' + esc(d.nome.split(' ')[0]) +

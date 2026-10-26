@@ -1371,3 +1371,11 @@ textarea:focus {
 .botao-tema-claro:hover {
   background: var(--superficie-2);
 }
+
+.opcao small {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+  margin-top: 2px;
+  line-height: 1.35;
+}

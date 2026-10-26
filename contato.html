@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261023b">
+  <link rel="stylesheet" href="css/style.css?v=20261026a">
 </head>
 <body>
   <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
@@ -53,20 +53,27 @@
               <div class="resumo-estimativa" id="resumo-estimativa"></div>
             </div>
             <div class="campos">
+              <div class="campo inteiro">
+                <span class="rotulo">Quem está contratando? *</span>
+                <div class="opcoes grade grade-2 tipo-contratante" style="gap:10px" role="radiogroup" aria-label="Quem está contratando">
+                  <label class="opcao"><input type="radio" name="tipo" value="empresa" checked><div><strong>Empresa</strong><small>Tem CNPJ (inclui MEI)</small></div></label>
+                  <label class="opcao"><input type="radio" name="tipo" value="domestico"><div><strong>Empregador doméstico</strong><small>Pessoa física com empregada(o) doméstica(o), babá, caseiro, cuidador…</small></div></label>
+                </div>
+              </div>
               <div class="campo">
                 <label for="nome">Nome completo *</label>
                 <input type="text" id="nome" name="nome" autocomplete="name" required>
                 <div class="erro-campo">Informe seu nome.</div>
               </div>
-              <div class="campo">
+              <div class="campo" id="campo-empresa">
                 <label for="empresa">Empresa *</label>
                 <input type="text" id="empresa" name="empresa" autocomplete="organization" required>
                 <div class="erro-campo">Informe o nome da empresa.</div>
               </div>
               <div class="campo">
-                <label for="cnpj">CNPJ *</label>
+                <label for="cnpj" id="rotulo-documento">CNPJ *</label>
                 <input type="text" id="cnpj" name="cnpj" inputmode="text" autocapitalize="characters" maxlength="18" placeholder="00.000.000/0000-00" required>
-                <div class="erro-campo">CNPJ inválido. Confira os números.</div>
+                <div class="erro-campo" id="erro-documento">CNPJ inválido. Confira os números.</div>
               </div>
               <div class="campo">
                 <label for="telefone">Telefone / WhatsApp *</label>
@@ -79,7 +86,7 @@
                 <div class="erro-campo">Informe um e-mail válido.</div>
               </div>
               <div class="campo">
-                <label for="funcionarios">Número de funcionários</label>
+                <label for="funcionarios" id="rotulo-funcionarios">Número de funcionários</label>
                 <select id="funcionarios" name="funcionarios">
                   <option value="">Selecione</option>
                   <option>1 a 5</option>
@@ -161,10 +168,10 @@
     </div>
   </footer>
 
-  <script src="js/config.js?v=20261023b"></script>
-  <script src="js/main.js?v=20261023b"></script>
-  <script src="js/encargos.js?v=20261023b"></script>
-  <script src="js/contato.js?v=20261023b"></script>
-  <script src="js/tema.js?v=20261023b"></script>
+  <script src="js/config.js?v=20261026a"></script>
+  <script src="js/main.js?v=20261026a"></script>
+  <script src="js/encargos.js?v=20261026a"></script>
+  <script src="js/contato.js?v=20261026a"></script>
+  <script src="js/tema.js?v=20261026a"></script>
 </body>
 </html>
