@@ -117,7 +117,7 @@
         '<div class="indicador' + (atrasadas.length ? ' indicador-alerta' : '') + '"><span>Retornos atrasados</span><strong>' + atrasadas.length + '</strong></div>' +
         '</div>' +
         '<div class="neg-filtros">' +
-        '<input type="search" id="neg-busca" placeholder="Buscar empresa, contato ou CNPJ" value="' + esc(filtro.busca) + '" aria-label="Buscar">' +
+        '<input type="search" id="neg-busca" placeholder="Buscar empresa, contato, CNPJ ou CPF" value="' + esc(filtro.busca) + '" aria-label="Buscar">' +
         '<select id="neg-etapa" aria-label="Etapa"' + (visao === 'quadro' ? ' hidden' : '') + '><option value="">Todas as etapas</option>' +
         ETAPAS.map(function (e) { return '<option value="' + e.k + '">' + esc(e.t) + '</option>'; }).join('') + '</select>' +
         '<div class="folha-modo" role="group" aria-label="Forma de exibição">' +
@@ -260,7 +260,7 @@
           titulo: 'Empresa',
           campos: [
             { n: 'empresa', l: 'Nome da empresa *', req: true, cls: 'dois' },
-            { n: 'cnpj', l: 'CNPJ', mask: 'cnpj', valida: 'cnpj' },
+            { n: 'cnpj', l: 'CNPJ (ou CPF, se for empregador doméstico)', mask: 'documento', valida: 'documento' },
             { n: 'funcionarios', l: 'Nº de funcionários', tipo: 'number', step: '1', conv: 'int' },
             { n: 'regime', l: 'Regime tributário', tipo: 'select', ops: ctx.REGIMES, vazio: 'Não informado' },
             { n: 'servicos', l: 'Serviços de interesse', cls: 'dois' },
@@ -399,7 +399,7 @@
         item('Contato', esc(n.contato) + (n.cargo_contato ? ' <small>(' + esc(n.cargo_contato) + ')</small>' : '')) +
         item('Telefone', n.telefone ? esc(n.telefone) + (tel.length >= 10 ? ' · <a href="https://wa.me/55' + tel + '" target="_blank" rel="noopener">WhatsApp ↗</a>' : '') : '') +
         item('E-mail', n.email ? '<a href="mailto:' + esc(n.email) + '">' + esc(n.email) + '</a>' : '') +
-        item('CNPJ', esc(n.cnpj)) +
+        item(String(n.cnpj || '').replace(/\D/g, '').length === 11 ? 'CPF' : 'CNPJ', esc(n.cnpj)) +
         item('Funcionários', n.funcionarios) +
         item('Regime', esc(ctx.REGIMES[n.regime] || '')) +
         item('Serviços de interesse', esc(n.servicos)) +
@@ -502,7 +502,7 @@
       if (btConv) btConv.addEventListener('click', async function () {
         btConv.disabled = true;
         try {
-          var cnpjOk = n.cnpj && window.KeyGestCalc.validarCNPJ(n.cnpj);
+          var cnpjOk = n.cnpj && (window.KeyGestCalc.validarCNPJ(n.cnpj) || (n.regime === 'domestico' && String(n.cnpj).replace(/\D/g, '').length === 11));
           var emp = await DB.inserir('empresas', {
             razao_social: n.empresa, nome_fantasia: null, cnpj: cnpjOk ? n.cnpj : null,
             regime: ctx.REGIMES[n.regime] ? n.regime : 'simples', responsavel: n.contato || null, email: n.email || null,

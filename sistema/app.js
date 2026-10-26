@@ -173,6 +173,12 @@
       if (x.length > 12) o += '-' + x.slice(12, 14);
       return o;
     },
+    // CNPJ (empresa) ou CPF (empregador doméstico), conforme o que for digitado
+    documento: function (v) {
+      var x = v.toUpperCase().replace(/[^0-9A-Z]/g, '');
+      if (x.length <= 11 && !/[A-Z]/.test(x)) return MASCARAS.cpf(x);
+      return MASCARAS.cnpj(x);
+    },
     telefone: function (v) {
       var d = v.replace(/\D/g, '').slice(0, 11);
       if (d.length <= 2) return d;
@@ -316,9 +322,9 @@
     {
       titulo: 'Dados da empresa',
       campos: [
-        { n: 'razao_social', l: 'Razão social *', req: true, cls: 'dois' },
+        { n: 'razao_social', l: 'Razão social (ou nome do empregador doméstico) *', req: true, cls: 'dois' },
         { n: 'nome_fantasia', l: 'Nome fantasia' },
-        { n: 'cnpj', l: 'CNPJ', mask: 'cnpj', valida: 'cnpj' },
+        { n: 'cnpj', l: 'CNPJ (ou CPF do empregador doméstico)', mask: 'documento', valida: 'documento' },
         { n: 'endereco', l: 'Endereço', cls: 'dois', dica: 'Rua, número, bairro, cidade/UF e CEP' },
         { n: 'setor_responsavel', l: 'Setor responsável pela folha', dica: 'Ex.: Recursos Humanos, Departamento Pessoal' },
         { n: 'regime', l: 'Regime tributário *', tipo: 'select', ops: REGIMES, req: true },
@@ -460,6 +466,7 @@
           if (c.valida === 'cpf' && !validarCPF(bruto)) msg = 'CPF inválido.';
           if (c.valida === 'pis' && !validarPIS(bruto)) msg = bruto.replace(/\D/g, '').length !== 11 ? 'O PIS deve ter 11 dígitos.' : 'PIS inválido. Confira os números.';
           if (c.valida === 'cnpj' && !C.validarCNPJ(bruto)) msg = 'CNPJ inválido.';
+          if (c.valida === 'documento' && !C.validarCNPJ(bruto) && !validarCPF(bruto)) msg = 'CNPJ ou CPF inválido.';
           if (c.valida === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(bruto)) msg = 'E-mail inválido.';
         } else if (c.req) {
           msg = 'Campo obrigatório.';
@@ -572,7 +579,7 @@
       '<div class="acoes">' + (PODE.editar ? '<a class="botao" href="#/empresas/nova">+ Nova empresa</a>' : '') + '</div></div>' +
       '<div class="caixa-lista">' +
       (empresas.length
-        ? '<table class="lista"><thead><tr><th>Empresa</th><th>CNPJ</th><th>Regime</th><th class="num">Colaboradores</th><th class="num">Folha mensal</th><th>Situação</th><th></th></tr></thead><tbody>' +
+        ? '<table class="lista"><thead><tr><th>Empresa</th><th>CNPJ / CPF</th><th>Regime</th><th class="num">Colaboradores</th><th class="num">Folha mensal</th><th>Situação</th><th></th></tr></thead><tbody>' +
           empresas.map(function (e) {
             var doEmp = cols.filter(function (c) { return c.empresa_id === e.id && c.status !== 'desligado'; });
             var folha = doEmp.reduce(function (s, c) { return s + (+c.salario || 0); }, 0);
@@ -613,6 +620,15 @@
         return;
       }
       if (r.dados.cnpj) r.dados.cnpj = r.dados.cnpj.toUpperCase();
+      var ehCpf = r.dados.cnpj && validarCPF(r.dados.cnpj);
+      if (r.dados.regime === 'domestico' && r.dados.cnpj && !ehCpf) {
+        marcarErro(form, 'cnpj', 'Empregador doméstico é pessoa física: informe o CPF.').focus();
+        return;
+      }
+      if (r.dados.regime !== 'domestico' && ehCpf) {
+        marcarErro(form, 'cnpj', 'CPF só é aceito para empregador doméstico. Para empresa, informe o CNPJ.').focus();
+        return;
+      }
       if (r.dados.ativo == null) r.dados.ativo = true;
       if (r.dados.rat == null) r.dados.rat = P.ratPadrao;
       if (r.dados.fap == null) r.dados.fap = P.fapPadrao;
@@ -974,7 +990,7 @@
       '<table class="dp-grade dp-topo"><colgroup><col style="width:24%"><col><col style="width:20%"></colgroup><tr>' +
       '<td class="dp-logo"><img src="../assets/logo.png" alt="" width="34" height="34"><span><strong>KeyGest</strong><small>Gestão de pessoas</small></span></td>' +
       '<td class="dp-titulo">DEMONSTRATIVO DE PAGAMENTO</td>' + cel('Mês/Ano', esc(mesAno)) + '</tr></table>' +
-      '<table class="dp-grade"><tr>' + cel('Empresa', esc((emp ? emp.razao_social : '') + (emp && emp.cnpj ? ' – ' + emp.cnpj : ''))) + '</tr></table>' +
+      '<table class="dp-grade"><tr>' + cel(emp && emp.regime === 'domestico' ? 'Empregador' : 'Empresa', esc((emp ? emp.razao_social : '') + (emp && emp.cnpj ? ' – ' + (emp.regime === 'domestico' ? 'CPF ' : '') + emp.cnpj : ''))) + '</tr></table>' +
       '<table class="dp-grade"><colgroup><col><col style="width:20%"></colgroup><tr>' + cel('Nome', esc(c.nome)) + cel('Matrícula', esc(c.matricula)) + '</tr></table>' +
       '<table class="dp-grade"><colgroup><col><col style="width:40%"></colgroup><tr>' + cel('Cargo', esc(c.cargo)) + cel('Departamento', esc(c.departamento)) + '</tr></table>' +
       '<table class="dp-grade"><colgroup><col style="width:24%"><col><col style="width:20%"><col style="width:20%"></colgroup><tr>' +
@@ -1280,7 +1296,7 @@
     var d = await dadosDoMes(query.empresa, query.competencia);
     if (!d.emp) return naoEncontrado();
     var emp = d.emp;
-    var campos = ['salario', 'bruto', 'descontos', 'liquido', 'inss', 'irrf', 'fgts', 'inssPatronal', 'rat', 'terceiros', 'patronal', 'encargos',
+    var campos = ['salario', 'bruto', 'descontos', 'liquido', 'inss', 'irrf', 'fgts', 'inssPatronal', 'rat', 'terceiros', 'indenizacao', 'patronal', 'encargos',
       'prov13', 'provFerias', 'provEncargos', 'provisoes', 'custo', 'baseFgts', 'vtEmpresa'];
     var t = {};
     campos.forEach(function (k) { t[k] = 0; });
@@ -1314,7 +1330,13 @@
     }).join('');
 
     function aliq(x) { return x ? pct(x) : emp.regime === 'mei' || /^simples/.test(emp.regime) ? 'No DAS' : pct(0); }
-    var encargos = [
+    var domestico = emp.regime === 'domestico';
+    var encargos = domestico ? [
+      ['FGTS', t.baseFgts, pct(a.fgts), t.fgts],
+      ['INSS do empregador doméstico', t.baseFgts, pct(a.inss), t.inssPatronal],
+      ['GILRAT (seguro contra acidentes)', t.baseFgts, pct(a.rat), t.rat],
+      ['Indenização compensatória (substitui a multa de 40% do FGTS)', t.baseFgts, pct(a.indenizacao), t.indenizacao],
+    ] : [
       ['FGTS', t.baseFgts, pct(a.fgts), t.fgts],
       ['INSS patronal (cota da empresa)', t.baseFgts, aliq(a.inss), t.inssPatronal],
       ['RAT ajustado pelo FAP', t.baseFgts, aliq(a.rat), t.rat],
@@ -1438,9 +1460,9 @@
       '</tbody></table></div>';
 
     var cabecalho = '<table class="ex-empresa"><tr>' +
-      '<td><b>Empresa:</b></td><td>' + esc(emp.razao_social) + (emp.nome_fantasia ? ' (' + esc(emp.nome_fantasia) + ')' : '') + '</td>' +
+      '<td><b>' + (emp.regime === 'domestico' ? 'Empregador:' : 'Empresa:') + '</b></td><td>' + esc(emp.razao_social) + (emp.nome_fantasia ? ' (' + esc(emp.nome_fantasia) + ')' : '') + '</td>' +
       '<td><b>Emissão:</b></td><td>' + esc(emissao) + '</td></tr><tr>' +
-      '<td><b>CNPJ:</b></td><td>' + esc(emp.cnpj) + '</td>' +
+      '<td><b>' + (emp.regime === 'domestico' ? 'CPF:' : 'CNPJ:') + '</b></td><td>' + esc(emp.cnpj) + '</td>' +
       '<td><b>Pagamento:</b></td><td><span class="so-impressao-inline">' + esc(textoPagamento) + '</span>' +
         (editarData ? '<input type="date" id="data-pagamento" class="nao-imprimir" value="' + esc(dataPagamento) + '" aria-label="Data de pagamento">' +
           (dataPagamento ? '' : '<small class="nao-imprimir">' + esc(textoPagamento) + '</small>') : '<span class="nao-imprimir">' + esc(textoPagamento) + '</span>') + '</td></tr><tr>' +
@@ -1463,7 +1485,7 @@
           '<div><span>Total bruto (proventos)</span><strong>' + brl(t.bruto) + '</strong></div>' +
           '<div><span>Total de descontos</span><strong>' + brl(t.descontos) + '</strong></div>' +
           '<div><span>Total líquido</span><strong>' + brl(t.liquido) + '</strong></div>' +
-          '<div><span>Total de encargos patronais</span><strong>' + brl(t.encargos) + '</strong><small>FGTS + INSS empresa, RAT e terceiros</small></div>' +
+          '<div><span>Total de encargos patronais</span><strong>' + brl(t.encargos) + '</strong><small>' + (domestico ? 'FGTS, INSS do empregador, GILRAT e indenização' : 'FGTS + INSS empresa, RAT e terceiros') + '</small></div>' +
           '</div>' +
 
           '<h3 class="doc-secao">Funcionários</h3>' +
@@ -1501,14 +1523,18 @@
           '<tr class="total"><td colspan="3">Total de provisões do mês</td><td>' + brl(t.provisoes) + '</td></tr>' +
           '</tbody></table></div>' +
           '<div class="doc-resumo">' +
-          '<div><span>FGTS a recolher (FGTS Digital)</span><strong>' + brl(t.fgts) + '</strong></div>' +
-          '<div><span>INSS a recolher (DCTFWeb)</span><strong>' + brl(t.inss + t.patronal) + '</strong><small>Funcionários ' + brl(t.inss) + ' + empresa ' + brl(t.patronal) + '</small></div>' +
-          '<div><span>IRRF a recolher (DCTFWeb)</span><strong>' + brl(t.irrf) + '</strong></div>' +
+          (domestico
+            ? '<div><span>DAE a pagar (eSocial Doméstico)</span><strong>' + brl(t.fgts + t.patronal + t.indenizacao + t.inss + t.irrf) + '</strong><small>Guia única: INSS, GILRAT, FGTS, indenização e IRRF</small></div>' +
+              '<div><span>INSS (empregado + empregador)</span><strong>' + brl(t.inss + t.patronal) + '</strong></div>' +
+              '<div><span>FGTS + indenização compensatória</span><strong>' + brl(t.fgts + t.indenizacao) + '</strong></div>'
+            : '<div><span>FGTS a recolher (FGTS Digital)</span><strong>' + brl(t.fgts) + '</strong></div>' +
+              '<div><span>INSS a recolher (DCTFWeb)</span><strong>' + brl(t.inss + t.patronal) + '</strong><small>Funcionários ' + brl(t.inss) + ' + empresa ' + brl(t.patronal) + '</small></div>' +
+              '<div><span>IRRF a recolher (DCTFWeb)</span><strong>' + brl(t.irrf) + '</strong></div>') +
           '<div><span>Custo da folha no mês</span><strong>' + brl(t.custo) + '</strong><small>Remuneração + encargos + VT pago pela empresa</small></div>' +
           '<div><span>Custo com provisões</span><strong>' + brl(t.custo + t.provisoes) + '</strong></div>' +
           '</div>' +
           '<p class="doc-nota">Os encargos da empresa não são descontados do salário: são pagos pela empresa além da remuneração. ' +
-          'Valores calculados com as tabelas de INSS e IRRF de ' + P.ano + '; os valores oficiais são os das guias emitidas no FGTS Digital e na DCTFWeb.</p></section>' +
+          'Valores calculados com as tabelas de INSS e IRRF de ' + P.ano + '; os valores oficiais são os das guias emitidas ' + (domestico ? 'no eSocial Doméstico (DAE)' : 'no FGTS Digital e na DCTFWeb') + '.</p></section>' +
 
           '<div class="doc-assinaturas doc-assinaturas-3">' +
           '<div><span></span>Responsável pela elaboração<small>' + esc(elaborador) + '</small></div>' +

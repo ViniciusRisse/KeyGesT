@@ -32,6 +32,7 @@
     simples: 'Simples Nacional (Anexos I, II, III e V): a contribuição patronal está incluída no DAS. A empresa recolhe à parte apenas o FGTS de 8%.',
     'simples-iv': 'Simples Nacional – Anexo IV: a empresa recolhe INSS patronal de 20% e RAT × FAP fora do DAS, além do FGTS. Não há contribuição a terceiros.',
     mei: 'MEI: contribuição patronal de 3% sobre o salário do empregado e FGTS de 8%. O MEI pode ter apenas 1 empregado.',
+    domestico: 'Empregador doméstico: guia única (DAE do eSocial Doméstico) com INSS do empregador de 8%, GILRAT de 0,8%, FGTS de 8% e indenização compensatória de 3,2%, que substitui a multa de 40% do FGTS.',
   };
 
   function linha(rotulo, valor, detalhe, classe) {
@@ -41,11 +42,13 @@
 
   function calcular() {
     var regime = form.regime.value;
-    var semRat = regime === 'simples' || regime === 'mei';
+    var dom = regime === 'domestico';
+    var semRat = regime === 'simples' || regime === 'mei' || dom;
     var semTerceiros = regime !== 'normal';
     form.rat.disabled = semRat;
     form.fap.disabled = semRat;
     form.terceiros.disabled = semTerceiros;
+    form.multa.disabled = dom;
     nota.textContent = NOTAS[regime];
 
     var op = {
@@ -91,8 +94,9 @@
     html += linha('Provisão de 13º salário', x(r.prov13), '1/12 da remuneração');
     html += linha('Provisão de 1/3 de férias', x(r.provTerco), '1/36 da remuneração');
     html += linha('FGTS', x(r.fgts), pct(a.fgts, 0));
-    if (a.inss) html += linha(regime === 'mei' ? 'INSS patronal (MEI)' : 'INSS patronal', x(r.inss), pct(a.inss, 0));
-    if (a.rat) html += linha('RAT × FAP', x(r.rat), pct(a.rat, 2));
+    if (a.inss) html += linha(regime === 'mei' ? 'INSS patronal (MEI)' : a.domestico ? 'INSS do empregador doméstico' : 'INSS patronal', x(r.inss), pct(a.inss, 0));
+    if (a.rat) html += linha(a.domestico ? 'GILRAT (seguro contra acidentes)' : 'RAT × FAP', x(r.rat), pct(a.rat, a.domestico ? 1 : 2));
+    if (a.indenizacao) html += linha('Indenização compensatória', x(r.indenizacao), pct(a.indenizacao, 1) + ' – substitui a multa de 40% do FGTS');
     if (a.terceiros) html += linha('Terceiros', x(r.terceiros), pct(a.terceiros, 1));
     if (a.multaFgts) html += linha('Provisão multa do FGTS', x(r.multaFgts), '40% do FGTS');
     html += linha('Total mensal', x(r.total), '', 'total');

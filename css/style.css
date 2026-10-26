@@ -1379,3 +1379,50 @@ textarea:focus {
   margin-top: 2px;
   line-height: 1.35;
 }
+
+/* Faixa do empregador doméstico (página inicial) */
+.faixa-domestico {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 40px;
+  align-items: center;
+  background: var(--verde-suave);
+  border: 1px solid var(--verde-borda);
+  border-radius: 20px;
+  padding: 40px;
+}
+
+.faixa-domestico h2 {
+  margin: 8px 0 10px;
+  color: var(--titulo);
+}
+
+.faixa-domestico p {
+  margin: 0;
+  color: var(--texto-suave);
+}
+
+.lista-check {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lista-check li {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--verde-borda);
+}
+
+.lista-check li:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 860px) {
+  .faixa-domestico {
+    grid-template-columns: 1fr;
+    padding: 24px;
+    gap: 20px;
+  }
+}

@@ -124,7 +124,7 @@
 
     html += '<table class="tabela"><caption>Custos trabalhistas (mensal)</caption><tbody>' +
       '<tr><td>Salários</td><td>' + brl(t.salarios) + '</td></tr>' +
-      '<tr><td>Encargos sobre a folha<small>INSS patronal, RAT, terceiros e FGTS</small></td><td>' + brl(t.encargos) + '</td></tr>' +
+      '<tr><td>Encargos sobre a folha<small>' + (regime === 'domestico' ? 'INSS do empregador 8%, GILRAT 0,8%, FGTS 8% e indenização compensatória 3,2% (DAE)' : 'INSS patronal, RAT, terceiros e FGTS') + '</small></td><td>' + brl(t.encargos) + '</td></tr>' +
       '<tr><td>Provisões de 13º e férias<small>Inclui 1/3 de férias e encargos</small></td><td>' + brl(t.provisoes) + '</td></tr>' +
       '<tr><td>Benefícios (custo da empresa)</td><td>' + brl(t.beneficios) + '</td></tr>' +
       '<tr class="total"><td>Total</td><td>' + brl(t.total) + '</td></tr>' +

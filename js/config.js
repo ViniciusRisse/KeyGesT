@@ -42,6 +42,10 @@ window.KEYGEST_CONFIG = {
     meiCpp: 0.03,
     descontoMaxVt: 0.06, // desconto máximo do vale-transporte no salário
     multaFgts: 0.4,
+    // Empregador doméstico (LC 150/2015, recolhido no DAE do eSocial Doméstico)
+    domesticoInss: 0.08,
+    domesticoGilrat: 0.008,
+    domesticoIndenizacao: 0.032,
 
     // INSS do empregado (Portaria Interministerial MPS/MF nº 13/2026) — progressivo.
     inssFaixas: [

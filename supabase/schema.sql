@@ -12,7 +12,7 @@ create table if not exists empresas (
   nome_fantasia text,
   cnpj text unique,
   regime text not null default 'simples'
-    check (regime in ('simples', 'simples-iv', 'normal', 'mei')),
+    check (regime in ('simples', 'simples-iv', 'normal', 'mei', 'domestico')),
   rat numeric(5,4) not null default 0.02,
   fap numeric(6,4) not null default 1,
   terceiros numeric(5,4) not null default 0.058,
@@ -524,3 +524,17 @@ begin
 end $$;
 
 notify pgrst, 'reload schema';
+
+-- Empregador doméstico (pessoa física, CPF no campo cnpj) como regime da empresa cliente
+do $$
+begin
+  if exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.empresas'::regclass and conname = 'empresas_regime_check'
+      and pg_get_constraintdef(oid) not like '%domestico%'
+  ) then
+    alter table public.empresas drop constraint empresas_regime_check;
+    alter table public.empresas add constraint empresas_regime_check
+      check (regime in ('simples', 'simples-iv', 'normal', 'mei', 'domestico'));
+  end if;
+end $$;

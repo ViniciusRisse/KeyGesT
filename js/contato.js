@@ -68,6 +68,10 @@
   Array.prototype.forEach.call(form.querySelectorAll('input[name=tipo]'), function (r) {
     r.addEventListener('change', aplicarTipo);
   });
+  if (new URLSearchParams(window.location.search).get('tipo') === 'domestico') {
+    form.querySelector('input[name=tipo][value=domestico]').checked = true;
+    aplicarTipo();
+  }
 
   // Máscaras
   form.cnpj.addEventListener('input', function () {

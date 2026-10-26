@@ -31,6 +31,13 @@
       terceiros: false,
       mei: true,
     },
+    domestico: {
+      nome: 'Empregador doméstico (pessoa física)',
+      inss: false,
+      rat: false,
+      terceiros: false,
+      domestico: true,
+    },
   };
 
   function num(v, padrao) {
@@ -42,17 +49,31 @@
   function aliquotas(op, p) {
     var r = REGIMES[op.regime] || REGIMES.normal;
     var fgts = p.fgts;
+    if (r.domestico) {
+      // eSocial Doméstico (DAE): INSS do empregador 8%, GILRAT 0,8%, FGTS 8% e
+      // indenização compensatória 3,2% (substitui a multa de 40% do FGTS).
+      return {
+        inss: p.domesticoInss,
+        rat: p.domesticoGilrat,
+        terceiros: 0,
+        fgts: fgts,
+        indenizacao: p.domesticoIndenizacao,
+        multaFgts: 0,
+        domestico: true,
+      };
+    }
     return {
       inss: r.mei ? p.meiCpp : r.inss ? p.inssPatronal : 0,
       rat: r.rat ? num(op.rat, p.ratPadrao) * num(op.fap, p.fapPadrao) : 0,
       terceiros: r.terceiros ? num(op.terceiros, p.terceirosPadrao) : 0,
       fgts: fgts,
+      indenizacao: 0,
       multaFgts: op.incluirMultaFgts ? fgts * p.multaFgts : 0,
     };
   }
 
   function somaPagos(a) {
-    return a.inss + a.rat + a.terceiros + a.fgts;
+    return a.inss + a.rat + a.terceiros + a.fgts + (a.indenizacao || 0);
   }
 
   /*
@@ -75,10 +96,11 @@
       inss: base * a.inss,
       rat: base * a.rat,
       terceiros: base * a.terceiros,
+      indenizacao: base * (a.indenizacao || 0),
       multaFgts: base * a.multaFgts,
       aliquotas: a,
     };
-    r.encargos = r.fgts + r.inss + r.rat + r.terceiros + r.multaFgts;
+    r.encargos = r.fgts + r.inss + r.rat + r.terceiros + r.indenizacao + r.multaFgts;
     r.encargosSobreSalario = remuneracao * (somaPagos(a) + a.multaFgts);
     r.provisoes = prov13 + provTerco + (r.encargos - r.encargosSobreSalario);
     r.total = base + r.encargos;
@@ -384,15 +406,16 @@
     var inssPatronal = arred(baseEncargos * a.inss);
     var rat = arred(baseEncargos * a.rat);
     var terceiros = arred(baseEncargos * a.terceiros);
+    var indenizacao = arred(baseEncargos * (a.indenizacao || 0));
     var patronal = arred(inssPatronal + rat + terceiros);
 
     // Provisões mensais (1/12 de 13º e 1/12 de férias + 1/3) sobre a remuneração do mês
     var baseProvisao = Math.max(0, baseMes - ferias);
     var prov13 = arred(baseProvisao / 12);
     var provFerias = arred(baseProvisao / 12 * 4 / 3);
-    var provEncargos = arred((prov13 + provFerias) * (a.fgts + a.inss + a.rat + a.terceiros));
+    var provEncargos = arred((prov13 + provFerias) * (a.fgts + a.inss + a.rat + a.terceiros + (a.indenizacao || 0)));
     var vtEmpresa = arred(vt - descVt);
-    var custo = arred(baseEncargos + fgts + patronal + vtEmpresa);
+    var custo = arred(baseEncargos + fgts + patronal + indenizacao + vtEmpresa);
 
     return {
       valorHora: valorHora,
@@ -421,7 +444,8 @@
       rat: rat,
       terceiros: terceiros,
       patronal: patronal,
-      encargos: arred(fgts + patronal),
+      indenizacao: indenizacao,
+      encargos: arred(fgts + patronal + indenizacao),
       prov13: prov13,
       provFerias: provFerias,
       provEncargos: provEncargos,
