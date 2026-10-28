@@ -1078,15 +1078,15 @@
     var anteriores = {};
     (await DB.listar('folha', { empresa_id: query.empresa, competencia: competenciaAnterior(query.competencia) }))
       .forEach(function (f) { anteriores[f.colaborador_id] = f; });
-    for (var i = 0; i < d.faltando.length; i++) {
-      var c = d.faltando[i], ant = anteriores[c.id] || {};
+    var novos = d.faltando.map(function (c) {
+      var ant = anteriores[c.id] || {};
       var f = { colaborador_id: c.id, empresa_id: query.empresa, competencia: query.competencia };
       C.CAMPOS_FOLHA.forEach(function (k) { f[k.k] = REPETE_NO_MES[k.k] ? +ant[k.k] || 0 : 0; });
       f.salario = +c.salario || 0;
       if (d.dataPagamento) f.data_pagamento = d.dataPagamento;
-      Object.assign(f, totaisLancamento(calcularLancamento(f, c, d.emp)));
-      await DB.inserir('folha', f);
-    }
+      return Object.assign(f, totaisLancamento(calcularLancamento(f, c, d.emp)));
+    });
+    await DB.inserirVarios('folha', novos);
   }
 
   function avisoFaltando(d, query) {
@@ -1254,7 +1254,7 @@
         'Isso apaga os lançamentos de ' + d.itens.length + ' colaborador(es) neste mês, incluindo os holerites. Não dá para desfazer.')) return;
       bt.disabled = true;
       try {
-        for (var i = 0; i < d.itens.length; i++) await DB.excluir('folha', d.itens[i].f.id);
+        await DB.excluirVarios('folha', d.itens.map(function (i) { return i.f.id; }));
         aviso('Relatório excluído.');
         rotear();
       } catch (e) { aviso(e.message, true); bt.disabled = false; }
@@ -1549,7 +1549,7 @@
       var valor = campoData.value || null;
       campoData.disabled = true;
       try {
-        for (var k = 0; k < d.itens.length; k++) await DB.atualizar('folha', d.itens[k].f.id, { data_pagamento: valor });
+        await DB.atualizarVarios('folha', d.itens.map(function (i) { return i.f.id; }), { data_pagamento: valor });
         aviso(valor ? 'Data de pagamento salva.' : 'Data de pagamento removida.');
         rotear();
       } catch (e) {

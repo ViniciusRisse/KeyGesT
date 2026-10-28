@@ -1,4 +1,5 @@
 /* Estilos do sistema de colaboradores (complementa css/style.css) */
+
 body.sistema {
   background: var(--fundo);
 }
@@ -18,7 +19,6 @@ body.sistema {
 
 .login-caixa h1 {
   font-size: 1.5rem;
-  margin-top: 20px;
 }
 
 .marca-escura {
@@ -292,11 +292,30 @@ body.sistema {
   color: var(--link);
 }
 
-.etiqueta.ferias { background: var(--azul-suave); color: var(--texto-azul); }
-.etiqueta.afastado { background: var(--amarelo-suave); color: var(--texto-amarelo); }
-.etiqueta.desligado { background: var(--superficie-2); color: var(--texto-suave); }
-.etiqueta.alerta-vermelho { background: var(--vermelho-suave); color: var(--texto-vermelho); }
-.etiqueta.alerta-amarelo { background: var(--amarelo-suave); color: var(--texto-amarelo); }
+.etiqueta.ferias {
+  background: var(--azul-suave);
+  color: var(--texto-azul);
+}
+
+.etiqueta.afastado {
+  background: var(--amarelo-suave);
+  color: var(--texto-amarelo);
+}
+
+.etiqueta.desligado {
+  background: var(--superficie-2);
+  color: var(--texto-suave);
+}
+
+.etiqueta.alerta-vermelho {
+  background: var(--vermelho-suave);
+  color: var(--texto-vermelho);
+}
+
+.etiqueta.alerta-amarelo {
+  background: var(--amarelo-suave);
+  color: var(--texto-amarelo);
+}
 
 .grade-ficha {
   display: grid;
@@ -496,10 +515,6 @@ body.sistema {
 }
 
 /* ---------- Folha do mês (planilha) ---------- */
-.filtros-folha {
-  grid-template-columns: 1.4fr 0.8fr 1.4fr;
-  align-items: center;
-}
 
 .status-salvo {
   font-size: 0.85rem;
@@ -517,14 +532,11 @@ body.sistema {
 .planilha {
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.88rem;
   min-width: 100%;
 }
 
 .planilha th,
 .planilha td {
-  border-right: 1px solid var(--borda);
-  border-bottom: 1px solid var(--borda);
   padding: 0;
   white-space: nowrap;
 }
@@ -533,11 +545,6 @@ body.sistema {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--petroleo);
-  color: var(--branco);
-  font-size: 0.76rem;
-  font-weight: 600;
-  padding: 10px 10px;
   text-align: right;
   cursor: help;
 }
@@ -556,16 +563,12 @@ body.sistema {
   z-index: 1;
   background: var(--superficie);
   text-align: left;
-  padding: 8px 12px;
-  min-width: 190px;
   max-width: 230px;
   white-space: normal;
-  box-shadow: 2px 0 0 var(--borda);
 }
 
 .planilha thead .fixa {
   z-index: 3;
-  background: var(--petroleo);
 }
 
 .planilha tbody .fixa a {
@@ -582,12 +585,9 @@ body.sistema {
 }
 
 .planilha .celula {
-  width: 108px;
   border: 0;
   border-radius: 0;
-  padding: 9px 10px;
   text-align: right;
-  font-variant-numeric: tabular-nums;
   background: transparent;
 }
 
@@ -597,18 +597,13 @@ body.sistema {
 }
 
 .planilha td.calc {
-  background: var(--superficie-2);
-  padding: 9px 10px;
   text-align: right;
   font-variant-numeric: tabular-nums;
-  min-width: 104px;
   color: var(--texto);
 }
 
 .planilha td.forte {
-  background: var(--esmeralda-claro);
   font-weight: 700;
-  color: var(--titulo);
 }
 
 .planilha tr.negativo td.forte {
@@ -620,7 +615,6 @@ body.sistema {
 .planilha tfoot th {
   position: sticky;
   bottom: 0;
-  background: var(--superficie-2);
   font-weight: 700;
   padding: 10px;
   text-align: right;
@@ -629,15 +623,10 @@ body.sistema {
 
 .planilha tfoot .fixa {
   z-index: 2;
-  background: var(--superficie-2);
   text-align: left;
 }
 
 @media (max-width: 700px) {
-  .filtros-folha {
-    grid-template-columns: 1fr 1fr;
-  }
-
   .status-salvo {
     grid-column: 1 / -1;
   }
@@ -650,7 +639,6 @@ body.sistema {
 @media print {
   .lateral,
   .faixa-demo,
-  .filtros-folha,
   .acoes,
   .aviso {
     display: none !important;
@@ -697,54 +685,6 @@ body.sistema {
   max-width: 100%;
 }
 
-.resumo-folha {
-  grid-template-columns: repeat(5, 1fr);
-  margin-bottom: 16px;
-}
-
-.resumo-folha .indicador strong {
-  font-size: 1.2rem;
-}
-
-.resumo-folha .indicador.forte {
-  background: var(--petroleo);
-  border-color: var(--petroleo);
-}
-
-.resumo-folha .indicador.forte span {
-  color: #b8d6cf;
-}
-
-.resumo-folha .indicador.forte strong {
-  color: var(--branco);
-}
-
-@media (max-width: 1100px) {
-  .resumo-folha {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 560px) {
-  .resumo-folha {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media print {
-  .resumo-folha {
-    grid-template-columns: repeat(5, 1fr);
-  }
-
-  .so-impressao {
-    display: block !important;
-  }
-}
-
-.so-impressao {
-  display: none;
-}
-
 @media (max-width: 860px) {
   .app {
     grid-template-columns: minmax(0, 1fr);
@@ -757,6 +697,7 @@ body.sistema {
 }
 
 /* ---------- Login ---------- */
+
 .abas-login {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -839,54 +780,9 @@ body.sistema {
 }
 
 /* ---------- Holerite ---------- */
+
 .holerite {
   max-width: 820px;
-}
-
-.holerite-topo {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  border-bottom: 2px solid var(--petroleo);
-  padding-bottom: 14px;
-  margin-bottom: 16px;
-}
-
-.holerite-titulo {
-  text-align: right;
-}
-
-.holerite-dados {
-  margin-bottom: 18px;
-}
-
-.holerite-tabela th,
-.holerite-tabela td {
-  padding: 8px 6px;
-}
-
-.holerite-tabela th:nth-child(n + 3),
-.holerite-tabela td:nth-child(n + 3) {
-  text-align: right;
-  white-space: nowrap;
-}
-
-.holerite-bases {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 22px;
-  font-size: 0.86rem;
-  color: var(--texto-suave);
-  background: var(--fundo);
-  border-radius: 10px;
-  padding: 12px 14px;
-}
-
-.holerite-assinatura {
-  margin-top: 26px;
-  font-size: 0.86rem;
-  color: var(--texto-suave);
 }
 
 @media print {
@@ -908,6 +804,7 @@ body.sistema {
 }
 
 /* ---------- Regras de senha ---------- */
+
 .regras-senha {
   list-style: none;
   margin: -4px 0 14px;
@@ -956,6 +853,7 @@ body.sistema {
 }
 
 /* ---------- Documentos (holerite e relatório) com marca d'água ---------- */
+
 .documento {
   position: relative;
   overflow: hidden;
@@ -1015,22 +913,6 @@ body.sistema {
 
 .doc-titulo span {
   display: block;
-  color: var(--texto-suave);
-}
-
-.doc-empresa {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 18px;
-  font-size: 0.92rem;
-  margin-bottom: 18px;
-}
-
-.doc-empresa strong {
-  color: var(--titulo);
-}
-
-.doc-empresa span {
   color: var(--texto-suave);
 }
 
@@ -1150,6 +1032,7 @@ body.sistema {
 @media print {
   /* Margem de 1 cm fica dentro do documento, então vale mesmo com
      "Margens: Nenhuma" na janela de impressão */
+
   @page {
     size: A4;
     margin: 0;
@@ -1206,6 +1089,7 @@ body.sistema {
 }
 
 /* Ícone de editar na lista */
+
 .lista .col-acoes {
   width: 56px;
   text-align: center;
@@ -1271,6 +1155,7 @@ body.sistema {
 }
 
 /* ---------- Demonstrativo de pagamento (holerite tradicional) ---------- */
+
 .demonstrativo {
   max-width: 820px;
 }
@@ -1412,6 +1297,7 @@ body.sistema {
 }
 
 /* No celular, o demonstrativo mantém o formato de papel e rola para o lado */
+
 @media (max-width: 720px) {
   #vista {
     overflow-x: auto;
@@ -1427,6 +1313,7 @@ body.sistema {
 }
 
 /* ================= Menu com ícones ================= */
+
 #menu-sistema a {
   display: flex;
   align-items: center;
@@ -1444,8 +1331,10 @@ body.sistema {
 }
 
 /* ================= Celular ================= */
+
 @media (max-width: 860px) {
   /* barra superior compacta */
+
   .lateral {
     position: sticky;
     top: 0;
@@ -1490,6 +1379,7 @@ body.sistema {
   }
 
   /* menu fixo embaixo, estilo aplicativo */
+
   #menu-sistema {
     position: fixed;
     left: 0;
@@ -1552,6 +1442,7 @@ body.sistema {
   }
 
   /* aviso de demonstração compacto */
+
   .faixa-demo {
     padding: 10px 12px;
     font-size: 0.82rem;
@@ -1576,6 +1467,7 @@ body.sistema {
   }
 
   /* título e botões */
+
   .topo-vista {
     margin-bottom: 16px;
     gap: 12px;
@@ -1614,6 +1506,7 @@ body.sistema {
 }
 
 /* listas em cartões no celular */
+
 @media (max-width: 720px) {
   .caixa-lista {
     overflow: visible;
@@ -1729,15 +1622,11 @@ body.sistema {
 }
 
 /* Relatório: salário base embaixo do nome e líquido como resultado final */
+
 .doc-tabela td small {
   display: block;
   color: var(--texto-suave);
   font-size: 0.74rem;
-}
-
-.doc-tabela .doc-base {
-  color: var(--titulo);
-  margin-top: 2px;
 }
 
 .doc-tabela .col-liquido {
@@ -1750,24 +1639,6 @@ body.sistema {
   background: var(--esmeralda-claro);
 }
 
-.doc-liquido {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin: 14px 0 6px auto;
-  max-width: 420px;
-  background: var(--petroleo);
-  color: #cfe5df;
-  border-radius: 12px;
-  padding: 12px 16px;
-}
-
-.doc-liquido strong {
-  color: var(--branco);
-  font-size: 1.25rem;
-}
-
 @media print {
   .doc-tabela .col-liquido {
     background: var(--verde-suave) !important;
@@ -1778,11 +1649,8 @@ body.sistema {
   width: 27%;
 }
 
-.doc-tabela .doc-base b {
-  white-space: nowrap;
-}
-
 /* Ações por linha no relatório */
+
 .acoes-linha {
   display: flex;
   gap: 6px;
@@ -1800,6 +1668,7 @@ body.sistema {
 }
 
 /* Janela de edição */
+
 .janela {
   border: 0;
   border-radius: 18px;
@@ -1916,18 +1785,12 @@ body.sistema {
 }
 
 /* Planilha: grupos de colunas e colunas extras */
+
 .planilha thead tr.grupos th {
-  position: static;
   cursor: default;
   text-align: center;
-  font-size: 0.7rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 5px 10px;
-}
-
-.planilha thead tr.grupos .g-desc {
-  background: #5b2f2f;
 }
 
 .planilha td.desc input {
@@ -1948,6 +1811,7 @@ body.sistema {
 }
 
 /* Janela de edição agrupada */
+
 .janela-grupo {
   border: 1px solid var(--borda);
   border-radius: 12px;
@@ -1967,6 +1831,7 @@ body.sistema {
 }
 
 /* Relatório de folha de pagamento */
+
 .doc-secao {
   font-size: 0.95rem;
   color: var(--titulo);
@@ -1979,58 +1844,6 @@ body.sistema {
   font-weight: 500;
   color: var(--texto-suave);
   font-size: 0.78rem;
-}
-
-.doc-dados {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0;
-  margin: 0 0 8px;
-  border: 1px solid var(--borda);
-  border-radius: 10px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.75);
-}
-
-.doc-dados div {
-  padding: 7px 10px;
-  border-right: 1px solid var(--borda);
-  border-bottom: 1px solid var(--borda);
-  min-width: 0;
-}
-
-.doc-dados .largo {
-  grid-column: span 2;
-}
-
-.doc-dados dt {
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--texto-suave);
-}
-
-.doc-dados dd {
-  margin: 2px 0 0;
-  font-size: 0.86rem;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-.doc-dados dd input[type='date'] {
-  font: inherit;
-  font-weight: 500;
-  padding: 3px 6px;
-  border: 1px solid var(--borda);
-  border-radius: 6px;
-  max-width: 100%;
-}
-
-.doc-dados dd small {
-  display: block;
-  font-weight: 400;
-  font-size: 0.72rem;
-  color: var(--texto-suave);
 }
 
 .so-impressao-inline {
@@ -2052,109 +1865,9 @@ body.sistema {
   white-space: normal;
 }
 
-.doc-bloco,
-.doc-funcionario {
+.doc-bloco {
   break-inside: avoid;
   page-break-inside: avoid;
-}
-
-.doc-funcionario {
-  border: 1px solid var(--borda);
-  border-radius: 12px;
-  padding: 12px 14px;
-  margin-bottom: 14px;
-  background: rgba(255, 255, 255, 0.6);
-}
-
-.doc-funcionario h4 {
-  margin: 0 0 8px;
-  color: var(--titulo);
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.doc-funcionario .doc-dados {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.doc-colunas {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin: 10px 0;
-}
-
-.doc-eventos {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8rem;
-}
-
-.doc-eventos th,
-.doc-eventos td {
-  padding: 4px 6px;
-  border-bottom: 1px solid var(--borda);
-  text-align: right;
-}
-
-.doc-eventos th:first-child,
-.doc-eventos td:first-child {
-  text-align: left;
-}
-
-.doc-eventos thead th {
-  background: var(--petroleo);
-  color: var(--branco);
-  font-weight: 600;
-}
-
-.doc-eventos td:nth-child(2) {
-  color: var(--texto-suave);
-  white-space: nowrap;
-}
-
-.doc-eventos tfoot td {
-  font-weight: 700;
-  border-bottom: 0;
-  border-top: 2px solid var(--petroleo);
-}
-
-.doc-resumo-func {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-}
-
-.doc-resumo-func div {
-  border: 1px solid var(--borda);
-  border-radius: 8px;
-  padding: 6px 8px;
-}
-
-.doc-resumo-func span {
-  display: block;
-  font-size: 0.68rem;
-  color: var(--texto-suave);
-}
-
-.doc-resumo-func strong {
-  font-size: 0.88rem;
-  color: var(--titulo);
-}
-
-.doc-resumo-func .forte {
-  background: var(--petroleo);
-  border-color: var(--petroleo);
-}
-
-.doc-resumo-func .forte span {
-  color: #b8d6cf;
-}
-
-.doc-resumo-func .forte strong {
-  color: var(--branco);
 }
 
 .doc-assinaturas-3 {
@@ -2173,18 +1886,8 @@ body.sistema {
 }
 
 @media (max-width: 900px) {
-  .doc-controle,
-  .doc-resumo-func {
+  .doc-controle {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .doc-dados,
-  .doc-funcionario .doc-dados {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .doc-colunas {
-    grid-template-columns: 1fr;
   }
 
   .doc-assinaturas-3 {
@@ -2198,24 +1901,8 @@ body.sistema {
     display: inline !important;
   }
 
-  .doc-dados {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
-
-  .doc-funcionario .doc-dados {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  }
-
   .doc-controle {
     grid-template-columns: repeat(6, 1fr) !important;
-  }
-
-  .doc-resumo-func {
-    grid-template-columns: repeat(5, 1fr) !important;
-  }
-
-  .doc-colunas {
-    grid-template-columns: 1fr 1fr !important;
   }
 
   .doc-assinaturas-3 {
@@ -2229,48 +1916,6 @@ body.sistema {
 }
 
 /* Detalhamento mais compacto */
-.doc-funcionario .doc-dados div {
-  padding: 4px 8px;
-}
-
-.doc-funcionario .doc-dados dd {
-  font-size: 0.8rem;
-}
-
-.doc-funcionario .doc-dados dt {
-  font-size: 0.62rem;
-}
-
-.doc-resumo-func {
-  grid-template-columns: 1fr 1fr 1fr 1fr 1.3fr;
-}
-
-.doc-resumo-func div {
-  padding: 4px 8px;
-}
-
-.doc-resumo-func strong {
-  font-size: 0.82rem;
-}
-
-@media print {
-  .doc-funcionario {
-    padding: 8px 10px;
-    margin-bottom: 8px;
-  }
-
-  .doc-resumo-func {
-    grid-template-columns: 1fr 1fr 1fr 1fr 1.3fr !important;
-  }
-
-  .doc-colunas {
-    margin: 6px 0;
-  }
-}
-
-.doc-colunas {
-  align-items: start;
-}
 
 .aviso-banco {
   border-left-color: #c0392b;
@@ -2285,6 +1930,7 @@ body.sistema {
 }
 
 /* Relatório no formato de extrato mensal */
+
 .ex-empresa,
 .ex-cab,
 .ex-eventos,
@@ -2312,10 +1958,6 @@ body.sistema {
   width: 1%;
   white-space: nowrap;
   color: var(--titulo);
-}
-
-.ex-empresa td:nth-child(2) {
-  width: 62%;
 }
 
 .ex-empresa input[type='date'] {
@@ -2421,9 +2063,7 @@ body.sistema {
 }
 
 .ex-eventos .ex-desc {
-  overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .ex-eventos tbody tr:nth-child(even) td:not(.ex-sep) {
@@ -2550,6 +2190,7 @@ body.sistema {
 }
 
 /* Nome do funcionário com ações ao lado (relatório) */
+
 .func-nome {
   display: flex;
   align-items: center;
@@ -2590,6 +2231,7 @@ body.sistema {
 }
 
 /* Folha do mês: layout simplificado */
+
 .folha-barra {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
@@ -2848,6 +2490,7 @@ body.sistema {
 }
 
 /* Planilha mais limpa */
+
 .planilha-opcoes {
   justify-content: space-between;
 }
@@ -2905,10 +2548,6 @@ body.sistema {
   border-bottom-color: var(--petroleo);
 }
 
-.planilha thead tr:nth-child(2) th {
-  top: 27px;
-}
-
 .planilha .inicio-grupo {
   border-left: 1px solid var(--borda);
 }
@@ -2920,7 +2559,6 @@ body.sistema {
 
 .planilha .celula {
   width: 100%;
-  min-width: 92px;
   font: inherit;
   font-variant-numeric: tabular-nums;
   padding: 10px;
@@ -2933,7 +2571,6 @@ body.sistema {
 .planilha td.calc {
   background: var(--superficie-2);
   border-left: 1px solid var(--linha);
-  min-width: 120px;
   padding: 10px;
 }
 
@@ -2948,7 +2585,6 @@ body.sistema {
 }
 
 .planilha .fixa {
-  min-width: 210px;
   padding: 8px 12px;
   box-shadow: 1px 0 0 var(--borda);
 }
@@ -2980,29 +2616,13 @@ body.sistema {
   min-width: 78px;
 }
 
-.planilha td.calc {
-  min-width: 108px;
-}
-
-.planilha .fixa {
-  min-width: 190px;
-}
-
 .planilha thead tr:nth-child(2) th {
   top: 25px;
-}
-
-.planilha .fixa {
-  min-width: 170px;
 }
 
 .planilha .celula,
 .planilha thead tr:not(.grupos) th:not(.fixa) {
   min-width: 72px;
-}
-
-.planilha td.calc {
-  min-width: 100px;
 }
 
 .planilha .celula,
@@ -3023,6 +2643,7 @@ body.sistema {
 /* ------------------------------------------------------------
    Negociações
    ------------------------------------------------------------ */
+
 .indicador small {
   display: block;
   font-size: 0.75rem;
@@ -3271,6 +2892,7 @@ body.sistema {
 }
 
 /* Ficha */
+
 .neg-trilha {
   display: flex;
   list-style: none;
@@ -3374,10 +2996,6 @@ body.sistema {
   margin-top: 12px;
 }
 
-.neg-form-linha input[type='text'] {
-  flex: 1 1 220px;
-}
-
 .neg-form-linha input,
 .neg-hist-form select,
 .neg-hist-form input,
@@ -3402,10 +3020,6 @@ body.sistema {
 .neg-hist-linha {
   display: flex;
   gap: 8px;
-}
-
-.neg-hist-linha select {
-  flex: 1;
 }
 
 .neg-hist-form textarea {
@@ -3582,6 +3196,7 @@ body.sistema {
 }
 
 /* Relatório cabendo na tela do celular */
+
 .doc-rolagem {
   overflow-x: auto;
 }
@@ -3775,6 +3390,7 @@ body.sistema {
 }
 
 /* Celular: o cabeçalho não estica quando a página tem pouco conteúdo */
+
 @media (max-width: 860px) {
   .app {
     grid-template-rows: auto 1fr;
@@ -3785,6 +3401,7 @@ body.sistema {
 /* ------------------------------------------------------------
    Financeiro
    ------------------------------------------------------------ */
+
 .fin-barra {
   display: flex;
   align-items: center;
@@ -4107,8 +3724,8 @@ body.sistema {
   padding-bottom: 6px;
 }
 
-
 /* Documentos (relatório e holerite) continuam como papel branco no modo escuro */
+
 .documento {
   --fundo: #ffffff;
   --superficie: #ffffff;
@@ -4136,6 +3753,7 @@ body.sistema {
 }
 
 /* Em grades, o espaço entre os painéis vem do gap */
+
 .grade-ficha > .painel,
 .neg-ficha > .painel,
 .fin-colunas > .painel {
@@ -4143,6 +3761,7 @@ body.sistema {
 }
 
 /* ---------- Páginas de cada perfil (Usuários) ---------- */
+
 .matriz-rolagem {
   overflow-x: auto;
   border: 1px solid var(--borda);

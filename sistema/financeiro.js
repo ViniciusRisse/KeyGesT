@@ -216,13 +216,12 @@
       if (!novos.length) { aviso('Os lançamentos fixos do mês anterior já estão neste mês.'); return; }
       if (!confirm('Copiar ' + novos.length + ' lançamento(s) fixo(s) para ' + nomeMes(comp) + '? Eles entram como "a receber" / "a pagar".')) return;
       try {
-        for (var i = 0; i < novos.length; i++) {
-          var x = novos[i];
-          await DB.inserir('financeiro', {
+        await DB.inserirVarios('financeiro', novos.map(function (x) {
+          return {
             tipo: x.tipo, competencia: comp, data: x.data ? comp + x.data.slice(7) : null, descricao: x.descricao, categoria: x.categoria,
-            empresa_id: x.empresa_id, valor: x.valor, quitado: false, recorrente: true, observacoes: x.observacoes || null,
-          });
-        }
+            empresa_id: x.empresa_id || null, valor: x.valor, quitado: false, recorrente: true, observacoes: x.observacoes || null,
+          };
+        }));
         aviso(novos.length + ' lançamento(s) copiado(s).');
         ctx.rotear();
       } catch (e) { aviso(e.message, true); }

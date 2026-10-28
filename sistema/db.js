@@ -68,13 +68,15 @@
 
   function gravar(tabela, obj, executar) {
     var tentativas = 0;
+    var lista = Array.isArray(obj);
+    var modelo = lista ? obj[0] || {} : obj;
     function tentar() {
-      var o = semAusentes(tabela, obj);
-      if (!Object.keys(o).length) return Promise.resolve(null);
+      var o = lista ? obj.map(function (x) { return semAusentes(tabela, x); }) : semAusentes(tabela, obj);
+      if (!Object.keys(lista ? o[0] || {} : o).length) return Promise.resolve(lista ? [] : null);
       return executar(o).then(function (r) {
         var m = r.error && (r.error.message || '');
         var x = m && /Could not find the '([^']+)' column/i.exec(m);
-        if (x && tentativas++ < 40 && Object.prototype.hasOwnProperty.call(obj, x[1])) {
+        if (x && tentativas++ < 40 && Object.prototype.hasOwnProperty.call(modelo, x[1])) {
           colunasAusentes[tabela] = colunasAusentes[tabela] || {};
           colunasAusentes[tabela][x[1]] = true;
           (COLUNAS_NOVAS[tabela] || []).forEach(function (grupo) {
@@ -136,6 +138,19 @@
     },
     excluir: function (tabela, id) {
       return sb.from(tabela).delete().eq(chave(tabela), id).then(resultado);
+    },
+    // Operações em lote: uma única ida ao banco para vários registros
+    inserirVarios: function (tabela, lista) {
+      if (!lista.length) return Promise.resolve([]);
+      return gravar(tabela, lista, function (o) { return sb.from(tabela).insert(o).select(); });
+    },
+    atualizarVarios: function (tabela, ids, obj) {
+      if (!ids.length) return Promise.resolve([]);
+      return gravar(tabela, obj, function (o) { return sb.from(tabela).update(o).in(chave(tabela), ids).select(); });
+    },
+    excluirVarios: function (tabela, ids) {
+      if (!ids.length) return Promise.resolve();
+      return sb.from(tabela).delete().in(chave(tabela), ids).then(resultado);
     },
     // Cria ou atualiza pela chave primária
     salvarLinha: function (tabela, obj) {
@@ -410,6 +425,15 @@
       var d = carregar(), k = chave(tabela);
       var existe = (d[tabela] || []).some(function (x) { return x[k] === obj[k]; });
       return existe ? local.atualizar(tabela, obj[k], obj) : local.inserir(tabela, obj);
+    },
+    inserirVarios: function (tabela, lista) {
+      return Promise.all(lista.map(function (o) { return local.inserir(tabela, o); }));
+    },
+    atualizarVarios: function (tabela, ids, obj) {
+      return Promise.all(ids.map(function (id) { return local.atualizar(tabela, id, obj); }));
+    },
+    excluirVarios: function (tabela, ids) {
+      return Promise.all(ids.map(function (id) { return local.excluir(tabela, id); })).then(function () {});
     },
     limpar: function () {
       var adm = carregar().acessos.filter(function (x) { return x.perfil === 'admin'; });
