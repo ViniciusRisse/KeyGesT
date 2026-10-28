@@ -33,6 +33,7 @@
     financeiro: 'Financeiro',
     usuarios: 'Usuários',
     assinantes: 'Assinantes',
+    assinatura: 'Minha assinatura',
     'meus-dados': 'Meus dados',
     holerites: 'Meus holerites',
   };
@@ -74,13 +75,17 @@
     });
     // A KeyGest (dona da plataforma) sempre vê os assinantes
     if (perfil === 'admin' && PODE.plataforma) paginas.splice(paginas.indexOf('usuarios') + 1 || paginas.length, 0, 'assinantes');
+    // O administrador de cada assinante cuida da própria assinatura
+    if (perfil === 'admin' && CONTA && !CONTA.plataforma) paginas.splice(paginas.indexOf('usuarios') + 1 || paginas.length, 0, 'assinatura');
     return paginas;
   }
 
   function contaEmDia(c) {
     if (!c) return true;
     if (c.situacao === 'ativa') return true;
-    return c.situacao === 'teste' && (!c.teste_ate || c.teste_ate >= isoData(hoje()));
+    var hj = isoData(hoje());
+    if (c.pago_ate && c.pago_ate >= hj) return true; // período pago ainda valendo (mesmo após cancelar)
+    return c.situacao === 'teste' && (!c.teste_ate || c.teste_ate >= hj);
   }
   function diasDeTeste(c) {
     if (!c || c.situacao !== 'teste' || !c.teste_ate) return null;
@@ -248,6 +253,7 @@
     negociacoes: svgIcone('<path d="M3 4h18l-7 8v6l-4 2v-8z"/>'),
     financeiro: svgIcone('<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>'),
     assinantes: svgIcone('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>'),
+    assinatura: svgIcone('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>'),
   };
 
   // No celular, as listas viram cartões: cada célula ganha o nome da sua coluna
@@ -1860,8 +1866,124 @@
     faixa.id = 'faixa-conta';
     faixa.className = classe;
     faixa.innerHTML = '<div>' + html + '</div>' +
-      (ACESSO.perfil === 'admin' ? '<a class="botao botao-pequeno" href="' + esc(linkAssinar()) + '" target="_blank" rel="noopener">Assinar agora</a>' : '');
+      (ACESSO.perfil === 'admin' ? '<a class="botao botao-pequeno" href="#/assinatura">' + (CONTA.situacao === 'inadimplente' ? 'Pagar agora' : 'Assinar agora') + '</a>' : '');
     document.getElementById('conteudo').insertBefore(faixa, document.getElementById('vista'));
+  }
+
+  // ------------------------------------------------------------------
+  // Minha assinatura (administrador de cada assinante): pagamento pelo Asaas
+  // ------------------------------------------------------------------
+  function atualizarConta() {
+    return DB.sessao().then(iniciarSessao);
+  }
+
+  async function telaAssinatura() {
+    var s;
+    try { s = await DB.assinatura('situacao'); } catch (e) { s = { falha: e.message }; }
+    var c = CONTA, plano = SAAS.planos[c.plano] || {};
+    var dias = diasDeTeste(c);
+    var semOnline = !!s.falha || s.pagamentoOnline === false;
+    var temAssinatura = !!c.asaas_assinatura;
+    var sit = c.situacao === 'teste'
+      ? 'Teste grátis ' + (dias == null ? '' : dias < 0 ? '(terminou)' : '(até ' + fmtData(c.teste_ate) + ')')
+      : SITUACOES[c.situacao] || c.situacao;
+    var dado = function (t, v) { return v ? '<div><dt>' + t + '</dt><dd>' + v + '</dd></div>' : ''; };
+    var p = s.pendente;
+    var chaves = Object.keys(SAAS.planos);
+
+    vista.innerHTML =
+      '<div class="topo-vista"><div><h1>Minha assinatura</h1><p>Plano do sistema KeyGest para ' + esc(c.nome) + '.</p></div></div>' +
+      (s.demo ? '<p class="aviso" style="margin-bottom:16px">Modo demonstração: a assinatura é simulada, sem cobrança de verdade.</p>' : '') +
+      '<div class="grade-ficha">' +
+      '<form class="painel form-sistema" id="form-assinar" novalidate>' +
+      '<h2>' + (temAssinatura ? 'Mudar plano' : 'Assinar') + '</h2>' +
+      '<fieldset class="tipo-conta"><legend>Plano</legend>' +
+      chaves.map(function (k) {
+        var pl = SAAS.planos[k];
+        return '<label class="opcao"><input type="radio" name="plano" value="' + esc(k) + '"' + (c.plano === k ? ' checked' : '') + '><div><strong>' + esc(pl.nome) +
+          ' · ' + brl(pl.mensal) + '/mês</strong><small>' + esc(pl.para || '') + ' · ou ' + brl(pl.anual) + ' por ano</small></div></label>';
+      }).join('') + '</fieldset>' +
+      '<fieldset class="tipo-conta"><legend>Cobrança</legend>' +
+      '<label class="opcao"><input type="radio" name="periodicidade" value="mensal"' + (c.periodicidade !== 'anual' ? ' checked' : '') + '><div><strong>Mensal</strong><small>Paga todo mês</small></div></label>' +
+      '<label class="opcao"><input type="radio" name="periodicidade" value="anual"' + (c.periodicidade === 'anual' ? ' checked' : '') + '><div><strong>Anual</strong><small>Paga uma vez por ano: 2 meses grátis</small></div></label>' +
+      '</fieldset>' +
+      '<div class="campo"><label for="ass-doc">CPF ou CNPJ de quem paga</label><input type="text" id="ass-doc" name="documento" inputmode="numeric" autocomplete="off" value="' + esc(c.documento || '') + '"><small>Sai na cobrança e na nota fiscal.</small></div>' +
+      '<p class="ajuda" id="ass-resumo"></p>' +
+      (semOnline
+        ? '<p class="aviso">O pagamento online ainda não está disponível. <a href="' + esc(linkAssinar()) + '" target="_blank" rel="noopener">Fale com a KeyGest pelo WhatsApp</a> para assinar.</p>'
+        : '<div class="acoes"><button type="submit" class="botao" id="ass-enviar">' + (temAssinatura ? 'Salvar mudança' : 'Ir para o pagamento') + '</button></div>') +
+      '<p class="ajuda">Pagamento por Pix, boleto ou cartão, pelo Asaas. Cancele quando quiser, sem multa: o sistema continua liberado até o fim do período pago. ' +
+      'Nos 7 dias seguintes à contratação, você pode desistir e receber o valor de volta (art. 49 do Código de Defesa do Consumidor). ' +
+      '<a href="../termos.html" target="_blank" rel="noopener">Termos de uso</a>.</p>' +
+      '</form>' +
+      '<div>' +
+      '<section class="painel"><h2>Situação</h2><dl class="dados">' +
+      dado('Plano atual', esc((plano.nome || c.plano) + ' · ' + (c.periodicidade === 'anual' ? 'anual' : 'mensal'))) +
+      dado('Situação', esc(sit)) +
+      dado('Pago até', c.pago_ate ? fmtData(c.pago_ate) : '') +
+      dado('Próxima cobrança', s.assinatura && s.assinatura.proximoVencimento ? fmtData(s.assinatura.proximoVencimento) + ' · ' + brl(s.assinatura.valor) : '') +
+      '</dl>' +
+      (p ? '<div class="aviso' + (p.vencida ? ' faixa-conta-bloqueada' : '') + '" style="margin-top:16px"><strong>Cobrança ' + (p.vencida ? 'vencida' : 'em aberto') + ':</strong> ' +
+        brl(p.valor) + ', vencimento ' + fmtData(p.vencimento) + '.<div class="acoes" style="margin-top:10px"><a class="botao" href="' + esc(p.url) + '" target="_blank" rel="noopener">Pagar agora</a></div></div>' : '') +
+      (temAssinatura ? '<div class="acoes" style="margin-top:16px"><button type="button" class="botao botao-perigo" id="ass-cancelar">Cancelar assinatura</button></div>' : '') +
+      '</section></div></div>';
+
+    var form = document.getElementById('form-assinar');
+    function resumo() {
+      var k = (form.querySelector('input[name=plano]:checked') || {}).value;
+      var per = (form.querySelector('input[name=periodicidade]:checked') || {}).value;
+      var pl = SAAS.planos[k];
+      if (!pl) return;
+      var primeira = c.situacao === 'teste' && dias != null && dias > 0 ? ' A primeira cobrança vence no fim do teste grátis (' + fmtData(c.teste_ate) + ').' : '';
+      document.getElementById('ass-resumo').innerHTML = '<strong>' + esc(pl.nome) + ' ' + per + ': ' + (per === 'anual' ? brl(pl.anual) + ' por ano' : brl(pl.mensal) + ' por mês') + '.</strong>' + primeira;
+    }
+    form.addEventListener('change', resumo);
+    resumo();
+
+    form.addEventListener('submit', async function (ev) {
+      ev.preventDefault();
+      var botao = document.getElementById('ass-enviar');
+      var dados = {
+        plano: (form.querySelector('input[name=plano]:checked') || {}).value,
+        periodicidade: (form.querySelector('input[name=periodicidade]:checked') || {}).value,
+        documento: form.documento.value.trim(),
+      };
+      var d = dados.documento.replace(/\D/g, '');
+      if (d.length !== 11 && d.length !== 14) { aviso('Informe um CPF (11 números) ou CNPJ (14 números).', true); form.documento.focus(); return; }
+      // Abre a aba já no clique (senão o navegador bloqueia) e depois leva à página de pagamento
+      var aba = DB.modo === 'demo' ? null : window.open('', '_blank');
+      if (aba) { aba.opener = null; aba.document.write('<p style="font-family:sans-serif;padding:24px">Gerando a cobrança no Asaas...</p>'); }
+      botao.disabled = true;
+      botao.textContent = 'Gerando cobrança...';
+      try {
+        var r = await DB.assinatura('assinar', dados);
+        if (r.url) {
+          if (aba) aba.location.href = r.url; else location.href = r.url;
+          aviso('A página de pagamento abriu em outra aba. Quando o pagamento for confirmado, a conta é liberada sozinha.');
+        } else {
+          if (aba) aba.close();
+          aviso(r.demo ? 'Assinatura simulada (modo demonstração).' : 'Assinatura atualizada.');
+        }
+        await atualizarConta();
+      } catch (e) {
+        if (aba) aba.close();
+        aviso(e.message, true);
+        botao.disabled = false;
+        botao.textContent = temAssinatura ? 'Salvar mudança' : 'Ir para o pagamento';
+      }
+    });
+
+    var cancelar = document.getElementById('ass-cancelar');
+    if (cancelar) cancelar.addEventListener('click', async function () {
+      var ate = c.pago_ate ? ' O sistema continua liberado até ' + fmtData(c.pago_ate) + '.' : '';
+      if (!confirm('Cancelar a assinatura? Não haverá novas cobranças.' + ate)) return;
+      cancelar.disabled = true;
+      try {
+        await DB.assinatura('cancelar');
+        aviso('Assinatura cancelada.' + ate);
+        await atualizarConta();
+      } catch (e) { aviso(e.message, true); cancelar.disabled = false; }
+    });
   }
 
   // ------------------------------------------------------------------
@@ -1905,10 +2027,46 @@
               '<td class="col-acoes"><button type="button" class="icone-editar" data-conta="' + esc(c.id) + '" aria-label="Editar assinatura de ' + esc(c.nome) + '">' + ICONE_LAPIS + '</button></td></tr>';
           }).join('') + '</tbody></table></div>'
         : '<div class="painel vazio" style="margin-top:18px">Nenhum assinante ainda. Quando alguém criar uma conta pelo site, ela aparece aqui.</div>') +
-      '<p class="ajuda" style="margin-top:12px">Na próxima etapa, o pagamento pelo Asaas vai atualizar a situação de cada conta sozinho. Por enquanto, ajuste aqui manualmente.</p>';
+      '<section class="painel" id="painel-asaas" style="margin-top:18px"><h2>Pagamentos pelo Asaas</h2><p class="ajuda">Conferindo...</p></section>';
 
     vista.querySelectorAll('[data-conta]').forEach(function (b) {
       b.addEventListener('click', function () { janelaConta(lista.find(function (c) { return c.id === b.dataset.conta; })); });
+    });
+    painelAsaas();
+  }
+
+  // Situação da integração com o Asaas e botão para ligar os avisos de pagamento
+  async function painelAsaas() {
+    var caixa = document.getElementById('painel-asaas');
+    if (!caixa) return;
+    var s;
+    try { s = await DB.assinatura('situacao'); } catch (e) { s = { falha: e.message }; }
+    var corpo;
+    if (s.falha || !s.pagamentoOnline) {
+      corpo = '<p>A chave do Asaas ainda não foi cadastrada no Supabase. Enquanto isso, os clientes que clicarem em "Assinar" são levados ao seu WhatsApp, e você ajusta a situação de cada conta aqui manualmente.</p>' +
+        '<ol class="ajuda" style="margin:8px 0 0 18px"><li>No Asaas: <strong>Integrações → Chaves de API → Gerar chave</strong>.</li>' +
+        '<li>No Supabase: <strong>Edge Functions → Secrets</strong>, crie o segredo <code>ASAAS_API_KEY</code> com essa chave.</li>' +
+        '<li>Volte aqui e clique em <strong>Ligar avisos de pagamento</strong>.</li></ol>';
+    } else {
+      corpo = '<p>Pagamento online <strong>ligado</strong>' + (s.sandbox ? ' em <strong>modo de teste (sandbox)</strong>: nenhuma cobrança é de verdade' : '') + '.</p>' +
+        '<p>' + (s.avisosLigados
+          ? 'Avisos de pagamento ligados: cada pagamento, atraso ou cancelamento atualiza a conta do cliente sozinho.'
+          : '<strong>Falta ligar os avisos de pagamento</strong>: sem eles, o Asaas cobra, mas o sistema não fica sabendo quem pagou.') + '</p>' +
+        (s.avisosLigados && s.ambienteAvisos && s.ambienteAvisos !== (s.sandbox ? 'sandbox' : 'producao')
+          ? '<p class="aviso">Os avisos foram ligados no outro ambiente do Asaas. Clique abaixo para ligar de novo.</p>' : '') +
+        '<div class="acoes"><button type="button" class="botao' + (s.avisosLigados ? ' botao-secundario' : '') + '" id="ligar-avisos">' +
+        (s.avisosLigados ? 'Ligar avisos de novo' : 'Ligar avisos de pagamento') + '</button></div>';
+    }
+    caixa.innerHTML = '<h2>Pagamentos pelo Asaas</h2>' + corpo;
+    var botao = document.getElementById('ligar-avisos');
+    if (botao) botao.addEventListener('click', async function () {
+      botao.disabled = true;
+      botao.textContent = 'Ligando...';
+      try {
+        var r = await DB.assinatura('configurar');
+        aviso('Avisos de pagamento ligados' + (r && r.sandbox ? ' (modo de teste)' : '') + '.');
+      } catch (e) { aviso(e.message, true); }
+      painelAsaas();
     });
   }
 
@@ -1965,6 +2123,7 @@
     if (!PAGINAS[tela] || !temPagina(tela)) return false;
     if (tela === 'usuarios') return PODE.usuarios;
     if (tela === 'assinantes') return PODE.plataforma;
+    if (tela === 'assinatura') return PODE.usuarios && !!CONTA && !CONTA.plataforma;
     if (tela === 'negociacoes') return PODE.equipe && (!formulario || PODE.editar);
     if (formulario && !PODE.editar) return false;
     return true;
@@ -1976,7 +2135,7 @@
 
   function montarMenu() {
     var itens = MINHAS_PAGINAS.map(function (pg) { return [pg, PAGINAS[pg]]; });
-    var curtos = { 'assinantes': 'Clientes', 'negociacoes': 'Vendas', 'financeiro': 'Lucro', 'colaboradores': 'Pessoas', 'folha': 'Folha', 'meus-dados': 'Meus dados', 'holerites': 'Holerites', 'usuarios': 'Acessos' };
+    var curtos = { 'assinantes': 'Clientes', 'assinatura': 'Plano', 'negociacoes': 'Vendas', 'financeiro': 'Lucro', 'colaboradores': 'Pessoas', 'folha': 'Folha', 'meus-dados': 'Meus dados', 'holerites': 'Holerites', 'usuarios': 'Acessos' };
     document.getElementById('menu-sistema').innerHTML = itens.map(function (i) {
       return '<a href="#/' + i[0] + '" data-rota="' + i[0] + '">' + (ICONES_MENU[i[0]] || '') +
         '<span class="rot-longo">' + i[1] + '</span><span class="rot-curto">' + (curtos[i[0]] || i[1]) + '</span></a>';
@@ -2042,6 +2201,8 @@
         else await neg.lista(query);
       } else if (caminho[0] === 'assinantes') {
         await telaAssinantes();
+      } else if (caminho[0] === 'assinatura') {
+        await telaAssinatura();
       } else if (caminho[0] === 'usuarios') {
         if (caminho[1] === 'novo') await telaFormUsuario(null, query);
         else if (caminho[1] === 'editar') await telaFormUsuario(query.email, query);

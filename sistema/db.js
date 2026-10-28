@@ -28,6 +28,16 @@
     if (lim) return lim[1] === 'empresas'
       ? 'O seu plano permite até ' + lim[2] + ' empresa(s). Para cadastrar mais, mude para o plano Escritório de RH.'
       : 'O seu plano permite até ' + lim[2] + ' colaboradores ativos. Para cadastrar mais, mude de plano.';
+    // Cobrança pelo Asaas
+    if (/KG_ASAAS_SEM_CHAVE/.test(m)) return 'O pagamento online ainda não foi ativado. Fale com a KeyGest para assinar.';
+    if (/KG_DOCUMENTO/.test(m)) return 'Informe um CPF ou CNPJ válido para emitir a cobrança.';
+    if (/KG_PLANO_PEQUENO/.test(m)) return 'Este plano é menor do que o que a sua conta já usa (colaboradores ou empresas). Escolha um plano maior ou desligue cadastros antes.';
+    if (/KG_PLANO_INVALIDO/.test(m)) return 'Escolha um plano e a forma de cobrança (mensal ou anual).';
+    if (/KG_SO_ADMIN/.test(m)) return 'Só o administrador da conta pode cuidar da assinatura.';
+    if (/KG_PLATAFORMA/.test(m)) return 'A conta KeyGest não tem assinatura.';
+    if (/KG_SEM_LOGIN/.test(m)) return 'Sua sessão expirou. Entre de novo no sistema.';
+    var asa = /KG_ASAAS:(.*)/.exec(m);
+    if (asa) return 'O Asaas recusou o pedido: ' + asa[1];
     if (/Database error saving new user/i.test(m)) return 'Não foi possível criar a senha: este e-mail não está liberado no sistema (ou o banco precisa ser atualizado). Confira o e-mail digitado ou fale com a KeyGest.';
     if (/signups? not allowed|signup.*disabled|Email signups are disabled|email_provider_disabled/i.test(m)) return 'O cadastro de novas senhas está desligado no Supabase (Authentication → Sign In / Providers → "Allow new users to sign up" e "Email"). Peça para a KeyGest ligar.';
     if (/Email address .* is invalid|invalid.*email/i.test(m)) return 'O Supabase recusou este e-mail. Confira se está escrito corretamente.';
@@ -145,6 +155,18 @@
     },
     resumoContas: function () {
       return sb.rpc('resumo_contas').then(resultado);
+    },
+    // Assinatura pelo Asaas (função do servidor "asaas"): situacao, assinar, cancelar, configurar
+    assinatura: async function (acao, dados) {
+      var r = await sb.functions.invoke('asaas', { body: Object.assign({ acao: acao }, dados || {}) });
+      if (r.error) {
+        var corpo = null;
+        try { corpo = await r.error.context.json(); } catch (e) { /* resposta sem JSON */ }
+        var m = corpo && corpo.erro ? corpo.erro + (corpo.mensagem ? ':' + corpo.mensagem : '') : r.error.message;
+        if (/Failed to send|Failed to fetch|not found/i.test(m)) m = 'KG_ASAAS_SEM_CHAVE';
+        throw new Error(traduzirErro(m));
+      }
+      return r.data;
     },
     listar: function (tabela, filtros) {
       var q = sb.from(tabela).select('*');
@@ -481,6 +503,26 @@
       salvar();
       local.verComo(email);
       return local.sessao().then(function (s) { return { session: s }; });
+    },
+    // Demonstração: imita a assinatura sem cobrança de verdade
+    assinatura: function (acao, dados) {
+      var d = carregar(), a = acessoDemo(), c = d.contas.find(function (x) { return x.id === a.conta_id; });
+      if (!c || a.perfil !== 'admin') return Promise.reject(new Error(traduzirErro('KG_SO_ADMIN')));
+      if (acao === 'situacao') {
+        return Promise.resolve({ pagamentoOnline: true, demo: true, avisosLigados: true,
+          assinatura: c.asaas_assinatura ? { valor: 0, ciclo: c.periodicidade === 'anual' ? 'YEARLY' : 'MONTHLY' } : null, pendente: null });
+      }
+      if (c.plataforma) return Promise.reject(new Error(traduzirErro(acao === 'configurar' ? 'KG_ASAAS_SEM_CHAVE' : 'KG_PLATAFORMA')));
+      if (acao === 'assinar') {
+        var lim = LIMITES[dados.plano] || {};
+        var colab = d.colaboradores.filter(function (x) { return x.conta_id === c.id && x.status !== 'desligado'; }).length;
+        if (lim.colaboradores && colab > lim.colaboradores) return Promise.reject(new Error(traduzirErro('KG_PLANO_PEQUENO')));
+        Object.assign(c, { plano: dados.plano, periodicidade: dados.periodicidade, asaas_assinatura: 'demo', documento: c.documento || dados.documento || null });
+      } else if (acao === 'cancelar') {
+        Object.assign(c, { asaas_assinatura: null, situacao: c.situacao === 'teste' ? 'teste' : 'cancelada' });
+      }
+      salvar();
+      return Promise.resolve({ demo: true });
     },
     verComo: function (email) {
       try { localStorage.setItem(CHAVE_PERFIL, email); } catch (e) { /* modo privado */ }

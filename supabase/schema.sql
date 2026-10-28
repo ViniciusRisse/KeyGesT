@@ -939,3 +939,53 @@ begin
 end $$;
 
 notify pgrst, 'reload schema';
+
+-- =================================================================
+-- Cobrança pelo Asaas (assinaturas mensais e anuais)
+-- As funções do Supabase (supabase/functions/asaas e asaas-webhook)
+-- criam a assinatura e atualizam a conta quando o pagamento entra.
+-- =================================================================
+-- Até quando a conta está paga (continua liberada até essa data mesmo após cancelar)
+alter table public.contas add column if not exists pago_ate date;
+
+-- Configuração do aviso de pagamento (só as funções do servidor leem: sem regra de acesso)
+create table if not exists public.asaas_config (
+  id integer primary key default 1 check (id = 1),
+  webhook_id text,
+  webhook_token text,
+  token_anterior text,
+  ambiente text,
+  atualizado_em timestamptz not null default now()
+);
+alter table public.asaas_config enable row level security;
+revoke all on public.asaas_config from anon, authenticated;
+
+-- Histórico dos avisos recebidos do Asaas (evita processar o mesmo aviso duas vezes)
+create table if not exists public.asaas_eventos (
+  id text primary key,
+  evento text,
+  conta_id uuid references public.contas(id) on delete set null,
+  recebido_em timestamptz not null default now(),
+  payload jsonb
+);
+create index if not exists asaas_eventos_data_idx on public.asaas_eventos (recebido_em);
+alter table public.asaas_eventos enable row level security;
+revoke all on public.asaas_eventos from anon;
+do $$
+begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'asaas_eventos' and policyname = 'asaas_eventos_plataforma') then
+    create policy asaas_eventos_plataforma on public.asaas_eventos for select to authenticated using (public.eh_plataforma());
+  end if;
+end $$;
+
+-- Conta em dia: ativa, em teste dentro do prazo ou com o período pago ainda valendo
+create or replace function public.conta_ativa()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((
+    select situacao = 'ativa'
+      or (situacao = 'teste' and coalesce(teste_ate, current_date) >= current_date)
+      or coalesce(pago_ate >= current_date, false)
+    from public.contas where id = public.minha_conta()), false);
+$$;
+
+notify pgrst, 'reload schema';
