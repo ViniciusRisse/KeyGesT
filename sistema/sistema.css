@@ -3802,3 +3802,54 @@ body.sistema {
 .matriz-paginas .nao-aplica {
   color: var(--texto-suave);
 }
+
+/* Assinatura (SaaS): faixa do teste grátis e conta vencida */
+.faixa-conta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+  border-left-color: var(--esmeralda);
+  background: var(--verde-suave);
+}
+
+.faixa-conta-bloqueada {
+  border-left-color: #c0392b;
+  background: var(--vermelho-suave);
+}
+
+.faixa-conta .botao {
+  flex-shrink: 0;
+}
+
+/* Criar conta: escolha do tipo */
+.tipo-conta {
+  border: 0;
+  padding: 0;
+  margin: 0 0 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.tipo-conta legend {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+  color: var(--titulo);
+}
+
+.tipo-conta .opcao {
+  padding: 8px 12px;
+}
+
+.tipo-conta .opcao strong {
+  font-size: 0.9rem;
+}
+
+@media (max-width: 720px) {
+  .faixa-conta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

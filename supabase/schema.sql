@@ -446,7 +446,7 @@ insert into perfil_paginas (perfil, paginas) values
   ('consulta', array['painel', 'empresas', 'colaboradores', 'folha', 'negociacoes']),
   ('cliente', array['painel', 'colaboradores', 'folha']),
   ('colaborador', array['meus-dados', 'holerites'])
-on conflict (perfil) do nothing;
+on conflict do nothing;
 
 -- O administrador nunca perde a página de usuários
 update perfil_paginas set paginas = array_append(paginas, 'usuarios')
@@ -579,5 +579,363 @@ revoke execute on function public.registrar_acesso() from public, anon, authenti
 
 create or replace trigger registrar_acesso after insert on auth.sessions
   for each row execute function public.registrar_acesso();
+
+notify pgrst, 'reload schema';
+
+-- =================================================================
+-- SaaS: contas de assinantes (multi-conta)
+-- Cada registro pertence a uma conta; ninguém enxerga dados de outra.
+-- A conta KeyGest é a dona da plataforma e recebe os dados existentes.
+-- Fica no fim do arquivo: redefine funções e regras criadas acima.
+-- =================================================================
+create table if not exists public.contas (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null,
+  tipo text not null default 'empresa' check (tipo in ('escritorio', 'empresa', 'domestico')),
+  plano text not null default 'empresa' check (plano in ('domestico', 'empresa', 'escritorio')),
+  periodicidade text not null default 'mensal' check (periodicidade in ('mensal', 'anual')),
+  situacao text not null default 'teste' check (situacao in ('teste', 'ativa', 'inadimplente', 'cancelada')),
+  teste_ate date,
+  documento text,
+  email_dono text,
+  telefone text,
+  plataforma boolean not null default false,
+  asaas_cliente text,
+  asaas_assinatura text,
+  observacoes text,
+  criado_em timestamptz not null default now(),
+  atualizado_em timestamptz not null default now()
+);
+
+insert into public.contas (id, nome, tipo, plano, situacao, plataforma, email_dono)
+values ('00000000-0000-4000-8000-000000000001', 'KeyGest', 'escritorio', 'escritorio', 'ativa', true, 'keygestrh@gmail.com')
+on conflict (id) do update set plataforma = true, situacao = 'ativa';
+
+create or replace trigger contas_atualizado before update on public.contas
+  for each row execute function public.tocar_atualizado_em();
+
+-- conta_id em todas as tabelas de dados (os dados existentes vão para a conta KeyGest)
+do $$
+declare t text;
+begin
+  foreach t in array array['acessos', 'empresas', 'colaboradores', 'ferias', 'folha', 'negociacoes',
+                           'negociacao_historico', 'financeiro', 'perfil_paginas', 'registros_acesso'] loop
+    if to_regclass('public.' || t) is not null then
+      execute format('alter table public.%I add column if not exists conta_id uuid references public.contas(id) on delete cascade', t);
+      execute format('update public.%I set conta_id = %L where conta_id is null', t, '00000000-0000-4000-8000-000000000001');
+      execute format('alter table public.%I alter column conta_id set not null', t);
+      execute format('create index if not exists %I on public.%I (conta_id)', t || '_conta_idx', t);
+    end if;
+  end loop;
+end $$;
+
+-- Conta do usuário logado (sem login, cai na conta KeyGest: só usado por scripts de manutenção)
+create or replace function public.minha_conta()
+returns uuid language sql stable security definer set search_path = public as $$
+  select conta_id from public.acessos where email = public.meu_email() and ativo;
+$$;
+
+create or replace function public.conta_padrao()
+returns uuid language sql stable security definer set search_path = public as $$
+  select coalesce(public.minha_conta(), '00000000-0000-4000-8000-000000000001'::uuid);
+$$;
+
+-- Novos registros entram na conta de quem está logado
+do $$
+declare t text;
+begin
+  foreach t in array array['acessos', 'empresas', 'colaboradores', 'ferias', 'folha', 'negociacoes',
+                           'negociacao_historico', 'financeiro', 'perfil_paginas', 'registros_acesso'] loop
+    if to_regclass('public.' || t) is not null then
+      execute format('alter table public.%I alter column conta_id set default public.conta_padrao()', t);
+    end if;
+  end loop;
+end $$;
+
+-- Um CNPJ/CPF pode existir em contas diferentes (dois escritórios atendendo a mesma empresa)
+alter table public.empresas drop constraint if exists empresas_cnpj_key;
+create unique index if not exists empresas_conta_cnpj_idx on public.empresas (conta_id, cnpj);
+
+-- Páginas por perfil passam a ser de cada conta
+do $$
+begin
+  if exists (select 1 from pg_constraint where conname = 'perfil_paginas_pkey'
+             and pg_get_constraintdef(oid) = 'PRIMARY KEY (perfil)') then
+    alter table public.perfil_paginas drop constraint perfil_paginas_pkey;
+    alter table public.perfil_paginas add primary key (conta_id, perfil);
+  end if;
+end $$;
+
+-- ---------------------------------------------------------------
+-- Funções de permissão, agora dentro da conta do usuário
+-- ---------------------------------------------------------------
+create or replace function public.conta_ativa()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((
+    select situacao = 'ativa' or (situacao = 'teste' and coalesce(teste_ate, current_date) >= current_date)
+    from public.contas where id = public.minha_conta()), false);
+$$;
+
+create or replace function public.eh_plataforma()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce(public.meu_perfil() = 'admin' and
+    (select plataforma from public.contas where id = public.minha_conta()), false);
+$$;
+
+-- Editar só com a conta em dia (vencida ou inadimplente fica somente para consulta)
+create or replace function public.pode_editar()
+returns boolean language sql stable set search_path = public as $$
+  select coalesce(public.meu_perfil() in ('admin', 'analista'), false) and public.conta_ativa();
+$$;
+
+create or replace function public.pagina_liberada(p text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select p = any (paginas) from public.perfil_paginas
+                   where perfil = public.meu_perfil() and conta_id = public.minha_conta()), false);
+$$;
+
+-- ---------------------------------------------------------------
+-- Regras de acesso (RLS) com a conta
+-- ---------------------------------------------------------------
+alter table public.contas enable row level security;
+drop policy if exists contas_ler on public.contas;
+create policy contas_ler on public.contas for select to authenticated
+  using (id = public.minha_conta() or public.eh_plataforma());
+drop policy if exists contas_plataforma on public.contas;
+create policy contas_plataforma on public.contas for update to authenticated
+  using (public.eh_plataforma()) with check (public.eh_plataforma());
+
+drop policy if exists acessos_ler on public.acessos;
+create policy acessos_ler on public.acessos for select to authenticated
+  using ((public.eh_admin() and conta_id = public.minha_conta()) or email = public.meu_email());
+drop policy if exists acessos_admin on public.acessos;
+create policy acessos_admin on public.acessos for all to authenticated
+  using (public.eh_admin() and conta_id = public.minha_conta())
+  with check (public.eh_admin() and conta_id = public.minha_conta());
+
+drop policy if exists empresas_ler on public.empresas;
+create policy empresas_ler on public.empresas for select to authenticated
+  using (conta_id = public.minha_conta() and (public.eh_equipe() or id = public.minha_empresa()));
+drop policy if exists empresas_editar on public.empresas;
+create policy empresas_editar on public.empresas for all to authenticated
+  using (conta_id = public.minha_conta() and public.pode_editar())
+  with check (conta_id = public.minha_conta() and public.pode_editar());
+
+drop policy if exists colaboradores_ler on public.colaboradores;
+create policy colaboradores_ler on public.colaboradores for select to authenticated
+  using (conta_id = public.minha_conta() and (public.eh_equipe()
+    or (public.eh_cliente() and empresa_id = public.minha_empresa()) or id = public.meu_colaborador()));
+drop policy if exists colaboradores_editar on public.colaboradores;
+create policy colaboradores_editar on public.colaboradores for all to authenticated
+  using (conta_id = public.minha_conta() and public.pode_editar())
+  with check (conta_id = public.minha_conta() and public.pode_editar());
+
+drop policy if exists ferias_ler on public.ferias;
+create policy ferias_ler on public.ferias for select to authenticated
+  using (conta_id = public.minha_conta() and (public.eh_equipe()
+    or colaborador_id = public.meu_colaborador()
+    or (public.eh_cliente() and exists (
+      select 1 from public.colaboradores c where c.id = ferias.colaborador_id and c.empresa_id = public.minha_empresa()))));
+drop policy if exists ferias_editar on public.ferias;
+create policy ferias_editar on public.ferias for all to authenticated
+  using (conta_id = public.minha_conta() and public.pode_editar())
+  with check (conta_id = public.minha_conta() and public.pode_editar());
+
+drop policy if exists folha_ler on public.folha;
+create policy folha_ler on public.folha for select to authenticated
+  using (conta_id = public.minha_conta() and (public.eh_equipe()
+    or colaborador_id = public.meu_colaborador() or (public.eh_cliente() and empresa_id = public.minha_empresa())));
+drop policy if exists folha_incluir on public.folha;
+create policy folha_incluir on public.folha for insert to authenticated
+  with check (conta_id = public.minha_conta() and (public.pode_editar()
+    or (public.eh_cliente() and public.conta_ativa() and empresa_id = public.minha_empresa() and exists (
+      select 1 from public.colaboradores c where c.id = folha.colaborador_id and c.empresa_id = folha.empresa_id))));
+drop policy if exists folha_alterar on public.folha;
+create policy folha_alterar on public.folha for update to authenticated
+  using (conta_id = public.minha_conta() and (public.pode_editar()
+    or (public.eh_cliente() and public.conta_ativa() and empresa_id = public.minha_empresa())))
+  with check (conta_id = public.minha_conta() and (public.pode_editar()
+    or (public.eh_cliente() and public.conta_ativa() and empresa_id = public.minha_empresa() and exists (
+      select 1 from public.colaboradores c where c.id = folha.colaborador_id and c.empresa_id = folha.empresa_id))));
+drop policy if exists folha_excluir on public.folha;
+create policy folha_excluir on public.folha for delete to authenticated
+  using (conta_id = public.minha_conta() and public.pode_editar());
+
+drop policy if exists negociacoes_ler on public.negociacoes;
+create policy negociacoes_ler on public.negociacoes for select to authenticated
+  using (conta_id = public.minha_conta() and public.eh_equipe() and (public.eh_admin() or public.pagina_liberada('negociacoes')));
+drop policy if exists negociacoes_editar on public.negociacoes;
+create policy negociacoes_editar on public.negociacoes for all to authenticated
+  using (conta_id = public.minha_conta() and public.pode_editar() and (public.eh_admin() or public.pagina_liberada('negociacoes')))
+  with check (conta_id = public.minha_conta() and public.pode_editar() and (public.eh_admin() or public.pagina_liberada('negociacoes')));
+drop policy if exists negociacao_historico_ler on public.negociacao_historico;
+create policy negociacao_historico_ler on public.negociacao_historico for select to authenticated
+  using (conta_id = public.minha_conta() and public.eh_equipe() and (public.eh_admin() or public.pagina_liberada('negociacoes')));
+drop policy if exists negociacao_historico_editar on public.negociacao_historico;
+create policy negociacao_historico_editar on public.negociacao_historico for all to authenticated
+  using (conta_id = public.minha_conta() and public.pode_editar() and (public.eh_admin() or public.pagina_liberada('negociacoes')))
+  with check (conta_id = public.minha_conta() and public.pode_editar() and (public.eh_admin() or public.pagina_liberada('negociacoes')));
+
+drop policy if exists financeiro_admin on public.financeiro; -- regra antiga, sem conta
+drop policy if exists financeiro_ler on public.financeiro;
+create policy financeiro_ler on public.financeiro for select to authenticated
+  using (conta_id = public.minha_conta() and public.eh_equipe() and public.pagina_liberada('financeiro'));
+drop policy if exists financeiro_editar on public.financeiro;
+create policy financeiro_editar on public.financeiro for all to authenticated
+  using (conta_id = public.minha_conta() and public.pode_editar() and public.pagina_liberada('financeiro'))
+  with check (conta_id = public.minha_conta() and public.pode_editar() and public.pagina_liberada('financeiro'));
+
+drop policy if exists perfil_paginas_ler on public.perfil_paginas;
+create policy perfil_paginas_ler on public.perfil_paginas for select to authenticated
+  using (conta_id = public.minha_conta());
+drop policy if exists perfil_paginas_admin on public.perfil_paginas;
+create policy perfil_paginas_admin on public.perfil_paginas for all to authenticated
+  using (public.eh_admin() and conta_id = public.minha_conta())
+  with check (public.eh_admin() and conta_id = public.minha_conta());
+
+-- Registros de acesso: cada administrador vê só os da própria conta
+do $$
+begin
+  if to_regclass('public.registros_acesso') is not null then
+    drop policy if exists registros_acesso_admin on public.registros_acesso;
+    create policy registros_acesso_admin on public.registros_acesso for select to authenticated
+      using (public.eh_admin() and conta_id = public.minha_conta());
+  end if;
+end $$;
+
+create or replace function public.registrar_acesso() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare e text;
+begin
+  begin
+    select u.email into e from auth.users u where u.id = new.user_id;
+    insert into public.registros_acesso (user_id, email, ip, user_agent, criado_em, conta_id)
+    values (new.user_id, e, new.ip, new.user_agent, coalesce(new.created_at, now()),
+      coalesce((select conta_id from public.acessos where email = lower(e)), '00000000-0000-4000-8000-000000000001'::uuid));
+    delete from public.registros_acesso where criado_em < now() - interval '7 months';
+  exception when others then
+    null; -- nunca impede o login
+  end;
+  return new;
+end $$;
+
+-- ---------------------------------------------------------------
+-- Limites de cada plano (conferidos no banco)
+-- ---------------------------------------------------------------
+create or replace function public.limite_plano(p text, item text)
+returns integer language sql immutable as $$
+  select case item
+    when 'colaboradores' then case p when 'domestico' then 2 when 'empresa' then 15 else 100 end
+    when 'empresas' then case p when 'escritorio' then 1000 else 1 end
+  end;
+$$;
+
+create or replace function public.conferir_limite() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare c public.contas; usados integer; item text := tg_argv[0];
+begin
+  select * into c from public.contas where id = new.conta_id;
+  if c.id is null or c.plataforma then return new; end if;
+  if item = 'colaboradores' then
+    select count(*) into usados from public.colaboradores where conta_id = new.conta_id and status <> 'desligado';
+  else
+    select count(*) into usados from public.empresas where conta_id = new.conta_id;
+  end if;
+  if usados >= public.limite_plano(c.plano, item) then
+    raise exception 'KG_LIMITE_PLANO:%:%', item, public.limite_plano(c.plano, item);
+  end if;
+  return new;
+end $$;
+
+create or replace trigger colaboradores_limite before insert on public.colaboradores
+  for each row execute function public.conferir_limite('colaboradores');
+create or replace trigger empresas_limite before insert on public.empresas
+  for each row execute function public.conferir_limite('empresas');
+
+-- ---------------------------------------------------------------
+-- Cadastro: e-mail liberado por um administrador (como antes) ou
+-- criação de conta nova com teste grátis de 14 dias
+-- ---------------------------------------------------------------
+create or replace function public.validar_cadastro()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare d jsonb; nova uuid; t text; doc text; nome_conta text;
+begin
+  if exists (select 1 from public.acessos where email = lower(new.email)) then
+    return new;
+  end if;
+  d := new.raw_user_meta_data -> 'nova_conta';
+  if d is null then
+    raise exception 'KG_EMAIL_NAO_LIBERADO';
+  end if;
+  t := coalesce(d ->> 'tipo', 'empresa');
+  if t not in ('escritorio', 'empresa', 'domestico') then t := 'empresa'; end if;
+  nome_conta := left(coalesce(nullif(trim(d ->> 'empresa'), ''), nullif(trim(d ->> 'nome'), ''), lower(new.email)), 200);
+  doc := nullif(left(trim(coalesce(d ->> 'documento', '')), 20), '');
+
+  insert into public.contas (nome, tipo, plano, situacao, teste_ate, documento, email_dono, telefone)
+  values (nome_conta, t, t, 'teste', current_date + 14, doc, lower(new.email), left(d ->> 'telefone', 20))
+  returning id into nova;
+
+  insert into public.acessos (email, nome, perfil, conta_id)
+  values (lower(new.email), left(coalesce(d ->> 'nome', ''), 200), 'admin', nova);
+
+  if t in ('empresa', 'domestico') then
+    insert into public.empresas (razao_social, cnpj, regime, responsavel, email, telefone, conta_id)
+    values (nome_conta, doc, case when t = 'domestico' then 'domestico' else 'simples' end,
+            left(d ->> 'nome', 200), lower(new.email), left(d ->> 'telefone', 20), nova);
+  end if;
+
+  insert into public.perfil_paginas (conta_id, perfil, paginas)
+  select nova, x.perfil, x.paginas from (values
+    ('admin', case when t = 'escritorio'
+       then array['painel', 'empresas', 'colaboradores', 'folha', 'negociacoes', 'financeiro', 'usuarios']
+       else array['painel', 'colaboradores', 'folha', 'usuarios'] end),
+    ('analista', case when t = 'escritorio' then array['painel', 'empresas', 'colaboradores', 'folha'] else array['painel', 'colaboradores', 'folha'] end),
+    ('consulta', case when t = 'escritorio' then array['painel', 'empresas', 'colaboradores', 'folha'] else array['painel', 'colaboradores', 'folha'] end),
+    ('cliente', array['painel', 'colaboradores', 'folha']),
+    ('colaborador', array['meus-dados', 'holerites'])
+  ) as x(perfil, paginas);
+  return new;
+end;
+$$;
+
+-- Resumo das contas para o painel de assinantes (somente a plataforma KeyGest)
+create or replace function public.resumo_contas()
+returns table (id uuid, nome text, tipo text, plano text, periodicidade text, situacao text, teste_ate date,
+               email_dono text, telefone text, documento text, criado_em timestamptz, colaboradores bigint, empresas bigint)
+language sql stable security definer set search_path = public as $$
+  select c.id, c.nome, c.tipo, c.plano, c.periodicidade, c.situacao, c.teste_ate, c.email_dono, c.telefone, c.documento, c.criado_em,
+    (select count(*) from public.colaboradores x where x.conta_id = c.id and x.status <> 'desligado'),
+    (select count(*) from public.empresas x where x.conta_id = c.id)
+  from public.contas c
+  where public.eh_plataforma()
+  order by c.criado_em desc;
+$$;
+
+-- Quem pode chamar cada função pela API
+revoke execute on function public.minha_conta(), public.conta_padrao(), public.conta_ativa(), public.eh_plataforma(),
+  public.resumo_contas() from public, anon;
+grant execute on function public.minha_conta(), public.conta_padrao(), public.conta_ativa(), public.eh_plataforma(),
+  public.resumo_contas() to authenticated;
+revoke execute on function public.conferir_limite(), public.registrar_acesso(), public.validar_cadastro() from public, anon, authenticated;
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    grant execute on function public.validar_cadastro() to supabase_auth_admin;
+  end if;
+end $$;
+
+-- Trava de segurança: toda regra de acesso precisa filtrar pela conta.
+-- Se alguma regra antiga ficou sem esse filtro, a atualização inteira é cancelada.
+do $$
+declare r record;
+begin
+  for r in select tablename, policyname from pg_policies
+           where schemaname = 'public'
+             and (coalesce(qual, '') || ' ' || coalesce(with_check, '')) not like '%minha_conta%'
+             and (coalesce(qual, '') || ' ' || coalesce(with_check, '')) not like '%eh_plataforma%' loop
+    raise exception 'KG_REGRA_SEM_CONTA: % em %', r.policyname, r.tablename;
+  end loop;
+end $$;
 
 notify pgrst, 'reload schema';

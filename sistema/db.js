@@ -24,6 +24,10 @@
     }
     if (/foreign key|violates.*restrict/i.test(m)) return 'Não é possível excluir: existem colaboradores ligados a esta empresa.';
     if (/KG_EMAIL_NAO_LIBERADO/.test(m)) return 'Este e-mail ainda não foi liberado pela KeyGest.';
+    var lim = /KG_LIMITE_PLANO:(\w+):(\d+)/.exec(m);
+    if (lim) return lim[1] === 'empresas'
+      ? 'O seu plano permite até ' + lim[2] + ' empresa(s). Para cadastrar mais, mude para o plano Escritório de RH.'
+      : 'O seu plano permite até ' + lim[2] + ' colaboradores ativos. Para cadastrar mais, mude de plano.';
     if (/Database error saving new user/i.test(m)) return 'Não foi possível criar a senha: este e-mail não está liberado no sistema (ou o banco precisa ser atualizado). Confira o e-mail digitado ou fale com a KeyGest.';
     if (/signups? not allowed|signup.*disabled|Email signups are disabled|email_provider_disabled/i.test(m)) return 'O cadastro de novas senhas está desligado no Supabase (Authentication → Sign In / Providers → "Allow new users to sign up" e "Email"). Peça para a KeyGest ligar.';
     if (/Email address .* is invalid|invalid.*email/i.test(m)) return 'O Supabase recusou este e-mail. Confira se está escrito corretamente.';
@@ -118,9 +122,29 @@
       sb.auth.onAuthStateChange(function (evento, sessao) { fn(evento, sessao); });
     },
     sair: function () { return sb.auth.signOut(); },
-    meuAcesso: function (sessao) {
+    meuAcesso: async function (sessao) {
       var email = String(sessao.user.email || '').toLowerCase();
-      return sb.from('acessos').select('*').eq('email', email).maybeSingle().then(resultado);
+      var a = resultado(await sb.from('acessos').select('*').eq('email', email).maybeSingle());
+      // Conta (assinatura) do usuário; num banco ainda sem contas, segue como antes
+      if (a && a.conta_id) {
+        try {
+          var c = await sb.from('contas').select('*').eq('id', a.conta_id).maybeSingle();
+          if (!c.error) a.conta = c.data;
+        } catch (e) { /* sem tabela de contas */ }
+      }
+      return a;
+    },
+    // Criação de conta nova (teste grátis): o banco cria a conta, o administrador e a empresa
+    cadastrarConta: function (dados, senha) {
+      return sb.auth.signUp({
+        email: dados.email, password: senha,
+        options: { emailRedirectTo: ENDERECO, data: { nova_conta: {
+          tipo: dados.tipo, nome: dados.nome, empresa: dados.empresa, documento: dados.documento, telefone: dados.telefone,
+        } } },
+      }).then(resultado);
+    },
+    resumoContas: function () {
+      return sb.rpc('resumo_contas').then(resultado);
     },
     listar: function (tabela, filtros) {
       var q = sb.from(tabela).select('*');
@@ -152,9 +176,13 @@
       if (!ids.length) return Promise.resolve();
       return sb.from(tabela).delete().in(chave(tabela), ids).then(resultado);
     },
-    // Cria ou atualiza pela chave primária
-    salvarLinha: function (tabela, obj) {
-      return gravar(tabela, obj, function (o) { return sb.from(tabela).upsert(o, { onConflict: chave(tabela) }).select().single(); });
+    // Cria ou atualiza pela chave (atualiza primeiro; se não existir, insere)
+    salvarLinha: async function (tabela, obj) {
+      var k = chave(tabela);
+      var r = await sb.from(tabela).update(obj).eq(k, obj[k]).select();
+      if (r.error) return resultado(r);
+      if (r.data && r.data.length) return r.data[0];
+      return gravar(tabela, obj, function (o) { return sb.from(tabela).insert(o).select().single(); });
     },
   };
 
@@ -167,6 +195,10 @@
     try { memoria = JSON.parse(localStorage.getItem(CHAVE)); } catch (e) { memoria = null; }
     if (!memoria) {
       memoria = dadosExemplo();
+      memoria.acessos = acessosExemplo(memoria);
+      memoria.contas = contasExemplo();
+      TABELAS_CONTA.forEach(function (t) { (memoria[t] || []).forEach(function (r) { if (!r.conta_id) r.conta_id = CONTA_DEMO; }); });
+      casaExemplo(memoria);
       salvar();
     }
     if (!Array.isArray(memoria.negociacoes)) memoria.negociacoes = negociacoesExemplo();
@@ -175,6 +207,13 @@
       if (!Array.isArray(memoria[t])) memoria[t] = [];
     });
     if (!memoria.acessos.length) memoria.acessos = acessosExemplo(memoria);
+    // Dados antigos (antes das contas): tudo vai para a conta KeyGest e entra a assinante de exemplo
+    if (!Array.isArray(memoria.contas)) {
+      memoria.contas = contasExemplo();
+      TABELAS_CONTA.forEach(function (t) { (memoria[t] || []).forEach(function (r) { if (!r.conta_id) r.conta_id = CONTA_DEMO; }); });
+      casaExemplo(memoria);
+      salvar();
+    }
     return memoria;
   }
 
@@ -235,6 +274,34 @@
       n('Mercado Amostra (fictícia)', 'Juliana', 'negociacao', 1200, 22, 'Prospecção ativa', 20, 'Enviar contrato revisado', 2),
     ];
   }
+
+  // Contas de demonstração: a KeyGest (plataforma) e uma assinante doméstica em teste
+  var CONTA_DEMO = 'conta-keygest';
+  var CONTA_CASA = 'conta-casa-helena';
+  function contasExemplo() {
+    return [
+      { id: CONTA_DEMO, nome: 'KeyGest', tipo: 'escritorio', plano: 'escritorio', periodicidade: 'mensal', situacao: 'ativa', plataforma: true,
+        email_dono: 'keygest.rh@gmail.com', teste_ate: null, criado_em: dataRelativa(-1, 0, 0) },
+      { id: CONTA_CASA, nome: 'Helena Prado (exemplo)', tipo: 'domestico', plano: 'domestico', periodicidade: 'mensal', situacao: 'teste',
+        plataforma: false, email_dono: 'helena@exemplo.com', documento: '714.602.380-01', teste_ate: dataRelativa(0, 0, 9), criado_em: dataRelativa(0, 0, -5) },
+    ];
+  }
+  function casaExemplo(d) {
+    var emp = { id: novoId(), conta_id: CONTA_CASA, razao_social: 'Helena Prado (exemplo)', nome_fantasia: '', cnpj: '714.602.380-01', regime: 'domestico',
+      rat: 0.02, fap: 1, terceiros: 0.058, responsavel: 'Helena Prado', email: 'helena@exemplo.com', telefone: '', ativo: true, observacoes: 'Empregadora doméstica fictícia.' };
+    var col = { id: novoId(), conta_id: CONTA_CASA, empresa_id: emp.id, nome: 'Rosa Lima (exemplo)', cpf: '111.444.777-35', pis: '', data_nascimento: null,
+      email: '', telefone: '', cargo: 'Empregada doméstica', departamento: '', salario: 1621, data_admissao: dataRelativa(-1, -2, 0), tipo_contrato: 'clt',
+      jornada_semanal: 44, status: 'ativo', data_desligamento: null, dependentes: 0, chave_pix: '', observacoes: '' };
+    var a = new Date(); a = new Date(a.getFullYear(), a.getMonth() - 1, 1);
+    d.empresas.push(emp);
+    d.colaboradores.push(col);
+    d.folha.push({ id: novoId(), conta_id: CONTA_CASA, colaborador_id: col.id, empresa_id: emp.id,
+      competencia: a.getFullYear() + '-' + String(a.getMonth() + 1).padStart(2, '0'), salario: 1621, faltas: 0, he50: 0, he100: 0,
+      adicionais: 0, vt: 180, desc_vr: 0, outros_descontos: 0 });
+    d.acessos.push({ email: 'helena@exemplo.com', nome: 'Helena Prado (empregadora)', perfil: 'admin', empresa_id: null, colaborador_id: null, ativo: true, conta_id: CONTA_CASA });
+  }
+  var TABELAS_CONTA = ['empresas', 'colaboradores', 'ferias', 'folha', 'acessos', 'negociacoes', 'negociacao_historico', 'financeiro', 'perfil_paginas'];
+  var LIMITES = { domestico: { colaboradores: 2, empresas: 1 }, empresa: { colaboradores: 15, empresas: 1 }, escritorio: { colaboradores: 100, empresas: 1000 } };
 
   function dadosExemplo() {
     var e1 = novoId(), e2 = novoId();
@@ -306,7 +373,17 @@
   }
   function acessoDemo() {
     var d = carregar();
-    return d.acessos.find(function (a) { return a.email === emailDemo() && a.ativo; }) || d.acessos.find(function (a) { return a.perfil === 'admin'; });
+    return d.acessos.find(function (a) { return a.email === emailDemo() && a.ativo; }) ||
+      d.acessos.find(function (a) { return a.perfil === 'admin' && a.conta_id === CONTA_DEMO; }) ||
+      d.acessos.find(function (a) { return a.perfil === 'admin'; });
+  }
+  function contaDe(a) {
+    return (carregar().contas || []).find(function (c) { return c.id === (a && a.conta_id); }) || null;
+  }
+  function contaAtiva(c) {
+    if (!c) return false;
+    var hojeIso = dataRelativa(0, 0, 0);
+    return c.situacao === 'ativa' || (c.situacao === 'teste' && (!c.teste_ate || c.teste_ate >= hojeIso));
   }
 
   // Imita as regras de segurança do banco (RLS) para o modo demonstração
@@ -317,10 +394,13 @@
   }
   // Página liberada para o perfil (sem configuração salva, vale o padrão informado)
   function paginaDemo(perfil, pagina, padrao) {
-    var r = (carregar().perfil_paginas || []).find(function (x) { return x.perfil === perfil; });
+    var conta = (acessoDemo() || {}).conta_id;
+    var r = (carregar().perfil_paginas || []).find(function (x) { return x.perfil === perfil && (!x.conta_id || x.conta_id === conta); });
     return r ? r.paginas.indexOf(pagina) !== -1 : padrao;
   }
   function podeVer(tabela, r, a, d) {
+    if (tabela === 'contas') return r.id === a.conta_id || !!(a.perfil === 'admin' && (contaDe(a) || {}).plataforma);
+    if (TABELAS_CONTA.indexOf(tabela) !== -1 && r.conta_id && r.conta_id !== a.conta_id) return false;
     var p = a.perfil;
     var equipe = p === 'admin' || p === 'analista' || p === 'consulta';
     if (tabela === 'perfil_paginas') return true;
@@ -345,6 +425,9 @@
     return false;
   }
   function podeGravar(tabela, obj, a, d) {
+    if (tabela === 'contas') return a.perfil === 'admin' && !!(contaDe(a) || {}).plataforma;
+    if (TABELAS_CONTA.indexOf(tabela) !== -1 && obj.conta_id && obj.conta_id !== a.conta_id) return false;
+    if (!contaAtiva(contaDe(a))) return false; // conta vencida: somente consulta
     if (tabela === 'acessos' || tabela === 'perfil_paginas') return a.perfil === 'admin';
     if (a.perfil === 'admin') return true;
     if (tabela === 'financeiro') return a.perfil === 'analista' && paginaDemo('analista', 'financeiro', false);
@@ -363,8 +446,42 @@
     sessao: function () { return Promise.resolve({ user: { email: emailDemo() } }); },
     entrar: function () { return local.sessao(); },
     sair: function () { return Promise.resolve(); },
-    meuAcesso: function () { return Promise.resolve(copia(acessoDemo())); },
-    perfisDemo: function () { return copia(carregar().acessos.filter(function (a) { return a.ativo; })); },
+    meuAcesso: function () {
+      var a = copia(acessoDemo());
+      a.conta = copia(contaDe(a));
+      return Promise.resolve(a);
+    },
+    perfisDemo: function () {
+      return copia(carregar().acessos.filter(function (a) { return a.ativo; }).map(function (a) {
+        return Object.assign({}, a, { conta_nome: (contaDe(a) || {}).nome || '' });
+      }));
+    },
+    resumoContas: function () {
+      var d = carregar(), a = acessoDemo();
+      if (!(a.perfil === 'admin' && (contaDe(a) || {}).plataforma)) return Promise.resolve([]);
+      return Promise.resolve(copia(d.contas.map(function (c) {
+        return Object.assign({}, c, {
+          colaboradores: d.colaboradores.filter(function (x) { return x.conta_id === c.id && x.status !== 'desligado'; }).length,
+          empresas: d.empresas.filter(function (x) { return x.conta_id === c.id; }).length,
+        });
+      }).sort(function (x, y) { return String(y.criado_em) < String(x.criado_em) ? -1 : 1; })));
+    },
+    cadastrarConta: function (dados) {
+      var d = carregar(), email = String(dados.email || '').toLowerCase();
+      if (d.acessos.some(function (x) { return x.email === email; })) return Promise.reject(new Error(traduzirErro('already registered')));
+      var id = novoId();
+      var nome = dados.empresa || dados.nome || email;
+      d.contas.push({ id: id, nome: nome, tipo: dados.tipo, plano: dados.tipo, periodicidade: 'mensal', situacao: 'teste', plataforma: false,
+        email_dono: email, documento: dados.documento || null, telefone: dados.telefone || null, teste_ate: dataRelativa(0, 0, 14), criado_em: new Date().toISOString() });
+      d.acessos.push({ email: email, nome: dados.nome || '', perfil: 'admin', empresa_id: null, colaborador_id: null, ativo: true, conta_id: id });
+      if (dados.tipo !== 'escritorio') {
+        d.empresas.push({ id: novoId(), conta_id: id, razao_social: nome, cnpj: dados.documento || null, regime: dados.tipo === 'domestico' ? 'domestico' : 'simples',
+          rat: 0.02, fap: 1, terceiros: 0.058, responsavel: dados.nome || '', email: email, telefone: dados.telefone || '', ativo: true });
+      }
+      salvar();
+      local.verComo(email);
+      return local.sessao().then(function (s) { return { session: s }; });
+    },
     verComo: function (email) {
       try { localStorage.setItem(CHAVE_PERFIL, email); } catch (e) { /* modo privado */ }
     },
@@ -384,7 +501,15 @@
       if (!podeGravar(tabela, obj, acessoDemo(), d)) return Promise.reject(new Error(SEM_PERMISSAO));
       var erro = conferirUnicos(d, tabela, obj, null);
       if (erro) return Promise.reject(new Error(erro));
-      var novo = Object.assign(tabela === 'acessos' ? {} : { id: novoId() }, { criado_em: new Date().toISOString() }, obj);
+      var quem = acessoDemo();
+      if (TABELAS_CONTA.indexOf(tabela) !== -1 && (tabela === 'colaboradores' || tabela === 'empresas')) {
+        var conta = contaDe(quem) || {};
+        var limite = (LIMITES[conta.plano] || {})[tabela];
+        var usados = (d[tabela] || []).filter(function (x) { return x.conta_id === quem.conta_id && x.status !== 'desligado'; }).length;
+        if (!conta.plataforma && limite && usados >= limite) return Promise.reject(new Error(traduzirErro('KG_LIMITE_PLANO:' + tabela + ':' + limite)));
+      }
+      var novo = Object.assign(tabela === 'acessos' ? {} : { id: novoId() }, { criado_em: new Date().toISOString() },
+        TABELAS_CONTA.indexOf(tabela) !== -1 ? { conta_id: quem.conta_id } : {}, obj);
       (d[tabela] = d[tabela] || []).push(novo);
       salvar();
       return Promise.resolve(copia(novo));
@@ -423,6 +548,15 @@
     },
     salvarLinha: function (tabela, obj) {
       var d = carregar(), k = chave(tabela);
+      if (tabela === 'perfil_paginas') {
+        var a = acessoDemo();
+        if (!podeGravar(tabela, obj, a, d)) return Promise.reject(new Error(SEM_PERMISSAO));
+        var linha = d.perfil_paginas.find(function (x) { return x.perfil === obj.perfil && (x.conta_id || CONTA_DEMO) === a.conta_id; });
+        if (linha) Object.assign(linha, obj);
+        else d.perfil_paginas.push(linha = Object.assign({ conta_id: a.conta_id }, obj));
+        salvar();
+        return Promise.resolve(copia(linha));
+      }
       var existe = (d[tabela] || []).some(function (x) { return x[k] === obj[k]; });
       return existe ? local.atualizar(tabela, obj[k], obj) : local.inserir(tabela, obj);
     },
@@ -442,15 +576,16 @@
       salvar();
     },
     restaurarExemplo: function () {
-      memoria = dadosExemplo();
-      memoria.acessos = acessosExemplo(memoria);
-      salvar();
+      memoria = null;
+      try { localStorage.removeItem(CHAVE); } catch (e) { /* modo privado */ }
+      carregar();
     },
   };
 
   function conferirUnicos(d, tabela, obj, id) {
     if (tabela === 'empresas' && obj.cnpj) {
-      if (d.empresas.some(function (e) { return e.id !== id && e.cnpj === obj.cnpj; })) return traduzirErro('unique cnpj');
+      var contaAtual = (acessoDemo() || {}).conta_id;
+      if (d.empresas.some(function (e) { return e.id !== id && e.cnpj === obj.cnpj && (!e.conta_id || e.conta_id === contaAtual); })) return traduzirErro('unique cnpj');
     }
     if (tabela === 'acessos' && obj.email && !id) {
       if (d.acessos.some(function (a) { return a.email === obj.email; })) return traduzirErro('unique acessos');

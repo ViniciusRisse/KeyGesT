@@ -27,6 +27,23 @@ window.KEYGEST_CONFIG = {
     anonKey: 'sb_publishable_eiPgvkYmFUlNfemkAqF_LA_EvMya21b',
   },
 
+  // Sistema vendido por assinatura (SaaS)
+  saas: {
+    // Liga a aba "Criar conta" no login. Só ative depois de aplicar no Supabase a parte
+    // "SaaS: contas de assinantes" do arquivo supabase/schema.sql.
+    cadastroAberto: false,
+    testeDias: 14,
+    // Preços (R$). Anual = 10 mensalidades (2 meses grátis).
+    planos: {
+      domestico: { nome: 'Doméstico', mensal: 29, anual: 290, colaboradores: 2, empresas: 1,
+        para: 'Empregador doméstico (pessoa física) com até 2 empregados' },
+      empresa: { nome: 'Empresa', mensal: 89, anual: 890, colaboradores: 15, empresas: 1,
+        para: 'Uma empresa com até 15 funcionários' },
+      escritorio: { nome: 'Escritório de RH', mensal: 249, anual: 2490, colaboradores: 100, empresas: null,
+        para: 'Escritórios de RH e contabilidade: várias empresas clientes, até 100 colaboradores' },
+    },
+  },
+
   formulario: {
     // Os pedidos de proposta são enviados pelo FormSubmit direto para o Gmail.
     // No primeiro envio, o FormSubmit manda um e-mail de ativação para esse endereço:

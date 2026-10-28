@@ -10,7 +10,11 @@
 
   // Acesso do usuário logado e o que ele pode fazer
   var ACESSO = null;
+  var CONTA = null;          // assinatura (conta) do usuário; null num banco ainda sem contas
   var PODE = {};
+  var SAAS = window.KEYGEST_CONFIG.saas || { planos: {} };
+  var TIPOS_CONTA = { escritorio: 'Escritório de RH', empresa: 'Empresa', domestico: 'Empregador doméstico' };
+  var SITUACOES = { teste: 'Teste grátis', ativa: 'Ativa', inadimplente: 'Pagamento pendente', cancelada: 'Cancelada' };
   var PERFIS = {
     admin: 'Administrador',
     analista: 'Analista (edita)',
@@ -28,6 +32,7 @@
     negociacoes: 'Negociações',
     financeiro: 'Financeiro',
     usuarios: 'Usuários',
+    assinantes: 'Assinantes',
     'meus-dados': 'Meus dados',
     holerites: 'Meus holerites',
   };
@@ -53,14 +58,33 @@
   var CONFIG_PAGINAS = {};   // perfil -> páginas salvas no banco
   var MINHAS_PAGINAS = [];   // páginas do usuário logado
 
+  // Contas de uma só empresa (empresa ou doméstico) não têm empresas clientes, vendas nem financeiro do escritório
+  var SO_ESCRITORIO = ['empresas', 'negociacoes', 'financeiro'];
+  function tipoConta() { return CONTA ? CONTA.tipo : 'escritorio'; }
+
   function paginasDoPerfil(perfil) {
     var salvas = CONFIG_PAGINAS[perfil];
     var lista = Array.isArray(salvas) ? salvas : PAGINAS_PADRAO[perfil] || [];
     var possiveis = PAGINAS_POSSIVEIS[perfil] || [];
     var fixas = PAGINAS_FIXAS[perfil] || [];
-    return ORDEM_PAGINAS.filter(function (pg) {
+    var escritorio = tipoConta() === 'escritorio';
+    var paginas = ORDEM_PAGINAS.filter(function (pg) {
+      if (!escritorio && SO_ESCRITORIO.indexOf(pg) !== -1) return false;
       return possiveis.indexOf(pg) !== -1 && (lista.indexOf(pg) !== -1 || fixas.indexOf(pg) !== -1);
     });
+    // A KeyGest (dona da plataforma) sempre vê os assinantes
+    if (perfil === 'admin' && PODE.plataforma) paginas.splice(paginas.indexOf('usuarios') + 1 || paginas.length, 0, 'assinantes');
+    return paginas;
+  }
+
+  function contaEmDia(c) {
+    if (!c) return true;
+    if (c.situacao === 'ativa') return true;
+    return c.situacao === 'teste' && (!c.teste_ate || c.teste_ate >= isoData(hoje()));
+  }
+  function diasDeTeste(c) {
+    if (!c || c.situacao !== 'teste' || !c.teste_ate) return null;
+    return diasEntre(hoje(), lerData(c.teste_ate));
   }
 
   async function carregarPaginas() {
@@ -76,13 +100,16 @@
 
   function definirPermissoes(a) {
     var p = a.perfil;
+    var emDia = contaEmDia(CONTA); // vencida ou inadimplente: somente consulta
     PODE = {
       equipe: p === 'admin' || p === 'analista' || p === 'consulta',
-      editar: p === 'admin' || p === 'analista',
-      folha: p === 'admin' || p === 'analista' || p === 'cliente',
+      editar: (p === 'admin' || p === 'analista') && emDia,
+      folha: (p === 'admin' || p === 'analista' || p === 'cliente') && emDia,
       usuarios: p === 'admin',
       cliente: p === 'cliente',
       colaborador: p === 'colaborador',
+      plataforma: p === 'admin' && !!(CONTA && CONTA.plataforma),
+      emDia: emDia,
     };
   }
 
@@ -220,6 +247,7 @@
     holerites: svgIcone('<path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h7M9 17h7"/>'),
     negociacoes: svgIcone('<path d="M3 4h18l-7 8v6l-4 2v-8z"/>'),
     financeiro: svgIcone('<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>'),
+    assinantes: svgIcone('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>'),
   };
 
   // No celular, as listas viram cartões: cada célula ganha o nome da sua coluna
@@ -543,7 +571,7 @@
       '<div class="acoes">' + (PODE.folha ? '<a class="botao botao-secundario" href="#/folha">Lançar folha do mês</a>' : '') +
       (PODE.editar ? '<a class="botao" href="#/colaboradores/novo">+ Novo colaborador</a>' : '') + '</div></div>' +
       '<div class="indicadores">' +
-      '<div class="indicador"><span>Empresas ativas</span><strong>' + empresas.filter(function (e) { return e.ativo !== false; }).length + '</strong></div>' +
+      (tipoConta() === 'escritorio' ? '<div class="indicador"><span>Empresas ativas</span><strong>' + empresas.filter(function (e) { return e.ativo !== false; }).length + '</strong></div>' : '') +
       '<div class="indicador"><span>Colaboradores ativos</span><strong>' + ativos.length + '</strong></div>' +
       '<div class="indicador"><span>Folha mensal (salários)</span><strong>' + brl(folha) + '</strong></div>' +
       '<div class="indicador"><span>Custo mensal estimado</span><strong>' + brl(custo) + '</strong></div>' +
@@ -1691,7 +1719,8 @@
       '<div class="campo"><label for="u-email">E-mail (login) *</label><input id="u-email" name="email" type="email" autocapitalize="none" spellcheck="false" value="' + esc(a.email) + '"' + (email ? ' disabled' : '') + '>' +
       '<small>É o login da pessoa e o endereço que recebe o link de recuperação de senha.</small><div class="erro-campo"></div></div>' +
       '<div class="campo"><label for="u-perfil">Perfil *</label><select id="u-perfil" name="perfil"' + (proprio ? ' disabled' : '') + '>' +
-      Object.keys(PERFIS).map(function (k) { return '<option value="' + k + '"' + (a.perfil === k ? ' selected' : '') + '>' + PERFIS[k] + '</option>'; }).join('') +
+      Object.keys(PERFIS).filter(function (k) { return k !== 'cliente' || tipoConta() === 'escritorio' || a.perfil === 'cliente'; })
+        .map(function (k) { return '<option value="' + k + '"' + (a.perfil === k ? ' selected' : '') + '>' + PERFIS[k] + '</option>'; }).join('') +
       '</select><div class="erro-campo"></div></div>' +
       '<div class="campo"><label for="u-ativo">Situação</label><select id="u-ativo" name="ativo"' + (proprio ? ' disabled' : '') + '>' +
       '<option value="true"' + (a.ativo ? ' selected' : '') + '>Ativo</option><option value="false"' + (a.ativo ? '' : ' selected') + '>Bloqueado</option></select><div class="erro-campo"></div></div>' +
@@ -1802,6 +1831,124 @@
   }
 
   // ------------------------------------------------------------------
+  // Assinatura: faixa do teste grátis / conta vencida
+  // ------------------------------------------------------------------
+  function linkAssinar() {
+    var w = String((window.KEYGEST_CONFIG.empresa || {}).whatsapp || '').replace(/\D/g, '');
+    var texto = 'Olá! Quero assinar o sistema KeyGest' + (CONTA ? ' (conta ' + CONTA.nome + ', plano ' + ((SAAS.planos[CONTA.plano] || {}).nome || CONTA.plano) + ')' : '') + '.';
+    return w ? 'https://wa.me/' + w + '?text=' + encodeURIComponent(texto) : 'mailto:' + (window.KEYGEST_CONFIG.empresa || {}).email;
+  }
+
+  function mostrarFaixaConta() {
+    var velha = document.getElementById('faixa-conta');
+    if (velha) velha.remove();
+    if (!CONTA || CONTA.plataforma) return;
+    var html = '', classe = 'aviso faixa-conta';
+    var dias = diasDeTeste(CONTA);
+    var plano = SAAS.planos[CONTA.plano] || {};
+    if (PODE.emDia && dias != null) {
+      html = '<strong>Teste grátis do plano ' + esc(plano.nome || CONTA.plano) + ':</strong> ' +
+        (dias <= 0 ? 'termina hoje.' : 'falta' + (dias === 1 ? '' : 'm') + ' ' + dias + ' dia' + (dias === 1 ? '' : 's') + '.') +
+        ' Assine para continuar usando sem interrupção.';
+    } else if (!PODE.emDia) {
+      classe += ' faixa-conta-bloqueada';
+      html = '<strong>' + (CONTA.situacao === 'inadimplente' ? 'Pagamento pendente.' : CONTA.situacao === 'cancelada' ? 'Assinatura cancelada.' : 'O teste grátis terminou.') +
+        '</strong> O sistema está disponível só para consulta: dá para ver e imprimir holerites e relatórios, mas não lançar nem alterar dados.';
+    }
+    if (!html) return;
+    var faixa = document.createElement('div');
+    faixa.id = 'faixa-conta';
+    faixa.className = classe;
+    faixa.innerHTML = '<div>' + html + '</div>' +
+      (ACESSO.perfil === 'admin' ? '<a class="botao botao-pequeno" href="' + esc(linkAssinar()) + '" target="_blank" rel="noopener">Assinar agora</a>' : '');
+    document.getElementById('conteudo').insertBefore(faixa, document.getElementById('vista'));
+  }
+
+  // ------------------------------------------------------------------
+  // Assinantes (somente a KeyGest, dona da plataforma)
+  // ------------------------------------------------------------------
+  function precoConta(c) {
+    var p = SAAS.planos[c.plano] || {};
+    return c.periodicidade === 'anual' ? (p.anual || 0) / 12 : p.mensal || 0;
+  }
+
+  async function telaAssinantes() {
+    var lista = (await DB.resumoContas()).filter(function (c) { return !c.plataforma && c.id !== (CONTA && CONTA.id); });
+    var conta = function (s) { return lista.filter(function (c) { return c.situacao === s; }); };
+    var ativas = conta('ativa');
+    var mrr = ativas.reduce(function (t, c) { return t + precoConta(c); }, 0);
+    var testesAcabando = conta('teste').filter(function (c) { var d = diasDeTeste(c); return d != null && d <= 3; });
+    vista.innerHTML =
+      '<div class="topo-vista"><div><h1>Assinantes</h1><p>Contas que usam o sistema KeyGest por assinatura.</p></div></div>' +
+      '<div class="indicadores neg-indicadores">' +
+      '<div class="indicador"><span>Assinaturas ativas</span><strong>' + ativas.length + '</strong></div>' +
+      '<div class="indicador"><span>Receita mensal recorrente</span><strong>' + brl(mrr) + '</strong><small>Anuais contadas por mês</small></div>' +
+      '<div class="indicador"><span>Em teste grátis</span><strong>' + conta('teste').length + '</strong><small>' + testesAcabando.length + ' terminando em até 3 dias</small></div>' +
+      '<div class="indicador' + (conta('inadimplente').length ? ' indicador-alerta' : '') + '"><span>Pagamento pendente</span><strong>' + conta('inadimplente').length + '</strong></div>' +
+      '<div class="indicador"><span>Canceladas</span><strong>' + conta('cancelada').length + '</strong></div>' +
+      '</div>' +
+      (lista.length
+        ? '<div class="painel" style="padding:0;margin-top:18px"><table class="lista"><thead><tr><th>Conta</th><th>Plano</th><th>Situação</th><th class="num">Colaboradores</th><th>Responsável</th><th>Desde</th><th></th></tr></thead><tbody>' +
+          lista.map(function (c) {
+            var p = SAAS.planos[c.plano] || {};
+            var dias = diasDeTeste(c);
+            var sit = c.situacao === 'teste'
+              ? (dias != null && dias < 0 ? 'Teste vencido' : 'Teste' + (dias != null ? ' · ' + Math.max(dias, 0) + ' dia(s)' : ''))
+              : SITUACOES[c.situacao] || c.situacao;
+            var classe = c.situacao === 'ativa' ? 'ativo' : c.situacao === 'teste' && (dias == null || dias >= 0) ? 'ferias' : 'alerta-vermelho';
+            return '<tr><td><strong>' + esc(c.nome) + '</strong><small style="display:block">' + esc(TIPOS_CONTA[c.tipo] || c.tipo) + (c.documento ? ' · ' + esc(c.documento) : '') + '</small></td>' +
+              '<td>' + esc(p.nome || c.plano) + '<small style="display:block">' + (c.periodicidade === 'anual' ? 'Anual' : 'Mensal') + ' · ' + brl(precoConta(c)) + '/mês</small></td>' +
+              '<td><span class="etiqueta ' + classe + '">' + esc(sit) + '</span></td>' +
+              '<td class="num">' + (c.colaboradores || 0) + (p.colaboradores ? ' / ' + p.colaboradores : '') + '</td>' +
+              '<td>' + esc(c.email_dono || '—') + (c.telefone ? '<small style="display:block">' + esc(c.telefone) + '</small>' : '') + '</td>' +
+              '<td>' + (c.criado_em ? fmtData(String(c.criado_em).slice(0, 10)) : '—') + '</td>' +
+              '<td class="col-acoes"><button type="button" class="icone-editar" data-conta="' + esc(c.id) + '" aria-label="Editar assinatura de ' + esc(c.nome) + '">' + ICONE_LAPIS + '</button></td></tr>';
+          }).join('') + '</tbody></table></div>'
+        : '<div class="painel vazio" style="margin-top:18px">Nenhum assinante ainda. Quando alguém criar uma conta pelo site, ela aparece aqui.</div>') +
+      '<p class="ajuda" style="margin-top:12px">Na próxima etapa, o pagamento pelo Asaas vai atualizar a situação de cada conta sozinho. Por enquanto, ajuste aqui manualmente.</p>';
+
+    vista.querySelectorAll('[data-conta]').forEach(function (b) {
+      b.addEventListener('click', function () { janelaConta(lista.find(function (c) { return c.id === b.dataset.conta; })); });
+    });
+  }
+
+  function janelaConta(c) {
+    var dlg = document.createElement('dialog');
+    dlg.className = 'janela';
+    dlg.innerHTML = '<form method="dialog" class="form-sistema" novalidate>' +
+      '<div class="janela-topo"><div><h2>' + esc(c.nome) + '</h2><p>' + esc(TIPOS_CONTA[c.tipo] || c.tipo) + ' · ' + esc(c.email_dono || '') + '</p></div>' +
+      '<button type="button" class="janela-fechar" aria-label="Fechar">×</button></div>' +
+      '<div class="campos janela-campos">' +
+      '<div class="campo"><label for="ct-plano">Plano</label><select id="ct-plano" name="plano">' +
+      Object.keys(SAAS.planos).map(function (k) { return '<option value="' + k + '"' + (c.plano === k ? ' selected' : '') + '>' + esc(SAAS.planos[k].nome) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="campo"><label for="ct-per">Cobrança</label><select id="ct-per" name="periodicidade"><option value="mensal"' + (c.periodicidade !== 'anual' ? ' selected' : '') + '>Mensal</option><option value="anual"' + (c.periodicidade === 'anual' ? ' selected' : '') + '>Anual</option></select></div>' +
+      '<div class="campo"><label for="ct-sit">Situação</label><select id="ct-sit" name="situacao">' +
+      Object.keys(SITUACOES).map(function (k) { return '<option value="' + k + '"' + (c.situacao === k ? ' selected' : '') + '>' + SITUACOES[k] + '</option>'; }).join('') + '</select></div>' +
+      '<div class="campo"><label for="ct-teste">Teste grátis até</label><input type="date" id="ct-teste" name="teste_ate" value="' + esc(c.teste_ate || '') + '"></div>' +
+      '</div>' +
+      '<p class="ajuda">Mudar o plano altera o limite de colaboradores na hora. "Pagamento pendente" e "Cancelada" deixam a conta só para consulta.</p>' +
+      '<div class="acoes"><button type="submit" class="botao">Salvar</button><button type="button" class="botao botao-secundario janela-cancelar">Cancelar</button></div></form>';
+    document.body.appendChild(dlg);
+    var form = dlg.querySelector('form');
+    function fechar() { dlg.close(); dlg.remove(); }
+    dlg.querySelector('.janela-fechar').addEventListener('click', fechar);
+    dlg.querySelector('.janela-cancelar').addEventListener('click', fechar);
+    dlg.addEventListener('cancel', function () { setTimeout(function () { dlg.remove(); }, 0); });
+    form.addEventListener('submit', async function (ev) {
+      ev.preventDefault();
+      try {
+        await DB.atualizar('contas', c.id, {
+          plano: form.plano.value, periodicidade: form.periodicidade.value, situacao: form.situacao.value, teste_ate: form.teste_ate.value || null,
+        });
+        fechar();
+        aviso('Assinatura de ' + c.nome + ' atualizada.');
+        rotear();
+      } catch (e) { aviso(e.message, true); }
+    });
+    dlg.showModal();
+  }
+
+  // ------------------------------------------------------------------
   // Rotas
   // ------------------------------------------------------------------
   function rotaPermitida(c) {
@@ -1817,6 +1964,7 @@
     if (tela === 'relatorio' || tela === 'holerites-lote') return temPagina('folha');
     if (!PAGINAS[tela] || !temPagina(tela)) return false;
     if (tela === 'usuarios') return PODE.usuarios;
+    if (tela === 'assinantes') return PODE.plataforma;
     if (tela === 'negociacoes') return PODE.equipe && (!formulario || PODE.editar);
     if (formulario && !PODE.editar) return false;
     return true;
@@ -1828,7 +1976,7 @@
 
   function montarMenu() {
     var itens = MINHAS_PAGINAS.map(function (pg) { return [pg, PAGINAS[pg]]; });
-    var curtos = { 'negociacoes': 'Vendas', 'financeiro': 'Lucro', 'colaboradores': 'Pessoas', 'folha': 'Folha', 'meus-dados': 'Meus dados', 'holerites': 'Holerites', 'usuarios': 'Acessos' };
+    var curtos = { 'assinantes': 'Clientes', 'negociacoes': 'Vendas', 'financeiro': 'Lucro', 'colaboradores': 'Pessoas', 'folha': 'Folha', 'meus-dados': 'Meus dados', 'holerites': 'Holerites', 'usuarios': 'Acessos' };
     document.getElementById('menu-sistema').innerHTML = itens.map(function (i) {
       return '<a href="#/' + i[0] + '" data-rota="' + i[0] + '">' + (ICONES_MENU[i[0]] || '') +
         '<span class="rot-longo">' + i[1] + '</span><span class="rot-curto">' + (curtos[i[0]] || i[1]) + '</span></a>';
@@ -1892,6 +2040,8 @@
         else if (caminho[1] && caminho[2] === 'editar') await neg.form(caminho[1]);
         else if (caminho[1]) await neg.ficha(caminho[1]);
         else await neg.lista(query);
+      } else if (caminho[0] === 'assinantes') {
+        await telaAssinantes();
       } else if (caminho[0] === 'usuarios') {
         if (caminho[1] === 'novo') await telaFormUsuario(null, query);
         else if (caminho[1] === 'editar') await telaFormUsuario(query.email, query);
@@ -1927,10 +2077,11 @@
 
   var MODOS = {
     entrar: { titulo: 'Entrar', texto: 'Use o e-mail e a senha cadastrados.', botao: 'Entrar', email: true, senha: true, senha2: false },
-    primeiro: { titulo: 'Primeiro acesso', texto: 'Use o e-mail liberado pela KeyGest e crie uma senha forte e exclusiva, que você não usa em nenhum outro site.', botao: 'Criar senha e entrar', email: true, senha: true, senha2: true },
+    primeiro: { titulo: 'Primeiro acesso', texto: 'Use o e-mail que o administrador liberou para você e crie uma senha forte e exclusiva, que você não usa em nenhum outro site.', botao: 'Criar senha e entrar', email: true, senha: true, senha2: true },
     esqueci: { titulo: 'Esqueci a senha', texto: 'Informe o seu e-mail de login. Enviaremos um link para você criar uma nova senha.', botao: 'Enviar link', email: true, senha: false, senha2: false },
     nova: { titulo: 'Nova senha', texto: 'Crie uma senha forte, diferente das anteriores e que você não usa em nenhum outro site.', botao: 'Salvar nova senha', email: false, senha: true, senha2: true },
     bloqueado: { titulo: 'Acesso não liberado', texto: '', botao: '', email: false, senha: false, senha2: false },
+    conta: { titulo: 'Criar conta', texto: 'Teste grátis por ' + (SAAS.testeDias || 14) + ' dias, sem cartão de crédito. Depois, escolha o plano mensal ou anual.', botao: 'Criar conta e começar', email: true, senha: true, senha2: true, conta: true },
   };
 
   function mensagemLogin(texto, tipo) {
@@ -1948,6 +2099,8 @@
     document.getElementById('campo-login-senha').hidden = !c.senha;
     document.getElementById('campo-login-senha2').hidden = !c.senha2;
     document.getElementById('regras-senha').hidden = !c.senha2;
+    document.getElementById('campos-conta').hidden = !c.conta;
+    document.getElementById('conta-termos-rotulo').hidden = !c.conta;
     document.getElementById('mostrar-senha-rotulo').hidden = !c.senha;
     document.getElementById('login-senha').value = '';
     document.getElementById('login-senha2').value = '';
@@ -1999,16 +2152,19 @@
       ACESSO = null;
     }
     if (!ACESSO || !ACESSO.ativo) {
-      mostrarLogin('bloqueado', 'O e-mail ' + sessao.user.email + ' ainda não tem acesso ao sistema ou foi bloqueado. Fale com a KeyGest para liberar.');
+      mostrarLogin('bloqueado', 'O e-mail ' + sessao.user.email + ' ainda não tem acesso ao sistema ou foi bloqueado. Fale com o administrador da sua empresa ou com a KeyGest.');
       return;
     }
+    CONTA = ACESSO.conta || null;
     definirPermissoes(ACESSO);
     await carregarPaginas();
     MINHAS_PAGINAS = paginasDoPerfil(ACESSO.perfil);
     montarMenu();
     telaLogin.hidden = true;
     document.getElementById('app').hidden = false;
-    document.getElementById('usuario-email').innerHTML = esc(ACESSO.nome || ACESSO.email) + '<br><small>' + esc(PERFIS[ACESSO.perfil]) + '</small>';
+    document.getElementById('usuario-email').innerHTML = esc(ACESSO.nome || ACESSO.email) + '<br><small>' + esc(PERFIS[ACESSO.perfil]) +
+      (CONTA && !CONTA.plataforma ? ' · ' + esc(CONTA.nome) : '') + '</small>';
+    mostrarFaixaConta();
     document.getElementById('aviso-demo').hidden = DB.modo !== 'demo';
     document.getElementById('sair').hidden = DB.modo === 'demo';
     if (DB.modo === 'demo') montarVerComo();
@@ -2019,7 +2175,7 @@
   function montarVerComo() {
     var sel = document.getElementById('ver-como');
     sel.innerHTML = DB.perfisDemo().map(function (a) {
-      return '<option value="' + esc(a.email) + '"' + (a.email === ACESSO.email ? ' selected' : '') + '>' + esc(PERFIS[a.perfil] + ' — ' + (a.nome || a.email)) + '</option>';
+      return '<option value="' + esc(a.email) + '"' + (a.email === ACESSO.email ? ' selected' : '') + '>' + esc((a.conta_nome ? a.conta_nome + ' · ' : '') + PERFIS[a.perfil] + ' — ' + (a.nome || a.email)) + '</option>';
     }).join('');
   }
 
@@ -2028,6 +2184,39 @@
     location.hash = '';
     DB.sessao().then(iniciarSessao);
   });
+
+  // Criar conta (SaaS): só aparece quando o cadastro está aberto no config.js
+  document.getElementById('aba-conta').hidden = !SAAS.cadastroAberto || DB.modo === 'demo';
+  function ajustarTipoConta() {
+    var t = (formLogin.querySelector('input[name=tipo_conta]:checked') || {}).value || 'empresa';
+    var dom = t === 'domestico';
+    document.getElementById('campo-conta-empresa').hidden = dom;
+    document.getElementById('rotulo-conta-empresa').textContent = t === 'escritorio' ? 'Nome do escritório' : 'Nome da empresa';
+    document.getElementById('rotulo-conta-documento').textContent = dom ? 'Seu CPF (empregador)' : 'CNPJ';
+    document.getElementById('conta-documento').placeholder = dom ? '000.000.000-00' : '00.000.000/0000-00';
+  }
+  formLogin.querySelectorAll('input[name=tipo_conta]').forEach(function (r) { r.addEventListener('change', ajustarTipoConta); });
+  document.getElementById('conta-documento').addEventListener('input', function () { this.value = MASCARAS.documento(this.value); });
+  document.getElementById('conta-telefone').addEventListener('input', function () { this.value = MASCARAS.telefone(this.value); });
+  ajustarTipoConta();
+
+  function lerDadosConta(email) {
+    var t = (formLogin.querySelector('input[name=tipo_conta]:checked') || {}).value || 'empresa';
+    var d = {
+      tipo: t, email: email,
+      nome: document.getElementById('conta-nome').value.trim(),
+      empresa: document.getElementById('conta-empresa').value.trim(),
+      documento: document.getElementById('conta-documento').value.trim().toUpperCase(),
+      telefone: document.getElementById('conta-telefone').value.trim(),
+    };
+    if (t === 'domestico') d.empresa = d.nome;
+    if (d.nome.length < 3) return { erro: 'Informe o seu nome completo.' };
+    if (t !== 'domestico' && d.empresa.length < 2) return { erro: t === 'escritorio' ? 'Informe o nome do escritório.' : 'Informe o nome da empresa.' };
+    if (t === 'domestico' ? !validarCPF(d.documento) : !C.validarCNPJ(d.documento)) return { erro: t === 'domestico' ? 'CPF inválido. Confira os números.' : 'CNPJ inválido. Confira os números.' };
+    if (d.telefone.replace(/\D/g, '').length < 10) return { erro: 'Informe um telefone com DDD.' };
+    if (!document.getElementById('conta-termos').checked) return { erro: 'Para criar a conta, aceite os Termos de uso e a Política de privacidade.' };
+    return { dados: d };
+  }
 
   document.getElementById('login-abas').addEventListener('click', function (ev) {
     var b = ev.target.closest('button[data-modo]');
@@ -2040,6 +2229,12 @@
     var senha = document.getElementById('login-senha').value;
     var senha2 = document.getElementById('login-senha2').value;
     var c = MODOS[modoLogin];
+    var conta = null;
+    if (c.conta) {
+      var lido = lerDadosConta(email);
+      if (lido.erro) return mensagemLogin(lido.erro);
+      conta = lido.dados;
+    }
     if (c.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return mensagemLogin('Informe um e-mail válido.');
     if (c.senha && !senha) return mensagemLogin('Informe a senha.');
     if (c.senha2 && !atualizarRegras().valida) return mensagemLogin('A senha ainda não cumpre todas as regras da lista.');
@@ -2066,6 +2261,21 @@
           definirModoLogin('entrar');
           document.getElementById('login-email').value = email;
           mensagemLogin('Senha criada! Agora entre com o seu e-mail e a nova senha.', 'sucesso');
+        }
+      } else if (modoLogin === 'conta') {
+        botao.textContent = 'Criando a sua conta...';
+        var rc;
+        try {
+          rc = await DB.cadastrarConta(conta, senha);
+        } catch (e) {
+          if (/não está liberado|Database error/i.test(e.message)) throw new Error('Não foi possível criar a conta agora. Confira os dados e tente de novo, ou fale com a KeyGest.');
+          throw e;
+        }
+        if (rc && rc.session) await iniciarSessao(rc.session);
+        else {
+          definirModoLogin('entrar');
+          document.getElementById('login-email').value = email;
+          mensagemLogin('Conta criada! Agora entre com o seu e-mail e a senha.', 'sucesso');
         }
       } else if (modoLogin === 'esqueci') {
         await DB.recuperar(email);
@@ -2137,7 +2347,12 @@
     var q = new URLSearchParams(location.search);
     var pedido = q.get('acesso');
     if (s) return iniciarSessao(s);
-    mostrarLogin(pedido === 'primeiro' || pedido === 'esqueci' ? pedido : 'entrar');
+    var podeConta = pedido === 'conta' && SAAS.cadastroAberto;
+    mostrarLogin(pedido === 'primeiro' || pedido === 'esqueci' || podeConta ? pedido : 'entrar');
+    if (podeConta && q.get('plano') && SAAS.planos[q.get('plano')]) {
+      var r0 = formLogin.querySelector('input[name=tipo_conta][value="' + q.get('plano') + '"]');
+      if (r0) { r0.checked = true; ajustarTipoConta(); }
+    }
     if (q.get('email')) {
       document.getElementById('login-email').value = q.get('email');
       document.getElementById('login-senha').focus();

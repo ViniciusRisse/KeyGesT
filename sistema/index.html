@@ -11,8 +11,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/style.css?v=20261028a">
-  <link rel="stylesheet" href="sistema.css?v=20261028a">
+  <link rel="stylesheet" href="../css/style.css?v=20261028b">
+  <link rel="stylesheet" href="sistema.css?v=20261028b">
 </head>
 <body class="sistema">
   <!-- Login -->
@@ -23,16 +23,30 @@
         <button type="button" role="tab" data-modo="entrar">Entrar</button>
         <button type="button" role="tab" data-modo="primeiro">Primeiro acesso</button>
         <button type="button" role="tab" data-modo="esqueci">Esqueci a senha</button>
+        <button type="button" role="tab" data-modo="conta" id="aba-conta" hidden>Criar conta</button>
       </div>
       <h1 id="login-titulo">Entrar</h1>
       <p class="ajuda" id="login-texto"></p>
       <div id="login-msg" class="alerta erro" role="alert" hidden></div>
       <form id="form-login" novalidate>
+        <div id="campos-conta" hidden>
+          <fieldset class="tipo-conta">
+            <legend>Para quem é o sistema?</legend>
+            <label class="opcao"><input type="radio" name="tipo_conta" value="domestico"><div><strong>Empregador doméstico</strong><small>Empregada, babá, caseiro ou cuidador · até 2 empregados</small></div></label>
+            <label class="opcao"><input type="radio" name="tipo_conta" value="empresa" checked><div><strong>Minha empresa</strong><small>Uma empresa com até 15 funcionários</small></div></label>
+            <label class="opcao"><input type="radio" name="tipo_conta" value="escritorio"><div><strong>Escritório de RH ou contabilidade</strong><small>Várias empresas clientes · até 100 colaboradores</small></div></label>
+          </fieldset>
+          <div class="campo"><label for="conta-nome">Seu nome completo</label><input type="text" id="conta-nome" autocomplete="name"></div>
+          <div class="campo" id="campo-conta-empresa"><label for="conta-empresa" id="rotulo-conta-empresa">Nome da empresa</label><input type="text" id="conta-empresa" autocomplete="organization"></div>
+          <div class="campo"><label for="conta-documento" id="rotulo-conta-documento">CNPJ</label><input type="text" id="conta-documento" inputmode="numeric" autocomplete="off"></div>
+          <div class="campo"><label for="conta-telefone">Telefone / WhatsApp</label><input type="tel" id="conta-telefone" autocomplete="tel" maxlength="15"></div>
+        </div>
         <div class="campo" id="campo-login-email"><label for="login-email">E-mail</label><input type="email" id="login-email" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false"><small>O seu login é sempre o seu e-mail.</small></div>
         <div class="campo" id="campo-login-senha"><label for="login-senha">Senha</label><input type="password" id="login-senha" autocomplete="current-password"></div>
         <ul class="regras-senha" id="regras-senha" aria-live="polite"></ul>
         <div class="campo" id="campo-login-senha2"><label for="login-senha2">Repita a senha</label><input type="password" id="login-senha2" autocomplete="new-password"></div>
         <label class="mostrar-senha" id="mostrar-senha-rotulo"><input type="checkbox" id="mostrar-senha"> Mostrar senha</label>
+        <label class="mostrar-senha" id="conta-termos-rotulo" hidden><input type="checkbox" id="conta-termos"> Li e aceito os <a href="../termos.html" target="_blank" rel="noopener">Termos de uso</a> e a <a href="../privacidade.html" target="_blank" rel="noopener">Política de privacidade</a></label>
         <button class="botao" type="submit" id="login-enviar" style="width:100%">Entrar</button>
       </form>
       <button type="button" class="botao botao-secundario" id="login-sair" style="width:100%;margin-top:10px" hidden>Sair</button>
@@ -71,14 +85,14 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
-  <script src="../js/config.js?v=20261028a"></script>
-  <script src="../js/encargos.js?v=20261028a"></script>
-  <script src="senha.js?v=20261028a"></script>
-  <script src="db.js?v=20261028a"></script>
-  <script src="folha.js?v=20261028a"></script>
-  <script src="negociacoes.js?v=20261028a"></script>
-  <script src="financeiro.js?v=20261028a"></script>
-  <script src="app.js?v=20261028a"></script>
-  <script src="../js/tema.js?v=20261028a"></script>
+  <script src="../js/config.js?v=20261028b"></script>
+  <script src="../js/encargos.js?v=20261028b"></script>
+  <script src="senha.js?v=20261028b"></script>
+  <script src="db.js?v=20261028b"></script>
+  <script src="folha.js?v=20261028b"></script>
+  <script src="negociacoes.js?v=20261028b"></script>
+  <script src="financeiro.js?v=20261028b"></script>
+  <script src="app.js?v=20261028b"></script>
+  <script src="../js/tema.js?v=20261028b"></script>
 </body>
 </html>
