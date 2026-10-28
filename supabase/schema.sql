@@ -823,7 +823,7 @@ end $$;
 -- Limites de cada plano (conferidos no banco)
 -- ---------------------------------------------------------------
 create or replace function public.limite_plano(p text, item text)
-returns integer language sql immutable as $$
+returns integer language sql immutable set search_path = public as $$
   select case item
     when 'colaboradores' then case p when 'domestico' then 2 when 'empresa' then 15 else 100 end
     when 'empresas' then case p when 'escritorio' then 1000 else 1 end

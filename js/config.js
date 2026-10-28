@@ -31,7 +31,7 @@ window.KEYGEST_CONFIG = {
   saas: {
     // Liga a aba "Criar conta" no login. Só ative depois de aplicar no Supabase a parte
     // "SaaS: contas de assinantes" do arquivo supabase/schema.sql.
-    cadastroAberto: false,
+    cadastroAberto: true,
     testeDias: 14,
     // Preços (R$). Anual = 10 mensalidades (2 meses grátis).
     planos: {
