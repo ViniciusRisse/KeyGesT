@@ -13,8 +13,8 @@
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261028d">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=20261106a">
 </head>
 <body>
   <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
@@ -24,233 +24,302 @@
       <a class="marca" href="index.html"><img src="assets/logo.png" alt="" width="46" height="46">KeyGest</a>
       <button class="menu-toggle" aria-expanded="false" aria-controls="menu" aria-label="Abrir menu">☰</button>
       <ul class="menu" id="menu">
-        <li><a href="index.html" aria-current="page">Início</a></li>
-        <li><a href="index.html#servicos">Serviços</a></li>
-        <li><a href="calculadora.html">Calculadora de folha</a></li>
-        <li><a href="simulador.html">Simulador de encargos</a></li>
+        <li><a href="index.html#solucoes">Soluções</a></li>
+        <li><a href="index.html#planos">Planos</a></li>
+        <li><a href="calculadora.html">Calculadora</a></li>
+        <li><a href="simulador.html">Simulador</a></li>
+        <li><a href="contato.html">Contato</a></li>
         <li><a class="botao botao-pequeno botao-contorno botao-entrar" href="sistema/index.html"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Entrar</a></li>
-        <li><a class="botao botao-pequeno" href="contato.html">Solicitar proposta</a></li>
+        <li><a class="botao botao-pequeno botao-destaque" href="sistema/index.html?acesso=conta">Teste grátis</a></li>
       </ul>
     </div>
   </header>
 
   <main id="conteudo">
-    <section class="hero">
+    <section class="ini-abertura">
       <div class="container">
         <div>
-          <span class="selo">Gestão inteligente de pessoas</span>
-          <h1>Sua empresa cresce. A gente simplifica a gestão.</h1>
-          <p class="lead">Terceirize o RH, o departamento pessoal e a folha de pagamento com a KeyGest. Cálculos corretos, prazos em dia e uma equipe especializada cuidando de tudo enquanto você foca no seu negócio.</p>
-          <div class="hero-acoes">
-            <a class="botao" href="calculadora.html">Calcular custo da minha folha</a>
-            <a class="botao botao-contorno" href="contato.html">Falar com um especialista</a>
+          <span class="ini-rotulo">RH, departamento pessoal e folha</span>
+          <h1>A folha da sua equipe <em>certa e no prazo</em>, sem planilha e sem susto.</h1>
+          <p class="ini-lead">Terceirize o departamento pessoal com a nossa equipe ou use o sistema KeyGest você mesmo. Holerites, férias, 13º e guias calculados pela CLT, para empresas e empregadores domésticos.</p>
+          <div class="ini-acoes">
+            <a class="botao botao-destaque" href="sistema/index.html?acesso=conta">Testar grátis por 14 dias</a>
+            <a class="botao botao-contorno" href="#contato">Falar com um especialista</a>
           </div>
-        </div>
-        <aside class="hero-cartao" aria-label="O que está incluso">
-          <h2>O que fazemos por você</h2>
-          <ul>
-            <li><span class="check">✓</span>Folha de pagamento, 13º salário e férias</li>
-            <li><span class="check">✓</span>Encargos, guias e obrigações no eSocial</li>
-            <li><span class="check">✓</span>Admissões, rescisões e documentação</li>
-            <li><span class="check">✓</span>Gestão de ponto, benefícios e consultoria</li>
+          <ul class="ini-garantias">
+            <li>Sem cartão no teste</li>
+            <li>Cancele quando quiser</li>
+            <li>Dados protegidos pela LGPD</li>
           </ul>
-        </aside>
+        </div>
+
+        <div class="ini-tela" role="img" aria-label="Imagem ilustrativa do painel do sistema KeyGest, com a folha do mês e alertas de férias">
+          <div class="ini-flutua ini-flutua-2" aria-hidden="true"><span class="ini-ic">✓</span><div><b>Holerites enviados</b><small>5 colaboradores · outubro</small></div></div>
+          <div class="ini-janela" aria-hidden="true">
+            <div class="ini-janela-barra"><i></i><i></i><i></i></div>
+            <div class="ini-janela-corpo">
+              <div class="ini-mini-menu"><span class="ativo">Painel</span><span>Colaboradores</span><span>Folha do mês</span><span>Férias</span><span>Usuários</span></div>
+              <div class="ini-mini-conteudo">
+                <div class="ini-mini-titulo">Folha de outubro/2026</div>
+                <div class="ini-mini-indicadores">
+                  <div><small>Salários</small><strong>R$ 13.500</strong></div>
+                  <div><small>Encargos</small><strong>R$ 4.059</strong></div>
+                  <div><small>Colaboradores</small><strong>5</strong></div>
+                </div>
+                <table class="ini-mini-tabela">
+                  <thead><tr><th>Colaborador</th><th>Situação</th><th class="num">Líquido</th></tr></thead>
+                  <tbody>
+                    <tr><td>Ana Souza</td><td><span class="ini-pilula amarela">Férias em 9 dias</span></td><td class="num">2.734,12</td></tr>
+                    <tr><td>Bruno Lima</td><td><span class="ini-pilula">Ativo</span></td><td class="num">2.312,40</td></tr>
+                    <tr><td>Carla Mendes</td><td><span class="ini-pilula amarela">Experiência</span></td><td class="num">1.986,75</td></tr>
+                    <tr><td>Diego Ramos</td><td><span class="ini-pilula">Ativo</span></td><td class="num">2.105,90</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="ini-flutua ini-flutua-1" aria-hidden="true"><span class="ini-ic">R$</span><div><b>Guia FGTS gerada</b><small>Vence em 20/11</small></div></div>
+        </div>
       </div>
     </section>
 
-    <div class="container">
-      <div class="numeros">
-        <div class="numero"><strong>100% online</strong><span>Atendimento e documentos digitais</span></div>
-        <div class="numero"><strong>eSocial</strong><span>Obrigações enviadas no prazo</span></div>
-        <div class="numero"><strong>Todos os portes</strong><span>Do MEI à média empresa</span></div>
-        <div class="numero"><strong>Preço claro</strong><span>Simule seus honorários no site</span></div>
+    <div class="ini-publicos">
+      <div class="container">
+        <p>Feito para quem emprega no Brasil</p>
+        <ul>
+          <li>Empregador doméstico</li>
+          <li>Pequenas e médias empresas</li>
+          <li>Escritórios de RH e contabilidade</li>
+          <li>eSocial e FGTS Digital</li>
+        </ul>
       </div>
     </div>
 
-    <section class="secao" id="servicos">
+    <section class="ini-secao" id="solucoes">
       <div class="container">
-        <div class="titulo-secao">
-          <span class="selo" style="color:var(--link)">Serviços</span>
-          <h2>RH e departamento pessoal completos, sem você precisar montar uma equipe</h2>
-          <p>Escolha só o que a sua empresa precisa. Todos os serviços são integrados e acompanhados por um analista dedicado.</p>
+        <div class="ini-cabeca">
+          <span class="ini-rotulo">Duas formas de contratar</span>
+          <h2>Você escolhe: a gente faz por você ou você faz com o nosso sistema</h2>
         </div>
-        <div class="grade grade-3">
-          <article class="cartao">
-            <div class="cartao-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6M7 17h4"/></svg></div>
-            <h3>Folha de pagamento</h3>
-            <p>Cálculo mensal de salários, horas extras, adicionais, descontos, pró-labore e holerites digitais.</p>
+        <div class="ini-caminhos">
+          <article class="ini-caminho ini-caminho-servico">
+            <span class="ini-rotulo">Terceirização</span>
+            <h3>A equipe KeyGest cuida de tudo</h3>
+            <p>Um analista dedicado fecha a sua folha todo mês, envia o eSocial e entrega guias e holerites.</p>
+            <ul>
+              <li>Folha, férias, 13º e rescisões</li>
+              <li>Admissões e documentação</li>
+              <li>Consultoria trabalhista</li>
+            </ul>
+            <a class="botao botao-destaque" href="contato.html">Pedir proposta</a>
           </article>
-          <article class="cartao">
-            <div class="cartao-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
-            <h3>13º salário e férias</h3>
-            <p>Programação de férias, cálculo do adicional de 1/3, parcelas do 13º e provisões mensais.</p>
-          </article>
-          <article class="cartao">
-            <div class="cartao-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-            <h3>Encargos e guias</h3>
-            <p>FGTS Digital, DCTFWeb, INSS, IRRF e contribuições apuradas e enviadas dentro do prazo.</p>
-          </article>
-          <article class="cartao">
-            <div class="cartao-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></div>
-            <h3>Admissões e rescisões</h3>
-            <p>Contratos, registros, exames, cálculos rescisórios e toda a documentação trabalhista.</p>
-          </article>
-          <article class="cartao">
-            <div class="cartao-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-            <h3>Ponto e jornada</h3>
-            <p>Tratamento do ponto, banco de horas, escalas e controle de horas extras.</p>
-          </article>
-          <article class="cartao">
-            <div class="cartao-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div>
-            <h3>Consultoria trabalhista</h3>
-            <p>Orientação para decisões do dia a dia, prevenção de passivos e adequação à legislação.</p>
+          <article class="ini-caminho ini-caminho-sistema" id="sistema">
+            <span class="ini-rotulo">Sistema por assinatura</span>
+            <h3>Faça a folha você mesmo, sem erro</h3>
+            <p>O sistema calcula INSS, IRRF, FGTS e encargos, gera holerites e avisa os prazos de férias e experiência.</p>
+            <ul>
+              <li>A partir de <span data-plano-preco="domestico" data-periodo="mensal">R$ 29</span> por mês</li>
+              <li>14 dias grátis, sem cartão</li>
+              <li>Funciona no computador e no celular</li>
+            </ul>
+            <a class="botao botao-secundario" href="#planos">Ver planos</a>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="secao secao-branca" id="domestico">
-      <div class="container faixa-domestico">
-        <div>
-          <span class="selo" style="color:var(--link)">Empregador doméstico</span>
-          <h2>Tem empregada doméstica, babá, caseiro ou cuidador?</h2>
-          <p>A KeyGest cuida de tudo no eSocial Doméstico para você ficar em dia com a lei, sem precisar abrir empresa.</p>
-          <div class="hero-acoes" style="margin-top:20px">
-            <a class="botao" href="simulador.html?regime=domestico">Simular o custo do doméstico</a>
-            <a class="botao botao-secundario" href="contato.html?tipo=domestico">Pedir proposta</a>
-          </div>
-        </div>
-        <ul class="lista-check">
-          <li><span class="check">✓</span>Registro e contrato de trabalho no eSocial Doméstico</li>
-          <li><span class="check">✓</span>Folha mensal, holerite e guia DAE calculada todo mês</li>
-          <li><span class="check">✓</span>Férias, 13º salário, horas extras e banco de horas</li>
-          <li><span class="check">✓</span>Afastamentos e rescisão com todos os cálculos</li>
-        </ul>
-      </div>
-    </section>
-
-    <section class="secao secao-branca" id="por-que">
+    <section class="ini-secao ini-branca">
       <div class="container">
-        <div class="titulo-secao">
-          <span class="selo" style="color:var(--link)">Por que terceirizar</span>
-          <h2>Menos custo fixo, menos risco e mais tempo para o seu negócio</h2>
-          <p>Manter um departamento pessoal interno exige pessoas, sistemas e atualização constante. Com a KeyGest, você tem tudo isso por uma mensalidade previsível.</p>
+        <div class="ini-cabeca">
+          <span class="ini-rotulo">Por dentro do sistema</span>
+          <h2>Tudo que o departamento pessoal faz, num lugar só</h2>
+          <p>Clique em cada item para ver a tela.</p>
         </div>
-        <div class="grade grade-4" style="margin-bottom:40px">
-          <div class="cartao">
-            <h3>Redução de custos</h3>
-            <p>Sem salários, encargos e sistemas de um departamento pessoal próprio.</p>
+        <div class="ini-recursos">
+          <div class="ini-abas" role="tablist" aria-label="Recursos do sistema">
+            <button type="button" class="ini-aba" role="tab" id="aba-folha" aria-selected="true" aria-controls="ini-palco" data-tela="folha"><strong>Folha do mês</strong><span>Lance faltas, horas extras e descontos. O cálculo sai na hora.</span></button>
+            <button type="button" class="ini-aba" role="tab" id="aba-holerite" aria-selected="false" aria-controls="ini-palco" data-tela="holerite" tabindex="-1"><strong>Holerites</strong><span>Cada colaborador vê e baixa o próprio holerite.</span></button>
+            <button type="button" class="ini-aba" role="tab" id="aba-alertas" aria-selected="false" aria-controls="ini-palco" data-tela="alertas" tabindex="-1"><strong>Férias e prazos</strong><span>Avisos de férias vencendo e fim de experiência.</span></button>
+            <button type="button" class="ini-aba" role="tab" id="aba-domestico" aria-selected="false" aria-controls="ini-palco" data-tela="domestico" tabindex="-1"><strong>Empregador doméstico</strong><span>Guia DAE com INSS, FGTS e indenização de 3,2%.</span></button>
           </div>
-          <div class="cartao">
-            <h3>Segurança jurídica</h3>
-            <p>Cálculos revisados e atualizados conforme CLT, convenções coletivas e eSocial.</p>
-          </div>
-          <div class="cartao">
-            <h3>Prazos em dia</h3>
-            <p>Calendário de obrigações monitorado para evitar multas e juros.</p>
-          </div>
-          <div class="cartao">
-            <h3>Foco no que importa</h3>
-            <p>Seu time dedica tempo a vendas, clientes e crescimento.</p>
-          </div>
-        </div>
-
-        <div class="tabela-rolagem">
-          <table class="comparativo">
-            <thead>
-              <tr><th scope="col">Item</th><th scope="col">Departamento pessoal interno</th><th scope="col">Com a KeyGest</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Custo</td><td>Salário + encargos do analista, sistema, treinamentos</td><td>Mensalidade previsível conforme o número de funcionários</td></tr>
-              <tr><td>Atualização legal</td><td>Depende de cursos e pesquisa da equipe</td><td>Equipe especializada acompanhando mudanças</td></tr>
-              <tr><td>Férias e ausências</td><td>Rotina para quando o responsável sai</td><td>Continuidade garantida por uma equipe</td></tr>
-              <tr><td>Risco de erros</td><td>Multas por atraso ou cálculo incorreto</td><td>Processos revisados e prazos monitorados</td></tr>
-              <tr><td>Escalabilidade</td><td>Novas contratações para crescer</td><td>Acompanha o crescimento da empresa</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section class="secao" id="como-funciona">
-      <div class="container">
-        <div class="titulo-secao">
-          <span class="selo" style="color:var(--link)">Como funciona</span>
-          <h2>Comece em quatro passos</h2>
-        </div>
-        <div class="grade grade-4 passos">
-          <div class="passo"><h3>Diagnóstico</h3><p>Entendemos a sua operação, o número de funcionários e as convenções coletivas aplicáveis.</p></div>
-          <div class="passo"><h3>Proposta</h3><p>Você recebe uma proposta clara, com serviços e honorários definidos.</p></div>
-          <div class="passo"><h3>Implantação</h3><p>Migramos os dados e históricos dos funcionários com segurança.</p></div>
-          <div class="passo"><h3>Rotina mensal</h3><p>Folha, guias e relatórios todo mês, com um analista dedicado.</p></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="secao secao-escura" id="ferramentas">
-      <div class="container">
-        <div class="titulo-secao">
-          <span class="selo">Ferramentas gratuitas</span>
-          <h2>Simule antes de decidir</h2>
-          <p>Use nossas ferramentas para entender quanto custa a sua folha e quanto a empresa precisa provisionar todo mês.</p>
-        </div>
-        <div class="grade grade-2">
-          <div class="cartao ferramenta">
-            <div class="cartao-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h2M14 10h2M8 14h2M14 14h2M8 18h2M14 18h2"/></svg></div>
-            <h3>Calculadora de folha de pagamento</h3>
-            <p>Informe cargos, salários, benefícios e serviços desejados. Veja o custo trabalhista estimado e os honorários da KeyGest.</p>
-            <a class="botao" href="calculadora.html">Abrir calculadora</a>
-          </div>
-          <div class="cartao ferramenta">
-            <div class="cartao-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></div>
-            <h3>Simulador de encargos e provisões</h3>
-            <p>Estime 13º salário, férias com 1/3, FGTS, INSS patronal, RAT e terceiros conforme o regime tributário da empresa.</p>
-            <a class="botao" href="simulador.html">Abrir simulador</a>
+          <div class="ini-palco" id="ini-palco" role="tabpanel" aria-labelledby="aba-folha">
+            <div class="ini-janela" data-painel="folha">
+              <div class="ini-janela-barra"><i></i><i></i><i></i></div>
+              <div class="ini-quadro">
+                <div class="ini-mini-titulo">Lançamentos de outubro · Bruno Lima (exemplo)</div>
+                <div class="ini-linha"><span>Salário base</span><span>R$ 2.800,00</span></div>
+                <div class="ini-linha"><span>Horas extras 50% (6h)</span><span>R$ 114,55</span></div>
+                <div class="ini-linha"><span>Faltas (1 dia)</span><span>− R$ 93,33</span></div>
+                <div class="ini-linha"><span>INSS</span><span>− R$ 228,17</span></div>
+                <div class="ini-linha"><span>Vale-transporte (6%)</span><span>− R$ 168,00</span></div>
+                <div class="ini-linha total"><span>Líquido a receber</span><span>R$ 2.425,05</span></div>
+              </div>
+            </div>
+            <div class="ini-janela" data-painel="holerite" hidden>
+              <div class="ini-janela-barra"><i></i><i></i><i></i></div>
+              <div class="ini-quadro">
+                <div class="ini-mini-titulo">Meus holerites · Ana Souza (exemplo)</div>
+                <div class="ini-alerta"><div>Outubro/2026<small>Pago em 05/11</small></div><span class="ini-pilula">Baixar PDF</span></div>
+                <div class="ini-alerta"><div>Setembro/2026<small>Pago em 06/10</small></div><span class="ini-pilula">Baixar PDF</span></div>
+                <div class="ini-alerta"><div>13º salário · 1ª parcela<small>Pago em 28/11</small></div><span class="ini-pilula">Baixar PDF</span></div>
+              </div>
+            </div>
+            <div class="ini-janela" data-painel="alertas" hidden>
+              <div class="ini-janela-barra"><i></i><i></i><i></i></div>
+              <div class="ini-quadro">
+                <div class="ini-mini-titulo">Alertas e prazos (exemplo)</div>
+                <div class="ini-alerta"><div>Ana Souza · férias a vencer<small>Conceder até 06/11 · saldo de 30 dias</small></div><span class="ini-pilula amarela">9 dias</span></div>
+                <div class="ini-alerta"><div>Carla Mendes · experiência de 45 dias<small>Decidir prorrogação até 06/11</small></div><span class="ini-pilula amarela">9 dias</span></div>
+                <div class="ini-alerta"><div>Bruno Lima · férias a vencer<small>Conceder até 21/11</small></div><span class="ini-pilula">24 dias</span></div>
+              </div>
+            </div>
+            <div class="ini-janela" data-painel="domestico" hidden>
+              <div class="ini-janela-barra"><i></i><i></i><i></i></div>
+              <div class="ini-quadro">
+                <div class="ini-mini-titulo">Guia DAE de outubro · empregada doméstica (exemplo)</div>
+                <div class="ini-linha"><span>Salário</span><span>R$ 1.621,00</span></div>
+                <div class="ini-linha"><span>INSS do empregador (8%)</span><span>R$ 129,68</span></div>
+                <div class="ini-linha"><span>GILRAT (0,8%)</span><span>R$ 12,97</span></div>
+                <div class="ini-linha"><span>FGTS (8%)</span><span>R$ 129,68</span></div>
+                <div class="ini-linha"><span>Indenização compensatória (3,2%)</span><span>R$ 51,87</span></div>
+                <div class="ini-linha"><span>INSS da empregada (7,5%)</span><span>R$ 121,58</span></div>
+                <div class="ini-linha total"><span>Total da guia DAE</span><span>R$ 445,78</span></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="secao secao-branca" id="duvidas">
+    <section class="ini-secao" id="servicos">
       <div class="container">
-        <div class="titulo-secao centro">
-          <span class="selo" style="color:var(--link)">Dúvidas frequentes</span>
+        <div class="ini-cabeca">
+          <span class="ini-rotulo">Serviços</span>
+          <h2>Departamento pessoal completo, sem montar uma equipe</h2>
+        </div>
+        <div class="ini-servicos">
+          <article><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6M7 17h4"/></svg><h3>Folha de pagamento</h3><p>Salários, horas extras, adicionais, descontos, pró-labore e holerites digitais.</p></article>
+          <article><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><h3>13º salário e férias</h3><p>Programação de férias, adicional de 1/3, parcelas do 13º e provisões mensais.</p></article>
+          <article><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><h3>Encargos e guias</h3><p>FGTS Digital, DCTFWeb, INSS e IRRF apurados e enviados no prazo.</p></article>
+          <article><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg><h3>Admissões e rescisões</h3><p>Contratos, registros, exames e cálculos rescisórios com toda a documentação.</p></article>
+          <article id="domestico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21H3z"/><path d="M9 21v-6h6v6"/></svg><h3>Empregador doméstico</h3><p>Registro no eSocial Doméstico, folha mensal e guia DAE para quem tem empregada, babá ou cuidador. Sem precisar abrir empresa.</p></article>
+          <article><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg><h3>Consultoria trabalhista</h3><p>Orientação no dia a dia para prevenir passivos e seguir a legislação.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="ini-secao ini-branca" id="planos">
+      <div class="container">
+        <div class="ini-cabeca ini-centro">
+          <span class="ini-rotulo">Planos do sistema</span>
+          <h2>Comece grátis. Assine quando fizer sentido.</h2>
+          <p>14 dias grátis em qualquer plano, sem cartão. Depois, pague por Pix, boleto ou cartão.</p>
+        </div>
+        <div class="ini-centro">
+          <div class="ini-alternar" role="group" aria-label="Forma de cobrança">
+            <button type="button" id="cob-mensal" aria-pressed="true" data-cobranca="mensal">Mensal</button>
+            <button type="button" id="cob-anual" aria-pressed="false" data-cobranca="anual">Anual <small>2 meses grátis</small></button>
+          </div>
+        </div>
+        <div class="ini-planos">
+          <article class="ini-plano">
+            <h3>Doméstico</h3>
+            <p class="ini-para">Para quem tem empregada, babá, caseiro ou cuidador.</p>
+            <div class="ini-preco"><strong data-plano-preco="domestico">R$ 29</strong><span data-unidade>/mês</span></div>
+            <p class="ini-preco-nota" data-plano-nota="domestico"></p>
+            <ul><li>Até <span data-plano-limite="domestico">2</span> empregados</li><li>Holerite e guia DAE todo mês</li><li>Férias e 13º calculados</li></ul>
+            <a class="botao botao-secundario" href="sistema/index.html?acesso=conta&amp;plano=domestico">Testar grátis</a>
+          </article>
+          <article class="ini-plano ini-destaque">
+            <span class="ini-selo">Mais escolhido</span>
+            <h3>Empresa</h3>
+            <p class="ini-para">Para a pequena empresa que faz a própria folha.</p>
+            <div class="ini-preco"><strong data-plano-preco="empresa">R$ 89</strong><span data-unidade>/mês</span></div>
+            <p class="ini-preco-nota" data-plano-nota="empresa"></p>
+            <ul><li>Até <span data-plano-limite="empresa">15</span> colaboradores</li><li>Portal do colaborador com holerites</li><li>Alertas de férias e experiência</li><li>Relatório da folha para a contabilidade</li></ul>
+            <a class="botao" href="sistema/index.html?acesso=conta&amp;plano=empresa">Testar grátis</a>
+          </article>
+          <article class="ini-plano">
+            <h3>Escritório de RH</h3>
+            <p class="ini-para">Para escritórios que atendem várias empresas clientes.</p>
+            <div class="ini-preco"><strong data-plano-preco="escritorio">R$ 249</strong><span data-unidade>/mês</span></div>
+            <p class="ini-preco-nota" data-plano-nota="escritorio"></p>
+            <ul><li>Até <span data-plano-limite="escritorio">100</span> colaboradores</li><li>Empresas clientes ilimitadas</li><li>Acesso para o cliente acompanhar</li><li>Funil de vendas e financeiro</li></ul>
+            <a class="botao botao-secundario" href="sistema/index.html?acesso=conta&amp;plano=escritorio">Testar grátis</a>
+          </article>
+        </div>
+        <p class="ini-planos-nota">Prefere que a nossa equipe faça tudo? <a href="contato.html">Peça uma proposta de terceirização</a>.</p>
+      </div>
+    </section>
+
+    <section class="ini-secao" id="como-funciona">
+      <div class="container">
+        <div class="ini-cabeca">
+          <span class="ini-rotulo">Como funciona a terceirização</span>
+          <h2>Da conversa à primeira folha em quatro passos</h2>
+        </div>
+        <ol class="ini-passos">
+          <li><h3>Diagnóstico</h3><p>Entendemos a operação, o número de funcionários e a convenção coletiva.</p></li>
+          <li><h3>Proposta</h3><p>Você recebe serviços e honorários definidos, sem surpresa.</p></li>
+          <li><h3>Implantação</h3><p>Migramos cadastros e históricos com segurança.</p></li>
+          <li><h3>Rotina mensal</h3><p>Folha, guias e relatórios todo mês, com um analista dedicado.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="ini-secao ini-branca" id="ferramentas">
+      <div class="container">
+        <div class="ini-cabeca">
+          <span class="ini-rotulo">Ferramentas grátis</span>
+          <h2>Simule o custo antes de decidir</h2>
+        </div>
+        <div class="ini-ferramentas">
+          <a class="ini-ferramenta" href="calculadora.html">
+            <span class="ini-ferramenta-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h2M14 10h2M8 14h2M14 14h2M8 18h2M14 18h2"/></svg></span>
+            <span><strong>Calculadora de folha</strong><span>Informe cargos e salários e veja o custo trabalhista estimado da sua equipe.</span><em>Abrir calculadora →</em></span>
+          </a>
+          <a class="ini-ferramenta" href="simulador.html">
+            <span class="ini-ferramenta-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span>
+            <span><strong>Simulador de encargos</strong><span>13º, férias com 1/3, FGTS, INSS patronal, RAT e terceiros, também para o empregador doméstico.</span><em>Abrir simulador →</em></span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="ini-secao" id="duvidas">
+      <div class="container">
+        <div class="ini-cabeca ini-centro">
+          <span class="ini-rotulo">Dúvidas frequentes</span>
           <h2>Perguntas comuns</h2>
         </div>
-        <div class="faq texto" style="margin:0 auto">
-          <details>
-            <summary>A KeyGest atende empresas de qual porte?</summary>
-            <p>Atendemos desde MEIs com um empregado até empresas com centenas de funcionários, no Simples Nacional, Lucro Presumido ou Lucro Real.</p>
-          </details>
-          <details>
-            <summary>Como é calculado o valor dos honorários?</summary>
-            <p>A mensalidade considera o número de funcionários e os serviços contratados. Você pode simular o valor na nossa calculadora e receber uma proposta formal após o diagnóstico.</p>
-          </details>
-          <details>
-            <summary>Preciso trocar de contador para contratar a KeyGest?</summary>
-            <p>Não. Trabalhamos em conjunto com o seu escritório contábil, enviando as informações da folha para a contabilidade.</p>
-          </details>
-          <details>
-            <summary>Como funciona a migração dos dados?</summary>
-            <p>Solicitamos os cadastros, históricos e últimos fechamentos de folha. Nossa equipe confere tudo e faz a implantação sem interromper os pagamentos.</p>
-          </details>
-          <details>
-            <summary>Os valores das ferramentas do site são definitivos?</summary>
-            <p>Não. As ferramentas geram estimativas com base em regras gerais. Convenções coletivas, adicionais e a situação de cada empresa podem alterar os valores. A proposta final é feita após a análise.</p>
-          </details>
+        <div class="ini-perguntas">
+          <details><summary>Qual a diferença entre a terceirização e o sistema?</summary><p>Na terceirização, a equipe KeyGest faz a folha, o eSocial e as guias por você. No sistema, você mesmo lança os dados e o sistema calcula e gera os holerites.</p></details>
+          <details><summary>Empregador doméstico precisa ter CNPJ?</summary><p>Não. O cadastro é feito com o CPF do empregador, e a guia mensal é o DAE do eSocial Doméstico.</p></details>
+          <details><summary>A KeyGest atende empresas de qual porte?</summary><p>De empregadores domésticos e MEIs com um empregado até empresas com centenas de funcionários, no Simples Nacional, Lucro Presumido ou Lucro Real.</p></details>
+          <details><summary>Preciso trocar de contador?</summary><p>Não. Trabalhamos junto com o seu escritório contábil e enviamos os dados da folha para ele.</p></details>
+          <details><summary>Como cancelo a assinatura do sistema?</summary><p>Em "Minha assinatura", dentro do sistema, a qualquer momento e sem multa. O acesso continua até o fim do período pago.</p></details>
+          <details><summary>Os valores das calculadoras são definitivos?</summary><p>Não. São estimativas por regras gerais. Convenções coletivas e a situação de cada empresa podem mudar os valores. A proposta final é feita após a análise.</p></details>
         </div>
       </div>
     </section>
 
-    <section class="secao">
+    <section class="ini-final" id="contato">
       <div class="container">
-        <div class="cta">
-          <div>
-            <h2>Pronto para simplificar a gestão da sua empresa?</h2>
-            <p>Receba uma proposta personalizada sem compromisso.</p>
-          </div>
-          <a class="botao" href="contato.html">Solicitar proposta</a>
+        <div>
+          <h2>Vamos simplificar o RH da sua empresa?</h2>
+          <p>Deixe seus dados e um especialista da KeyGest entra em contato pelo WhatsApp ou e-mail.</p>
         </div>
+        <form class="ini-formulario" id="form-rapido" action="contato.html" method="get">
+          <h3>Fale com um especialista</h3>
+          <div class="ini-campo"><label for="r-nome">Seu nome</label><input id="r-nome" name="nome" type="text" autocomplete="name" required minlength="3"></div>
+          <div class="ini-campos-2">
+            <div class="ini-campo"><label for="r-telefone">WhatsApp</label><input id="r-telefone" name="telefone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(00) 00000-0000"></div>
+            <div class="ini-campo"><label for="r-tipo">Para quem é</label><select id="r-tipo" name="tipo"><option value="empresa">Minha empresa</option><option value="domestico">Empregador doméstico</option></select></div>
+          </div>
+          <div class="ini-campo"><label for="r-email">E-mail</label><input id="r-email" name="email" type="email" autocomplete="email" required></div>
+          <button class="botao botao-destaque" type="submit">Continuar</button>
+          <p class="ini-miuda">No próximo passo você confirma os dados e envia o pedido. Usamos seus dados só para responder (LGPD).</p>
+        </form>
       </div>
     </section>
   </main>
@@ -265,7 +334,8 @@
         <div>
           <h3>Navegação</h3>
           <ul>
-            <li><a href="index.html#servicos">Serviços</a></li>
+            <li><a href="index.html#solucoes">Soluções</a></li>
+            <li><a href="index.html#planos">Planos do sistema</a></li>
             <li><a href="calculadora.html">Calculadora de folha</a></li>
             <li><a href="simulador.html">Simulador de encargos</a></li>
             <li><a href="contato.html">Solicitar proposta</a></li>
@@ -287,8 +357,9 @@
     </div>
   </footer>
 
-  <script src="js/config.js?v=20261028d"></script>
-  <script src="js/main.js?v=20261028d"></script>
-  <script src="js/tema.js?v=20261028d"></script>
+  <script src="js/config.js?v=20261106a"></script>
+  <script src="js/main.js?v=20261106a"></script>
+  <script src="js/tema.js?v=20261106a"></script>
+  <script src="js/inicio.js?v=20261106a"></script>
 </body>
 </html>

@@ -47,7 +47,7 @@ html {
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--texto);
   background: var(--fundo);
   line-height: 1.6;
@@ -67,9 +67,11 @@ a {
 h1,
 h2,
 h3 {
-  line-height: 1.2;
+  line-height: 1.18;
   margin: 0 0 0.5em;
   color: var(--titulo);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 h1 {
@@ -116,9 +118,11 @@ p {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: var(--petroleo);
+  background: rgba(11, 46, 43, 0.94);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   color: var(--branco);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .cabecalho .container {
@@ -173,6 +177,9 @@ p {
 .menu .botao {
   margin-left: 8px;
   color: var(--branco);
+  border-radius: 999px;
+  font-weight: 700;
+  padding: 7px 16px;
 }
 
 .menu .botao-entrar {
@@ -239,9 +246,9 @@ p {
   color: var(--branco);
   border: 2px solid var(--botao);
   padding: 12px 22px;
-  border-radius: 10px;
+  border-radius: 999px;
   font: inherit;
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, transform 0.15s;
@@ -280,6 +287,24 @@ p {
 .botao-secundario:hover {
   background: var(--esmeralda-claro);
   border-color: var(--esmeralda);
+}
+
+/* Botão de destaque: esmeralda com texto escuro (usado sobre fundos escuros) */
+.botao-destaque {
+  background: var(--esmeralda);
+  border-color: var(--esmeralda);
+  color: #06231f;
+}
+
+.botao-destaque:hover {
+  background: #33b894;
+  border-color: #33b894;
+  color: #06231f;
+}
+
+.menu .botao-destaque,
+.menu .botao-destaque:hover {
+  color: #06231f;
 }
 
 .botao-pequeno {
@@ -1446,5 +1471,1004 @@ textarea:focus {
     grid-template-columns: 1fr;
     padding: 24px;
     gap: 20px;
+  }
+}
+
+/* ============================================================
+   Página inicial (novo visual)
+   ============================================================ */
+.ini-rotulo {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--link);
+}
+
+.ini-abertura {
+  background: radial-gradient(900px 500px at 85% 10%, rgba(42, 163, 132, 0.28), transparent 60%),
+    linear-gradient(180deg, #0b2e2b, var(--petroleo));
+  color: #eaf4f1;
+  overflow: hidden;
+}
+
+.ini-abertura .container {
+  display: grid;
+  grid-template-columns: 1.02fr 1fr;
+  gap: 56px;
+  align-items: center;
+  padding-top: 72px;
+  padding-bottom: 88px;
+}
+
+.ini-abertura .ini-rotulo {
+  color: #7fe0c2;
+}
+
+.ini-abertura h1 {
+  font-size: clamp(2.3rem, 4.6vw, 3.6rem);
+  font-weight: 800;
+  color: #ffffff;
+  margin: 14px 0 18px;
+}
+
+.ini-abertura h1 em {
+  font-style: normal;
+  color: #7fe0c2;
+}
+
+.ini-lead {
+  font-size: 1.15rem;
+  color: #a9c7c0;
+  max-width: 34em;
+}
+
+.ini-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.ini-acoes .botao {
+  padding: 14px 24px;
+}
+
+.ini-garantias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+  color: #a9c7c0;
+}
+
+.ini-garantias li::before,
+.ini-caminho li::before,
+.ini-plano li::before {
+  content: '✓';
+  color: var(--esmeralda);
+  font-weight: 800;
+  margin-right: 8px;
+}
+
+.ini-garantias li::before {
+  color: #7fe0c2;
+}
+
+/* Imagem do sistema feita em HTML (sempre clara, como uma captura de tela) */
+.ini-tela {
+  position: relative;
+  min-width: 0;
+}
+
+.ini-janela {
+  background: #fbfdfc;
+  color: #132220;
+  border-radius: 16px;
+  box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  width: 100%;
+}
+
+.ini-janela-barra {
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px;
+  background: #eef3f1;
+}
+
+.ini-janela-barra i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #c9d6d2;
+}
+
+.ini-janela-corpo {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  min-height: 320px;
+}
+
+.ini-mini-menu {
+  background: var(--petroleo);
+  padding: 14px 10px;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+
+.ini-mini-menu span {
+  font-size: 0.7rem;
+  color: #a9c7c0;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.ini-mini-menu span.ativo {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.ini-mini-conteudo {
+  padding: 16px 18px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-width: 0;
+}
+
+.ini-mini-titulo {
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.ini-mini-indicadores {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.ini-mini-indicadores div {
+  border: 1px solid #dfe8e5;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.ini-mini-indicadores small {
+  display: block;
+  font-size: 0.62rem;
+  color: #5b6b68;
+}
+
+.ini-mini-indicadores strong {
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ini-mini-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.7rem;
+}
+
+.ini-mini-tabela th {
+  text-align: left;
+  color: #5b6b68;
+  font-weight: 600;
+  padding: 6px 4px;
+  border-bottom: 1px solid #e2e9e7;
+}
+
+.ini-mini-tabela td {
+  padding: 7px 4px;
+  border-bottom: 1px solid #eef3f1;
+}
+
+.ini-mini-tabela .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ini-pilula {
+  display: inline-block;
+  font-size: 0.64rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: #e2f4ec;
+  color: #187a60;
+  white-space: nowrap;
+}
+
+.ini-pilula.amarela {
+  background: #fbf0d0;
+  color: #7a5a07;
+}
+
+.ini-flutua {
+  position: absolute;
+  z-index: 1;
+  background: #ffffff;
+  color: #132220;
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.45);
+  font-size: 0.8rem;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.ini-flutua b {
+  display: block;
+  font-size: 0.82rem;
+}
+
+.ini-flutua small {
+  color: #5b6b68;
+}
+
+.ini-ic {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #e2f4ec;
+  color: #187a60;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.ini-flutua-1 {
+  left: -26px;
+  bottom: 34px;
+}
+
+.ini-flutua-2 {
+  right: -14px;
+  top: -18px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ini-flutua-1 {
+    animation: ini-boia 6s ease-in-out infinite;
+  }
+
+  .ini-flutua-2 {
+    animation: ini-boia 6s ease-in-out -3s infinite;
+  }
+
+  @keyframes ini-boia {
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+}
+
+/* Para quem é */
+.ini-publicos {
+  background: var(--superficie);
+  border-bottom: 1px solid var(--borda);
+}
+
+.ini-publicos .container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 28px;
+  padding-top: 22px;
+  padding-bottom: 22px;
+}
+
+.ini-publicos p {
+  margin: 0;
+  color: var(--texto-suave);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.ini-publicos ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ini-publicos li {
+  border: 1px solid var(--borda);
+  border-radius: 99px;
+  padding: 6px 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+/* Seções */
+.ini-secao {
+  padding: 92px 0;
+}
+
+.ini-branca {
+  background: var(--superficie);
+}
+
+.ini-cabeca {
+  max-width: 720px;
+  display: grid;
+  gap: 12px;
+  margin-bottom: 44px;
+}
+
+.ini-cabeca h2,
+.ini-cabeca p {
+  margin: 0;
+}
+
+.ini-cabeca h2 {
+  font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+  font-weight: 800;
+}
+
+.ini-cabeca p {
+  color: var(--texto-suave);
+  font-size: 1.08rem;
+}
+
+.ini-centro {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Duas formas de contratar */
+.ini-caminhos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+.ini-caminho {
+  border-radius: 22px;
+  padding: 36px;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  min-width: 0;
+}
+
+.ini-caminho h3,
+.ini-caminho p,
+.ini-caminho ul {
+  margin: 0;
+}
+
+.ini-caminho h3 {
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.ini-caminho ul {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.ini-caminho .botao {
+  justify-self: start;
+  margin-top: 6px;
+}
+
+.ini-caminho-servico {
+  background: var(--petroleo);
+  color: #a9c7c0;
+}
+
+.ini-caminho-servico h3 {
+  color: #ffffff;
+}
+
+.ini-caminho-servico .ini-rotulo {
+  color: #7fe0c2;
+}
+
+.ini-caminho-sistema {
+  background: var(--esmeralda-claro);
+}
+
+/* Por dentro do sistema */
+.ini-recursos {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+.ini-abas {
+  display: grid;
+  gap: 8px;
+}
+
+.ini-aba {
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--raio);
+  padding: 16px 18px;
+  cursor: pointer;
+  color: var(--texto);
+  font: inherit;
+  display: grid;
+  gap: 4px;
+}
+
+.ini-aba strong {
+  font-size: 1.02rem;
+}
+
+.ini-aba span {
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.ini-aba:hover {
+  border-color: var(--borda);
+}
+
+.ini-aba[aria-selected='true'] {
+  background: var(--fundo);
+  border-color: var(--borda);
+  box-shadow: var(--sombra);
+}
+
+.ini-aba[aria-selected='true'] strong {
+  color: var(--link);
+}
+
+.ini-aba:focus-visible,
+.ini-alternar button:focus-visible,
+.ini-ferramenta:focus-visible {
+  outline: 3px solid var(--esmeralda);
+  outline-offset: 2px;
+}
+
+.ini-palco {
+  background: linear-gradient(135deg, var(--petroleo), #145a50);
+  border-radius: 22px;
+  padding: 36px;
+  min-height: 380px;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+}
+
+.ini-palco .ini-janela {
+  max-width: 620px;
+}
+
+.ini-quadro {
+  padding: 20px;
+  display: grid;
+  gap: 10px;
+}
+
+.ini-linha {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.85rem;
+  padding: 8px 0;
+  border-bottom: 1px dashed #dfe8e5;
+}
+
+.ini-linha span:last-child {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ini-linha.total {
+  border-bottom: 0;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.ini-alerta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #e2e9e7;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+}
+
+.ini-alerta small {
+  display: block;
+  color: #5b6b68;
+}
+
+/* Serviços */
+.ini-servicos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--borda);
+  border: 1px solid var(--borda);
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+.ini-servicos article {
+  background: var(--superficie);
+  padding: 30px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.ini-servicos svg {
+  width: 28px;
+  height: 28px;
+  color: var(--link);
+}
+
+.ini-servicos h3,
+.ini-servicos p {
+  margin: 0;
+}
+
+.ini-servicos p {
+  color: var(--texto-suave);
+  font-size: 0.95rem;
+}
+
+/* Planos */
+.ini-alternar {
+  display: inline-flex;
+  background: var(--fundo);
+  border: 1px solid var(--borda);
+  border-radius: 99px;
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 36px;
+}
+
+.ini-alternar button {
+  border: 0;
+  background: transparent;
+  padding: 9px 18px;
+  border-radius: 99px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--texto-suave);
+  cursor: pointer;
+}
+
+.ini-alternar button[aria-pressed='true'] {
+  background: var(--petroleo);
+  color: #ffffff;
+}
+
+.ini-alternar small {
+  color: var(--link);
+  font-weight: 700;
+}
+
+.ini-alternar button[aria-pressed='true'] small {
+  color: #7fe0c2;
+}
+
+.ini-planos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.ini-plano {
+  position: relative;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 22px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ini-plano h3,
+.ini-plano p,
+.ini-plano ul {
+  margin: 0;
+}
+
+.ini-plano h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.ini-destaque {
+  border: 2px solid var(--esmeralda);
+  box-shadow: var(--sombra);
+}
+
+.ini-selo {
+  position: absolute;
+  top: -13px;
+  left: 32px;
+  background: var(--esmeralda);
+  color: #06231f;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 99px;
+}
+
+.ini-para {
+  color: var(--texto-suave);
+  font-size: 0.92rem;
+  min-height: 3em;
+}
+
+.ini-preco {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.ini-preco strong {
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--titulo);
+  font-variant-numeric: tabular-nums;
+}
+
+.ini-preco span {
+  color: var(--texto-suave);
+  font-weight: 600;
+}
+
+.ini-preco-nota {
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  margin-top: -10px !important;
+  min-height: 1.4em;
+}
+
+.ini-plano ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  font-size: 0.94rem;
+  flex: 1;
+}
+
+.ini-plano .botao {
+  width: 100%;
+}
+
+.ini-planos-nota {
+  text-align: center;
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+  margin: 24px 0 0;
+}
+
+/* Passos (sequência de verdade, por isso numerados) */
+.ini-passos {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: passo;
+}
+
+.ini-passos li {
+  border-top: 3px solid var(--esmeralda);
+  padding-top: 20px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.ini-passos li::before {
+  counter-increment: passo;
+  content: 'Passo ' counter(passo);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--link);
+}
+
+.ini-passos h3,
+.ini-passos p {
+  margin: 0;
+}
+
+.ini-passos p {
+  color: var(--texto-suave);
+  font-size: 0.95rem;
+}
+
+/* Ferramentas grátis */
+.ini-ferramentas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.ini-ferramenta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 18px;
+  align-items: start;
+  background: var(--fundo);
+  border: 1px solid var(--borda);
+  border-radius: 22px;
+  padding: 28px;
+  text-decoration: none;
+  color: var(--texto);
+  transition: border-color 0.15s;
+}
+
+.ini-ferramenta:hover {
+  border-color: var(--esmeralda);
+}
+
+.ini-ferramenta-ic {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--esmeralda-claro);
+  color: var(--link);
+  display: grid;
+  place-items: center;
+}
+
+.ini-ferramenta-ic svg {
+  width: 26px;
+  height: 26px;
+}
+
+.ini-ferramenta strong {
+  display: block;
+  font-size: 1.15rem;
+  color: var(--titulo);
+  margin-bottom: 6px;
+}
+
+.ini-ferramenta > span:last-child > span {
+  display: block;
+  color: var(--texto-suave);
+  font-size: 0.95rem;
+}
+
+.ini-ferramenta em {
+  display: inline-block;
+  font-style: normal;
+  color: var(--link);
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+/* Dúvidas */
+.ini-perguntas {
+  max-width: 820px;
+  margin: 0 auto;
+  display: grid;
+  gap: 10px;
+}
+
+.ini-perguntas details {
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 0 22px;
+}
+
+.ini-perguntas summary {
+  cursor: pointer;
+  padding: 18px 0;
+  font-weight: 700;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ini-perguntas summary::-webkit-details-marker {
+  display: none;
+}
+
+.ini-perguntas summary::after {
+  content: '+';
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--link);
+}
+
+.ini-perguntas details[open] summary::after {
+  content: '–';
+}
+
+.ini-perguntas details p {
+  color: var(--texto-suave);
+  margin: 0;
+  padding-bottom: 18px;
+}
+
+/* Chamada final com formulário */
+.ini-final {
+  background: radial-gradient(700px 400px at 10% 100%, rgba(42, 163, 132, 0.3), transparent 60%), var(--petroleo);
+  color: #a9c7c0;
+}
+
+.ini-final .container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: center;
+  padding-top: 88px;
+  padding-bottom: 88px;
+}
+
+.ini-final h2 {
+  font-size: clamp(1.9rem, 3.4vw, 2.8rem);
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.ini-final p {
+  font-size: 1.08rem;
+}
+
+.ini-formulario {
+  background: var(--superficie);
+  color: var(--texto);
+  border-radius: 22px;
+  padding: 30px;
+  display: grid;
+  gap: 14px;
+  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.6);
+}
+
+.ini-formulario h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.ini-campos-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.ini-campo {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ini-campo label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ini-campo input,
+.ini-campo select {
+  font: inherit;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--borda);
+  background: var(--fundo);
+  color: var(--texto);
+  width: 100%;
+}
+
+.ini-campo input:focus,
+.ini-campo select:focus {
+  outline: 2px solid var(--esmeralda);
+  outline-offset: 1px;
+}
+
+.ini-formulario .botao {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.ini-miuda {
+  font-size: 0.8rem !important;
+  color: var(--texto-suave);
+  margin: 0;
+}
+
+/* Telas menores */
+@media (max-width: 980px) {
+  .ini-abertura .container,
+  .ini-final .container,
+  .ini-recursos,
+  .ini-caminhos {
+    grid-template-columns: 1fr;
+  }
+
+  .ini-servicos,
+  .ini-planos,
+  .ini-passos {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ini-abas {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .ini-secao {
+    padding: 64px 0;
+  }
+
+  .ini-abertura .container {
+    padding-top: 48px;
+    padding-bottom: 64px;
+  }
+
+  .ini-servicos,
+  .ini-planos,
+  .ini-passos,
+  .ini-ferramentas,
+  .ini-campos-2,
+  .ini-abas {
+    grid-template-columns: 1fr;
+  }
+
+  .ini-caminho,
+  .ini-palco,
+  .ini-plano,
+  .ini-formulario {
+    padding: 24px;
+  }
+
+  .ini-palco {
+    padding: 16px;
+    min-height: 0;
+  }
+
+  .ini-janela-corpo {
+    grid-template-columns: 1fr;
+  }
+
+  .ini-mini-menu {
+    display: none;
+  }
+
+  .ini-flutua-1 {
+    left: 8px;
+    bottom: -24px;
+  }
+
+  .ini-flutua-2 {
+    right: 8px;
+    top: -24px;
+  }
+
+  .ini-ferramenta {
+    grid-template-columns: 1fr;
   }
 }

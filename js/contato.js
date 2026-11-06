@@ -73,6 +73,12 @@
     aplicarTipo();
   }
 
+  // Dados que a pessoa já digitou no formulário rápido da página inicial
+  ['nome', 'email', 'telefone'].forEach(function (k) {
+    var v = params.get(k);
+    if (v && form.elements[k] && !form.elements[k].value) form.elements[k].value = v.slice(0, 120);
+  });
+
   // Máscaras
   form.cnpj.addEventListener('input', function () {
     if (domestico()) {
