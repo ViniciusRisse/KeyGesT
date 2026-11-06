@@ -3853,3 +3853,177 @@ body.sistema {
     align-items: flex-start;
   }
 }
+
+/* ============================================================
+   Novo visual (mesmo estilo da página inicial)
+   ============================================================ */
+
+/* Menu lateral */
+.lateral {
+  background: radial-gradient(420px 320px at 0% 0%, rgba(42, 163, 132, 0.22), transparent 70%),
+    linear-gradient(180deg, #0b2e2b, var(--petroleo));
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nav-sistema a {
+  font-weight: 600;
+  border-radius: 12px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-sistema a svg {
+  transition: color 0.15s;
+}
+
+.nav-sistema a:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.nav-sistema a.ativo {
+  background: rgba(42, 163, 132, 0.2);
+  color: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(127, 224, 194, 0.18);
+}
+
+.nav-sistema a.ativo svg {
+  color: #7fe0c2;
+}
+
+/* Títulos das telas */
+.topo-vista h1 {
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.topo-vista p {
+  font-size: 0.98rem;
+}
+
+.painel h2 {
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+/* Cartões e indicadores */
+.painel {
+  border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(15, 61, 58, 0.04), 0 12px 32px -20px rgba(15, 61, 58, 0.22);
+}
+
+.indicador {
+  border-radius: 18px;
+  padding: 20px 22px;
+  box-shadow: 0 1px 2px rgba(15, 61, 58, 0.04), 0 12px 32px -22px rgba(15, 61, 58, 0.25);
+}
+
+.indicador span {
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.indicador strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Etiquetas da lista de alertas não esticam junto com o texto */
+.alertas li {
+  align-items: flex-start;
+}
+
+.alertas li .etiqueta {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Tabelas */
+.lista {
+  font-variant-numeric: tabular-nums;
+}
+
+.lista tr:hover td {
+  background: var(--esmeralda-claro);
+}
+
+/* Campos */
+.area input[type='text'],
+.area input[type='email'],
+.area input[type='tel'],
+.area input[type='number'],
+.area input[type='date'],
+.area input[type='month'],
+.area input[type='password'],
+.area select,
+.area textarea {
+  border-radius: 12px;
+}
+
+/* Janelas (lançamentos, assinatura) */
+.janela {
+  border-radius: 22px;
+}
+
+/* Login com o mesmo fundo da página inicial */
+.tela-login {
+  background: radial-gradient(900px 520px at 85% 0%, rgba(42, 163, 132, 0.3), transparent 60%),
+    radial-gradient(700px 420px at 0% 100%, rgba(42, 163, 132, 0.18), transparent 60%),
+    linear-gradient(180deg, #0b2e2b, var(--petroleo));
+}
+
+.painel.login-caixa {
+  border-radius: 24px;
+  box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.55);
+}
+
+.abas-login {
+  border-radius: 999px;
+}
+
+.abas-login button {
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Com a aba "Criar conta", ficam 4 abas: duas por linha */
+.abas-login:has(#aba-conta:not([hidden])) {
+  grid-template-columns: repeat(2, 1fr);
+  border-radius: 16px;
+}
+
+.abas-login:has(#aba-conta:not([hidden])) button {
+  border-radius: 12px;
+}
+
+.login-caixa h1 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* Modo escuro: sombras mais discretas */
+:root[data-tema='escuro'] .painel,
+:root[data-tema='escuro'] .indicador {
+  box-shadow: 0 12px 32px -22px rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema='claro']) .painel,
+  :root:not([data-tema='claro']) .indicador {
+    box-shadow: 0 12px 32px -22px rgba(0, 0, 0, 0.6);
+  }
+}
+
+@media (max-width: 560px) {
+  .indicador {
+    padding: 14px;
+  }
+
+  .indicador strong {
+    font-size: clamp(1rem, 4.6vw, 1.25rem);
+    overflow-wrap: anywhere;
+  }
+}
