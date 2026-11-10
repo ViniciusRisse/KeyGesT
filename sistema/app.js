@@ -2436,7 +2436,7 @@
         else {
           definirModoLogin('entrar');
           document.getElementById('login-email').value = email;
-          mensagemLogin('Conta criada! Agora entre com o seu e-mail e a senha.', 'sucesso');
+          mensagemLogin('Conta criada! Enviamos um e-mail de confirmação para ' + email + '. Abra o e-mail (veja também o spam), clique no link e depois entre aqui com a sua senha.', 'sucesso');
         }
       } else if (modoLogin === 'esqueci') {
         await DB.recuperar(email);
@@ -2450,7 +2450,8 @@
     } catch (e) {
       mensagemLogin(e.message);
     }
-    botao.textContent = textoBotao;
+    // O modo pode ter mudado (ex.: conta criada → "Entrar"): o botão segue o modo atual
+    botao.textContent = (MODOS[modoLogin] || {}).botao || textoBotao;
     botao.disabled = false;
   });
 

@@ -52,6 +52,14 @@
     return m;
   }
 
+  // E-mail que já tem cadastro: o Supabase responde "ok" sem criar nada (identities vazio)
+  function jaCadastrado(d) {
+    if (d && d.user && Array.isArray(d.user.identities) && d.user.identities.length === 0) {
+      throw new Error(traduzirErro('already registered'));
+    }
+    return d;
+  }
+
   function resultado(r) {
     if (r.error) throw new Error(traduzirErro(r.error));
     return r.data;
@@ -120,7 +128,7 @@
     },
     // Primeiro acesso: a pessoa cria a própria senha (o e-mail precisa ter sido liberado pelo admin)
     cadastrar: function (email, senha) {
-      return sb.auth.signUp({ email: email, password: senha, options: { emailRedirectTo: ENDERECO } }).then(resultado);
+      return sb.auth.signUp({ email: email, password: senha, options: { emailRedirectTo: ENDERECO } }).then(resultado).then(jaCadastrado);
     },
     recuperar: function (email) {
       return sb.auth.resetPasswordForEmail(email, { redirectTo: ENDERECO }).then(resultado);
@@ -151,7 +159,7 @@
         options: { emailRedirectTo: ENDERECO, data: { nova_conta: {
           tipo: dados.tipo, nome: dados.nome, empresa: dados.empresa, documento: dados.documento, telefone: dados.telefone,
         } } },
-      }).then(resultado);
+      }).then(resultado).then(jaCadastrado);
     },
     resumoContas: function () {
       return sb.rpc('resumo_contas').then(resultado);
