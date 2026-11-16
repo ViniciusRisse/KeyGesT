@@ -4027,3 +4027,22 @@ body.sistema {
     overflow-wrap: anywhere;
   }
 }
+
+/* Aplicativo (instalado no celular) */
+.janela-instalar {
+  max-width: 440px;
+}
+
+.passos-instalar {
+  margin: 0 0 18px;
+  padding-left: 22px;
+  display: grid;
+  gap: 10px;
+  line-height: 1.5;
+}
+
+/* No app instalado, o link "Site" e o "Voltar ao site" do login não fazem falta */
+.modo-app .link-site,
+.modo-app .login-rodape > a[href='../index.html'] {
+  display: none;
+}
